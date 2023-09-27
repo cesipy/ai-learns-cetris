@@ -20,7 +20,7 @@
 /* ----------------------------------------------------------- */
 
 enum type {
-     I, J, L, T, S, Z, O
+     I, J, L, T, S, Z, O, initial // initial only for the first initialization
 };
 
 
@@ -46,8 +46,8 @@ typedef struct {
     bool fixed_piece;
     bool moved_in_prev_iteration;
     bool rotated_in_prev_iteration;
-    bool is_new;              // used for copy in rotation
-    short color; // color from 0 to 7
+    bool is_new;                // used for copy in rotation
+    short color;                // color from 0 to 7
 }Block;
 
 /**
@@ -69,6 +69,7 @@ typedef struct {
     int highest_fixed_block;    // height of the highest current block. (to check for game-over)
     Position middle_coordinate; // store the middle point of current ffalling piece (to rotate)
     int score;                  // store of current game iteration
+    type piece_type;            // type of falling piece
     //further add
 }Game;
 

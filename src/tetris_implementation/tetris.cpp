@@ -233,6 +233,7 @@ void game_init(Game* g, int rows, int cols)
     g->highest_fixed_block = 0;
     g->middle_coordinate   = position;
     g->score               = 0;
+    g->piece_type          = initial;
 
     // further implementation
 
@@ -293,6 +294,9 @@ void insert_falling_piece(type type, Game* g)
         // assign middle position
         pos.row = 1;
         pos.col = mid;
+
+        // assign piece type
+        game->piece_type = J;
     }
 
     else if (type == I)
@@ -305,6 +309,9 @@ void insert_falling_piece(type type, Game* g)
         // assign middle position
         pos.row = 1;
         pos.col = mid + 1;
+
+        // assign piece type
+        game->piece_type = I;
     }
 
     else if (type == L)
@@ -317,6 +324,10 @@ void insert_falling_piece(type type, Game* g)
         // assign middle position
         pos.row = 1;
         pos.col = mid ;
+
+
+        // assign piece type
+        game->piece_type = L;
     }
 
     else if (type == T)
@@ -329,6 +340,10 @@ void insert_falling_piece(type type, Game* g)
         // assign middle position
         pos.row = 1;
         pos.col = mid;
+
+
+        // assign piece type
+        game->piece_type = T;
     }
 
     else if (type == S )
@@ -341,6 +356,10 @@ void insert_falling_piece(type type, Game* g)
         // assign middle person
         pos.row = 1;
         pos.col = mid;
+
+
+        // assign piece type
+        game->piece_type = S;
     }
 
     else if (type == Z )
@@ -353,6 +372,9 @@ void insert_falling_piece(type type, Game* g)
         // assign middle person
         pos.row = 1;
         pos.col = mid +1;
+
+        // assign piece type
+        game->piece_type = Z;
     }
 
     else if (type == O)
@@ -365,6 +387,9 @@ void insert_falling_piece(type type, Game* g)
         // only temporary, should not have a middle;
         pos.row = 1;
         pos.col = mid;
+
+        // assign piece type
+        game->piece_type = O;
     }
 
     game->middle_coordinate = pos;
@@ -636,6 +661,8 @@ Position block_position_after_rotation(int row, int col, direction dir)
 // rotate the piece
 void rotate_piece(direction dir)
 {
+    if (game->piece_type == O)
+    { return; }
     // temporary copy of game board
     Block temp_board[BOARD_HEIGHT][BOARD_WIDTH];
     for(int i=0; i<game->rows; i++)
