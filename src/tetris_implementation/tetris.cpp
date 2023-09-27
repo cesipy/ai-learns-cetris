@@ -4,8 +4,6 @@
 #include <iostream>
 #include <random>
 
-int ch;
-
 WINDOW* board, * falling, *hold, *score;
 Game* game;
 int piece_counter = 0;

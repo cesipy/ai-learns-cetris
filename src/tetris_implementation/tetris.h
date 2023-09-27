@@ -3,7 +3,7 @@
 
 #include <ncurses.h>
 #define GRAVITY_TICKS 350
-#define SLEEP_TIME 1000
+#define SLEEP_TIME 10
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
@@ -87,6 +87,16 @@ typedef struct {
     int x;
     int y;
 }Coordinate;
+
+/**
+ * struct for sharing the current state of the game.
+ */
+typedef struct {
+    int lines_cleared;      // to be maximized
+    int height;             // to be minimized
+    int holes;              // to be minimized
+    int bumpiness;          // to be minimized
+}State;
 
 /* ----------------------------------------------------------- */
 
@@ -201,5 +211,11 @@ Position rotate_block_position(int row, int col, const Position& pivot);
 
 void alloc_game_board();
 void dealloc_game_board();
+
+
+/* ----------------------------------------------------------- */
+// files from communication.cpp
+int rxc();
+void calculate_lines_cleared(Game* g, State* s);
 
 #endif
