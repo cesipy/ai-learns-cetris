@@ -6,6 +6,7 @@
 
 WINDOW* board, * falling, *hold, *score;
 Game* game;
+State* state;
 int piece_counter = 0;
 // seed for random function
 std::random_device rd;
@@ -56,6 +57,10 @@ void main_loop()
 
             game->need_new_piece = false;
         }
+
+        // update state for current processing
+        update_state(game, state);
+
 
         int input = getch();
         // check for 'q' to quit the game

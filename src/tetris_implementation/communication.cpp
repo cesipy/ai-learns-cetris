@@ -92,4 +92,16 @@ void calculate_bumpiness(Game* g, State* s)
             }
         }
     }
+
+    s->bumpiness = bumpiness;
+}
+
+
+void update_state(Game* g, State * s)
+{
+    calculate_lines_cleared(Game* g, State * s);
+    calculate_height(Game* g, State * s);
+    calculate_bumpiness(Game* g, State * s);
+    calculate_holes(Game* g, State * s);
+    s->piece_type = g->piece_type;
 }

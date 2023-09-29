@@ -96,6 +96,7 @@ typedef struct {
     int height;             // to be minimized
     int holes;              // to be minimized
     int bumpiness;          // to be minimized
+    type piece_type;        // type of falling piece
 }State;
 
 /* ----------------------------------------------------------- */
@@ -220,6 +221,7 @@ void calculate_lines_cleared(Game* g, State* s);
 void calculate_height(Game* g, State* s);
 void calculate_holes(Game* g, State* s);
 void calculate_bumpiness(Game* g, State* s);
+void update_state(Game* g, State * s);
 
 
 #endif
