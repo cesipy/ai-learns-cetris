@@ -107,7 +107,7 @@ void update_state(Game* g, State * s)
 }
 
 
-std::string state_to_string(const State* s) {
+char* state_to_string(const State* s) {
     std::ostringstream output;
 
     // Format the struct values into a string
@@ -115,7 +115,34 @@ std::string state_to_string(const State* s) {
            << ", Height: " << s->height
            << ", Holes: " << s->holes
            << ", Bumpiness: " << s->bumpiness
-           << ", Piece Type: " << s->piece_type;
+           << ", Piece Type: " << s->piece_type << "\n";
 
-    return output.str();
+    // Create a copy of the string and return its c_str()
+    std::string str = output.str();
+    char* result = new char[str.length() + 1]; // +1 for null-terminator
+    strcpy(result, str.c_str());
+
+    return result;
+}
+
+
+const int setup_named_pipe(const char* name)
+{
+    const mode_t permission = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH; // 644
+    if (mkfifo(name, permission) != 0)
+    {
+        // add error handling
+        fprintf(stderr, "error @ mkfifo");
+        exit(EXIT_FAILURE);
+    }
+
+    const int fd = open(name, O_RDWR);
+    if (fd < 0)
+    {
+        fprintf(stderr, "error @ opening fifo");
+        exit(EXIT_FAILURE);
+    }
+
+    return fd;
+
 }

@@ -11,3 +11,9 @@ typedef struct {
 ```
 then we get a formula that is trained by the q-learning algorithm
 `a*Height + b*lines_cleared + c*holes + d*bumpiness`
+
+
+print content of named pipe.
+```bash
+cat < named_pipe
+```

@@ -8,6 +8,11 @@ WINDOW* board, * falling, *hold, *score;
 Game* game = new Game ;
 State* state = new State;
 int piece_counter = 0;
+
+//named pipe
+int fd;                 // named pipe
+const char* name_fifo =  "named_pipe";
+
 // seed for random function
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -37,7 +42,13 @@ int main (int argc, char* argv[])
 
     // free allocated objects
     delete game;
+    delete state;
     endwin();
+
+    // close named pipe
+    close(fd);
+    unlink(name_fifo);
+
 }
 
 /*  ------------------------------  */
@@ -58,7 +69,8 @@ void main_loop()
             game->need_new_piece = false;
         }
 
-        if (tick % (GRAVITY_TICKS*10) == 0)
+        // only temp
+        if (tick % (GRAVITY_TICKS) == 0)
         {
             // update state for current processing
             update_state(game, state);
@@ -105,6 +117,12 @@ void main_loop()
         usleep(SLEEP_TIME);     // sleep for a bit
         tick++;
         check_game_state();
+
+
+        if (tick % (GRAVITY_TICKS) == 0) {
+            char *message = state_to_string(state);
+            write(fd, message, strlen(message));
+        }
     }
 }
 
@@ -242,6 +260,9 @@ void game_init(Game* g, int rows, int cols)
     g->piece_type          = initial;
 
     // further implementation
+
+    // set up named pipe
+    fd = setup_named_pipe(name_fifo);
 
     for (int i=0; i<g->rows;i++)
     {

@@ -4,9 +4,17 @@
 #include <ncurses.h>
 #include <string>
 #include <sstream>
+#include <stdlib.h>
+#include <string.h>
+
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define GRAVITY_TICKS 350
-#define SLEEP_TIME 10
+#define SLEEP_TIME 1000
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
@@ -225,6 +233,7 @@ void calculate_height(Game* g, State* s);
 void calculate_holes(Game* g, State* s);
 void calculate_bumpiness(Game* g, State* s);
 void update_state(Game* g, State * s);
-
+const int setup_named_pipe(const char* name);
+char* state_to_string(const State* s);
 
 #endif
