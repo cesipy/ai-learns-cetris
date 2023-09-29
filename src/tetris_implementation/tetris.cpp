@@ -5,8 +5,8 @@
 #include <random>
 
 WINDOW* board, * falling, *hold, *score;
-Game* game;
-State* state;
+Game* game = new Game ;
+State* state = new State;
 int piece_counter = 0;
 // seed for random function
 std::random_device rd;
@@ -17,7 +17,7 @@ std::mt19937 gen(rd());
 
 int main (int argc, char* argv[])
 {
-    game = new Game;    // alloc memory
+    //game = new Game;    // alloc memory
     game_init(game, BOARD_HEIGHT, BOARD_WIDTH); // initialize the board struct and all its members
 
     initscr();
@@ -58,9 +58,12 @@ void main_loop()
             game->need_new_piece = false;
         }
 
-        // update state for current processing
-        update_state(game, state);
+        if (tick % (GRAVITY_TICKS*10) == 0)
+        {
+            // update state for current processing
+            update_state(game, state);
 
+        }
 
         int input = getch();
         // check for 'q' to quit the game
@@ -797,3 +800,4 @@ void display_score()
     mvwprintw(game->win, 0, 0, "Score: %d", game->score);
     wrefresh(game->win);
 }
+
