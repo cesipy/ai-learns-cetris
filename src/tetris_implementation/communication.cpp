@@ -59,5 +59,37 @@ void calculate_holes(Game* g, State* s)
 
 void calculate_bumpiness(Game* g, State* s)
 {
+    int bumpiness;
+    int highest_point_in_a, highest_point_in_b;
 
+    // get the highest position in first column
+    for(int i=0; i<g->rows;i++)
+    {
+        if (g->game_board[i][0].fixed_piece)
+        {
+            highest_point_in_a = i;
+            break;
+        }
+    }
+
+    for (int j=1; j<g->cols; j++)
+    {
+        for (int i=0; i<g->rows; i++)
+        {
+            if (g->game_board[i][j].fixed_piece)
+            {
+                highest_point_in_b = i;
+
+                // calculate difference
+                int delta = highest_point_in_a - highest_point_in_b;
+                delta = delta < 0 ? -delta : delta;
+
+                //add to overall bumpiness:
+                bumpiness += delta;
+
+                highest_point_in_a = highest_point_in_b;
+                break;
+            }
+        }
+    }
 }
