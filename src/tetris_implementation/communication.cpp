@@ -99,9 +99,9 @@ void calculate_bumpiness(Game* g, State* s)
 
 void update_state(Game* g, State * s)
 {
-    calculate_lines_cleared(Game* g, State * s);
-    calculate_height(Game* g, State * s);
-    calculate_bumpiness(Game* g, State * s);
-    calculate_holes(Game* g, State * s);
+    calculate_lines_cleared(g, s);
+    calculate_height(g, s);
+    calculate_bumpiness(g, s);
+    calculate_holes(g, s);
     s->piece_type = g->piece_type;
 }
