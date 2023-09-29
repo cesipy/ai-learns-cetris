@@ -105,3 +105,17 @@ void update_state(Game* g, State * s)
     calculate_holes(g, s);
     s->piece_type = g->piece_type;
 }
+
+
+std::string state_to_string(const State* s) {
+    std::ostringstream output;
+
+    // Format the struct values into a string
+    output << "Lines Cleared: " << s->lines_cleared
+           << ", Height: " << s->height
+           << ", Holes: " << s->holes
+           << ", Bumpiness: " << s->bumpiness
+           << ", Piece Type: " << s->piece_type;
+
+    return output.str();
+}
