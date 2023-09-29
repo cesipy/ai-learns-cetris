@@ -217,5 +217,9 @@ void dealloc_game_board();
 // files from communication.cpp
 int rxc();
 void calculate_lines_cleared(Game* g, State* s);
+void calculate_height(Game* g, State* s);
+void calculate_holes(Game* g, State* s);
+void calculate_bumpiness(Game* g, State* s);
+
 
 #endif
