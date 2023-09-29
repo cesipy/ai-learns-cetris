@@ -1,9 +1,16 @@
 import subprocess as sub
 import os
+import time
+
+FIFO = "named_pipe"
 
 
 def child():
-    print("hello from child")
+    with open(FIFO) as f:
+        while True:
+            data = f.read()
+            if len(data) != 0:
+                print("read: {}".format(data))
 
 
 def main():
@@ -11,6 +18,7 @@ def main():
 
     if pid == 0:
         # child process to handle the tetris game
+        time.sleep(1)
         child()
 
     else:
