@@ -17,3 +17,8 @@ print content of named pipe.
 ```bash
 cat < named_pipe
 ```
+
+### fixing attributes
+
+- there are 14 cols in a row
+- 

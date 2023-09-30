@@ -31,23 +31,25 @@ void calculate_height(Game* g, State* s)
 }
 
 
-void calculate_holes(Game* g, State* s)
-{
+void calculate_holes(Game* g, State* s) {
     int number_holes = 0;
-    // for referencing
     bool reached_first_fixed_blocks = false;
-    for (int i=0; i<g->rows; i++)
-    {
-        for (int j=0; j<g->cols; j++)
+
+    for (int i = 0; i < 29 - 1; i++)    //temp: magic numbers because of distortion of game height and width TO BE FIXED
+    { // Avoid checking beyond the last row
+        for (int j = 0; j < 15; j++)    //temp: magic numbers because of distortion of game height and width TO BE FIXED
         {
             Block block = g->game_board[i][j];
-            if (block.fixed_piece) { reached_first_fixed_blocks = true; }
+            if (block.fixed_piece)
+            {
+                reached_first_fixed_blocks = true;
+            }
 
             bool condition = reached_first_fixed_blocks
-                    && block.value == EMPTY_CELL
-                    && g->game_board[i+1][j].fixed_piece;
-            if (condition)
-            {
+                             && block.value == EMPTY_CELL
+                             && g->game_board[i - 1][j].fixed_piece;
+
+            if (condition) {
                 number_holes++;
             }
         }
@@ -57,9 +59,10 @@ void calculate_holes(Game* g, State* s)
 }
 
 
+
 void calculate_bumpiness(Game* g, State* s)
 {
-    int bumpiness;
+    int bumpiness = 0;
     int highest_point_in_a, highest_point_in_b;
 
     // get the highest position in first column
@@ -72,7 +75,7 @@ void calculate_bumpiness(Game* g, State* s)
         }
     }
 
-    for (int j=1; j<g->cols; j++)
+    for (int j=1; j<15; j++)        // width = 14, so <15
     {
         for (int i=0; i<g->rows; i++)
         {

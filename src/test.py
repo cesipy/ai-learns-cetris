@@ -11,6 +11,7 @@ def child():
             data = f.read()
             if len(data) != 0:
                 print("read: {}".format(data))
+            else: break
 
 
 def main():
