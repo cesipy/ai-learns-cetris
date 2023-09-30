@@ -18,6 +18,13 @@ print content of named pipe.
 cat < named_pipe
 ```
 
+### handling the game
+in each iteration in `main_loop` :
+1. current state with current falling piece, holes, bumpiness, etc is shared to python code
+2. is analysed and sent in python code
+3. is received in c and executed
+4. gravity tick
+
 ### fixing attributes
 
 - there are 14 cols in a row

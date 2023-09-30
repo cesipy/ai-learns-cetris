@@ -5,13 +5,15 @@
 #include <random>
 
 WINDOW* board, * falling, *hold, *score;
-Game* game = new Game ;
-State* state = new State;
+Game* game        = new Game ;
+State* state      = new State;
 int piece_counter = 0;
+Control* control  = new Control ;
 
 //named pipe
-int fd;                 // named pipe
-const char* name_fifo =  "named_pipe";
+int fd_states, fd_controls;                 // named pipe
+const char* fifo_states  = "fifo_states";
+const char* fifo_control = "fifo_controls";
 
 // seed for random function
 std::random_device rd;
@@ -46,8 +48,10 @@ int main (int argc, char* argv[])
     endwin();
 
     // close named pipe
-    close(fd);
-    unlink(name_fifo);
+    close(fd_controls);
+    close(fd_states);
+    unlink(fifo_control);
+    unlink(fifo_states);
 
 }
 
@@ -121,7 +125,9 @@ void main_loop()
 
         if (tick % (GRAVITY_TICKS) == 0) {
             char *message = state_to_string(state);
-            write(fd, message, strlen(message));
+            write(fd_states, message, strlen(message));
+
+            receive_message(fd_controls,control );
         }
     }
 }
@@ -258,7 +264,8 @@ void game_init(Game* g, int rows, int cols)
     // further implementation
 
     // set up named pipe
-    fd = setup_named_pipe(name_fifo);
+    fd_states    = setup_named_pipe(fifo_states, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR );
+    fd_controls  = setup_named_pipe(fifo_control, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR);
 
     for (int i=0; i<g->rows;i++)
     {

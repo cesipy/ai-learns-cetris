@@ -132,9 +132,8 @@ char* state_to_string(const State* s) {
 }
 
 
-const int setup_named_pipe(const char* name)
+const int setup_named_pipe(const char* name, mode_t permission, int mode)
 {
-    const mode_t permission = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH; // 644
     if (mkfifo(name, permission) != 0)
     {
         // add error handling
@@ -142,7 +141,8 @@ const int setup_named_pipe(const char* name)
         exit(EXIT_FAILURE);
     }
 
-    const int fd = open(name, O_RDWR);
+
+    const int fd = open(name, mode);
     if (fd < 0)
     {
         fprintf(stderr, "error @ opening fifo");
@@ -150,5 +150,37 @@ const int setup_named_pipe(const char* name)
     }
 
     return fd;
+}
 
+
+
+
+
+void receive_message(int fd, Control* control_message) {
+    char buffer[100];
+    ssize_t bytesRead;
+
+    // Read data from the named pipe
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+
+    if (bytesRead > 0) {
+        // Null-terminate the received data to make it a valid C string
+        buffer[bytesRead] = '\0';
+
+        // Print the received message to stdout
+        write(STDOUT_FILENO, buffer, bytesRead);
+
+        // Assuming 'control_message' is a struct that you want to populate from the received data
+        // You can parse the 'buffer' and populate 'control_message' accordingly here.
+    } else if (bytesRead == 0) {
+        return;
+    } else {
+        perror("read");
+    }
+}
+
+
+void parse_message(char* message, Control* control_message)
+{
+    return;
 }

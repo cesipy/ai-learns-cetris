@@ -3,3 +3,5 @@ src/tetris_implementation/tetris
 src/tetris_implementation/communication.o
 src/tetris_implementation/tetris.o
 .idea
+src/tetris_implementation/fifo_controls
+src/tetris_implementation/fifo_states

@@ -110,6 +110,13 @@ typedef struct {
     type piece_type;        // type of falling piece
 }State;
 
+
+typedef struct {
+    int new_position;       // relative to current position (can be negative or positive
+    // needs further implementation
+
+}Control;
+
 /* ----------------------------------------------------------- */
 
 void insert_falling_piece(type type, Game* g);
@@ -235,5 +242,17 @@ void calculate_bumpiness(Game* g, State* s);
 void update_state(Game* g, State * s);
 const int setup_named_pipe(const char* name);
 char* state_to_string(const State* s);
+void receive_message(int fd, Control* control_message);
+void parse_message(char* message, Control* control_message);
+
+/**
+ *
+ * @param name
+ * @param permission
+ * @param mode specifies opening mode, 1 - write only only, 0 - read only
+ * @return
+ */
+const int setup_named_pipe(const char* name, mode_t permission, int mode );
+
 
 #endif
