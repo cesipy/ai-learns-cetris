@@ -31,33 +31,36 @@ void calculate_height(Game* g, State* s)
 }
 
 
-void calculate_holes(Game* g, State* s) {
-    int number_holes = 0;
-    bool reached_first_fixed_blocks = false;
 
-    for (int i = 0; i < 29 - 1; i++)    //temp: magic numbers because of distortion of game height and width TO BE FIXED
-    { // Avoid checking beyond the last row
-        for (int j = 0; j < 15; j++)    //temp: magic numbers because of distortion of game height and width TO BE FIXED
+void calculate_holes(Game* g, State* s)
+{
+    int number_holes = 0;
+
+    for (int col=0; col < 15; col++)
+    {
+        bool encountered_fixed_piece = false;
+
+        // loop through column
+
+        for (int row=0; row < 28; row++)
         {
-            Block block = g->game_board[i][j];
+            Block block = g->game_board[row][col];
+
             if (block.fixed_piece)
             {
-                reached_first_fixed_blocks = true;
+                encountered_fixed_piece = true;
             }
+            bool condition = encountered_fixed_piece
+                    && block.value == EMPTY_CELL;
 
-            bool condition = reached_first_fixed_blocks
-                             && block.value == EMPTY_CELL
-                             && g->game_board[i - 1][j].fixed_piece;
-
-            if (condition) {
+            if (condition)
+            {
                 number_holes++;
             }
         }
     }
-
     s->holes = number_holes;
 }
-
 
 
 void calculate_bumpiness(Game* g, State* s)

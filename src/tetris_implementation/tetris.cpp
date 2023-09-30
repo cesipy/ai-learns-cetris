@@ -157,11 +157,7 @@ void display_board(Game* g)
         for (int j = 0; j < g->cols; j++)
         {
             // debugging: show middle coordinate
-            if (i == middle.row && j == middle.col)
-            {
-                ADD_BLOCK(win, 1);
-            }
-            else if (g->game_board[i][j].value != EMPTY_CELL)
+            if (g->game_board[i][j].value != EMPTY_CELL)
             {
                 // draw block with saved color
                 ADD_BLOCK(win, game->game_board[i][j].color);
