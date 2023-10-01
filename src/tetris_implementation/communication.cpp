@@ -182,5 +182,6 @@ void receive_message(int fd, Control* control_message) {
 
 void parse_message(char* message, Control* control_message)
 {
+
     return;
 }
