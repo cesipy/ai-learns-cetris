@@ -48,6 +48,7 @@ int main (int argc, char* argv[])
     // free allocated objects
     delete game;
     delete state;
+    delete control;
     endwin();
 
     // close named pipe
@@ -74,6 +75,30 @@ void main_loop()
             piece_counter_increase();
 
             game->need_new_piece = false;
+        }
+
+        if (control->new_control_available)
+        {
+            control->new_control_available = false;
+
+            int delta_position = control->new_position;
+
+            if (delta_position < 0)
+            {
+                while (delta_position < 0)
+                {
+                    move_piece(left);
+                    delta_position++;
+                }
+            }
+            else if (delta_position > 0)
+            {
+                while (delta_position > 0)
+                {
+                    move_piece(right);
+                    delta_position--;
+                }
+            }
         }
 
         // only temp
@@ -263,6 +288,8 @@ void game_init(Game* g, int rows, int cols)
     g->middle_coordinate   = position;
     g->score               = 0;
     g->piece_type          = initial;
+
+    control->new_control_available = false;
 
     // further implementation
 

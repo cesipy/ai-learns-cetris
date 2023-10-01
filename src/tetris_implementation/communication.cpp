@@ -167,8 +167,10 @@ void receive_message(int fd, Control* control_message) {
         // Null-terminate the received data to make it a valid C string
         buffer[bytesRead] = '\0';
 
+        parse_message(buffer, control_message);
+
         // Print the received message to stdout
-        write(STDOUT_FILENO, buffer, bytesRead);
+        //write(STDOUT_FILENO, buffer, bytesRead);
 
         // Assuming 'control_message' is a struct that you want to populate from the received data
         // You can parse the 'buffer' and populate 'control_message' accordingly here.
@@ -182,6 +184,7 @@ void receive_message(int fd, Control* control_message) {
 
 void parse_message(char* message, Control* control_message)
 {
-
+    control_message->new_control_available = true;
+    control_message->new_position          = std::stoi(message);
     return;
 }
