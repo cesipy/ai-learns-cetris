@@ -42,6 +42,9 @@ int main (int argc, char* argv[])
     // example_fill_board(game);
     main_loop();
 
+    // send closing message to fifo_states
+    write(fd_states, "end", strlen("end"));
+
     // free allocated objects
     delete game;
     delete state;

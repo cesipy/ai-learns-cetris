@@ -19,7 +19,7 @@ def receive_from_pipe():
         fifo_fd = os.open(FIFO_STATES, os.O_RDONLY)
 
         # Read data from the FIFO
-        data = os.read(fifo_fd, 100)  # Adjust the buffer size as needed
+        data = os.read(fifo_fd, 1024)  # Adjust the buffer size as needed
 
         # Close the FIFO
         os.close(fifo_fd)
@@ -33,10 +33,23 @@ def receive_from_pipe():
         return ""
 
 
-def sent_to_pipe():
-    with open(FIFO_CONTROLS, "w") as f:
-        data = random.randint(-6, 6)
-        f.write(str(data))
+def send_to_pipe():
+    try:
+        # Open the FIFO for writing
+        fifo_fd = os.open(FIFO_CONTROLS, os.O_WRONLY)
+
+        # Generate some data (e.g., a random number)
+        data = str(random.randint(-6, 6))
+
+        # Write data to the FIFO
+        os.write(fifo_fd, data.encode('utf-8'))  # Encode data if not in bytes
+
+        # Close the FIFO
+        os.close(fifo_fd)
+    except FileNotFoundError:
+        print(f"Error: {FIFO_CONTROLS} does not exist.")
+    except Exception as e:
+        print(f"Error while writing to {FIFO_CONTROLS}: {e}")
 
 
 def main():
@@ -48,11 +61,11 @@ def main():
         data: str = ""
         while not data == "end":
 
-            receive_from_pipe()
+            data = receive_from_pipe()
 
             time.sleep(350/1000)
 
-            sent_to_pipe()
+            send_to_pipe()
 
         print("reached!")
         exit(0)
