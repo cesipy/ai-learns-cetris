@@ -29,3 +29,6 @@ $(EXECUTABLE): $(OBJECTS)
 
 clean:
 	rm -f $(EXECUTABLE) $(OBJECTS)
+	rm -f fifo_controls
+	rm -f fifo_states
+	rm -f test.o

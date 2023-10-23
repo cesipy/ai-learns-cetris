@@ -155,7 +155,7 @@ void main_loop()
             char *message = state_to_string(state);
             write(fd_states, message, strlen(message));
 
-            receive_message(fd_controls,control );
+            receive_message(fd_controls,control );       // receive new control instructions via named pipe
         }
     }
 }

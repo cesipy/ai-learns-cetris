@@ -71,6 +71,7 @@ def main():
         exit(0)
     else:
         # parent
+        # executes the tetris binary
         tetris_command = './tetris'
 
         sub.run(tetris_command, shell=True)

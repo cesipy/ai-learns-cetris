@@ -1,13 +1,6 @@
 #include "tetris.h"
 
 
-int rxc(void)
-{
-    printf("hello");
-    return 1;
-}
-
-
 void calculate_lines_cleared(Game* g, State* s)
 {
     s->lines_cleared = g->score;
@@ -187,4 +180,9 @@ void parse_message(char* message, Control* control_message)
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
     return;
+}
+
+
+void close_named_pipe(Control* c) {
+    
 }
