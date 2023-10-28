@@ -2,6 +2,11 @@
 
 /*  ------------------------------  */
 
+State* state      = new State;
+Control* control  = new Control ;
+
+
+
 int main (int argc, char* argv[])
 {
     initscr();
@@ -16,9 +21,20 @@ int main (int argc, char* argv[])
     // example_fill_board(game);
     main_loop(game);
 
+      // send closing message to fifo_states
+    write(game->communication->fd_states, "end", strlen("end"));
+
     endwin();
     // free allocated objects
     delete game;
+    delete state;
+    delete control;
+
+     // close named pipe, make this in own cleanup function!
+    close(game->communication->fd_controls);
+    close(game->communication->fd_states);
+    unlink(game->communication->fifo_control_name);
+    unlink(game->communication->fifo_states_name);
 
 }
 

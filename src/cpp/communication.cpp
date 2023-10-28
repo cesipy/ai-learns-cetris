@@ -1,10 +1,5 @@
 #include "tetris.h"
 
-//named pipe
-int fd_states, fd_controls;                 // named pipe
-const char* fifo_states  = "fifo_states";
-const char* fifo_control = "fifo_controls";
-
 
 void calculate_lines_cleared(Game* g, State* s)
 {
@@ -149,9 +144,6 @@ const int setup_named_pipe(const char* name, mode_t permission, int mode)
 
     return fd;
 }
-
-
-
 
 
 void receive_message(int fd, Control* control_message) {

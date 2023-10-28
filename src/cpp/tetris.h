@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+
 #define GRAVITY_TICKS 350
 #define SLEEP_TIME 1000
 #define BOARD_WIDTH  30
@@ -50,6 +52,14 @@ typedef struct {
 
 
 typedef struct {
+    int fd_states;      // communicates game states
+    int fd_controls;    // communicates game control structs. (= new position, etc)
+    const char* fifo_states_name;
+    const char* fifo_control_name;
+} Communication; 
+
+
+typedef struct {
     int value;
     bool falling_piece;
     bool fixed_piece;
@@ -81,6 +91,7 @@ typedef struct {
     type piece_type;            // type of falling piece
     //further add
     int difficulty;
+    Communication* communication;
 }Game;
 
 
@@ -113,7 +124,7 @@ typedef struct {
 
 typedef struct {
     bool new_control_available;       // indicate new control received from pipe
-    int new_position;       // relative to current position (can be negative or positive
+    int new_position;                 // relative to current position (can be negative or positive
     // needs further implementation
 
 }Control;
@@ -241,7 +252,9 @@ void display_score(Game* g);
 int check_input(Game* g);
 
 
+// from communication file
 /* ----------------------------------------------------------- */
+
 // files from communication.cpp
 void calculate_lines_cleared(Game* g, State* s);
 void calculate_height(Game* g, State* s);
@@ -261,6 +274,7 @@ void parse_message(char* message, Control* control_message);
  * @return
  */
 const int setup_named_pipe(const char* name, mode_t permission, int mode );
+
 
 
 #endif
