@@ -125,6 +125,17 @@ char* state_to_string(const State* s) {
 }
 
 
+void communicate(Game* g) 
+{
+    update_state(g, g->state);              // TODO: simplify parameters, only g needed!
+
+    char* message = state_to_string(g->state);
+    write(g->communication->fd_states, message, strlen(message));
+
+    receive_message(g->communication->fd_controls, g->control);
+}
+
+
 const int setup_named_pipe(const char* name, mode_t permission, int mode)
 {
     if (mkfifo(name, permission) != 0)

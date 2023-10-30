@@ -267,6 +267,7 @@ const int setup_named_pipe(const char* name);
 char* state_to_string(const State* s);
 void receive_message(int fd, Control* control_message);
 void parse_message(char* message, Control* control_message);
+void communicate(Game* g);
 
 /**
  *
