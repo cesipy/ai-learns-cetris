@@ -40,6 +40,26 @@ enum direction {
 };
 
 /**
+ * struct for sharing the current state of the game.
+ */
+typedef struct {
+    int lines_cleared;      // to be maximized
+    int height;             // to be minimized
+    int holes;              // to be minimized
+    int bumpiness;          // to be minimized
+    type piece_type;        // type of falling piece
+}State;
+
+
+typedef struct {
+    bool new_control_available;       // indicate new control received from pipe
+    int new_position;                 // relative to current position (can be negative or positive
+    // needs further implementation
+
+}Control;
+
+
+/**
  * stores position with (x, y)
  *
  * @param x x coordinate
@@ -91,6 +111,8 @@ typedef struct {
     type piece_type;            // type of falling piece
     //further add
     int difficulty;
+    Control* control;
+    State* state;
     Communication* communication;
 }Game;
 
@@ -108,26 +130,6 @@ typedef struct {
     int x;
     int y;
 }Coordinate;
-
-
-/**
- * struct for sharing the current state of the game.
- */
-typedef struct {
-    int lines_cleared;      // to be maximized
-    int height;             // to be minimized
-    int holes;              // to be minimized
-    int bumpiness;          // to be minimized
-    type piece_type;        // type of falling piece
-}State;
-
-
-typedef struct {
-    bool new_control_available;       // indicate new control received from pipe
-    int new_position;                 // relative to current position (can be negative or positive
-    // needs further implementation
-
-}Control;
 
 /* ----------------------------------------------------------- */
 void initialize_game(Game* g);

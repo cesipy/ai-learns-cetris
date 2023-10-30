@@ -38,8 +38,8 @@ void main_loop(Game* g)
         display_score(g);
 
         // update position if a falling piece aka gravity
-        // difficulty gets updated in manage_full_lines()
-        if (tick % g->difficulty == 0) {
+        // difficulty gets updated in manage_full_lines(    )
+        if (tick % GRAVITY_TICKS == 0) {                        // no difficulty increasement
             gravity(g);
         }
 
