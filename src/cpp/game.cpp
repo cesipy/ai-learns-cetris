@@ -48,6 +48,14 @@ void main_loop(Game* g)
         tick++;
         check_game_state(g);
 
+        if (tick % GRAVITY_TICKS == 0) 
+        {
+            update_state(g, g->state);
+
+            char* message = state_to_string(g->state);
+            write(g->communication->fd_states, message, strlen(message));
+        }
+
     }
 }
 
@@ -144,6 +152,15 @@ void game_init(Game* g, int rows, int cols)
     g->difficulty          = GRAVITY_TICKS;
 
     // further implementation
+
+    State* state     = new State;
+    Control* control = new Control;
+
+    control->new_control_available = false;
+
+    // assign control and state to game
+    g->state         = state;
+    g->control       = control;
 
     // set up named pipes
     Communication* communication = new Communication;
