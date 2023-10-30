@@ -5,7 +5,6 @@ src/tetris_implementation/tetris.o
 .idea
 src/tetris_implementation/fifo_controls
 src/tetris_implementation/fifo_states
-src/tetris
 .vscode
 src/cpp/game.o
 src/cpp/communication.o
