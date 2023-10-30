@@ -258,14 +258,14 @@ int check_input(Game* g);
 /* ----------------------------------------------------------- */
 
 // files from communication.cpp
-void calculate_lines_cleared(Game* g, State* s);
-void calculate_height(Game* g, State* s);
-void calculate_holes(Game* g, State* s);
-void calculate_bumpiness(Game* g, State* s);
-void update_state(Game* g, State * s);
+void calculate_lines_cleared(Game* g);
+void calculate_height(Game* g);
+void calculate_holes(Game* g);
+void calculate_bumpiness(Game* g);
+void update_state(Game* g);
 const int setup_named_pipe(const char* name);
 char* state_to_string(const State* s);
-void receive_message(int fd, Control* control_message);
+void receive_message(Game* g);
 void parse_message(char* message, Control* control_message);
 void communicate(Game* g);
 

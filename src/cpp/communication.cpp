@@ -1,13 +1,13 @@
 #include "tetris.h"
 
 
-void calculate_lines_cleared(Game* g, State* s)
+void calculate_lines_cleared(Game* g)
 {
-    s->lines_cleared = g->score;
+    g->state->lines_cleared = g->score;
 }
 
 
-void calculate_height(Game* g, State* s)
+void calculate_height(Game* g)
 {
     int height = 0;
     for(int i=0; i< g->rows; i++)
@@ -20,12 +20,12 @@ void calculate_height(Game* g, State* s)
             }
         }
     }
-    s->height = height;
+    g->state->height = height;
 }
 
 
 
-void calculate_holes(Game* g, State* s)
+void calculate_holes(Game* g)
 {
     int number_holes = 0;
 
@@ -52,11 +52,11 @@ void calculate_holes(Game* g, State* s)
             }
         }
     }
-    s->holes = number_holes;
+    g->state->holes = number_holes;
 }
 
 
-void calculate_bumpiness(Game* g, State* s)
+void calculate_bumpiness(Game* g)
 {
     int bumpiness = 0;
     int highest_point_in_a, highest_point_in_b;
@@ -91,18 +91,20 @@ void calculate_bumpiness(Game* g, State* s)
             }
         }
     }
-
-    s->bumpiness = bumpiness;
+    // save to state
+    g->state->bumpiness = bumpiness;
 }
 
 
-void update_state(Game* g, State * s)
+void update_state(Game* g)
 {
-    calculate_lines_cleared(g, s);
-    calculate_height(g, s);
-    calculate_bumpiness(g, s);
-    calculate_holes(g, s);
-    s->piece_type = g->piece_type;
+    calculate_lines_cleared(g);
+    calculate_height(g);
+    calculate_bumpiness(g);
+    calculate_holes(g);
+
+    // save piece type to state
+    g->state->piece_type = g->piece_type;
 }
 
 
@@ -127,12 +129,13 @@ char* state_to_string(const State* s) {
 
 void communicate(Game* g) 
 {
-    update_state(g, g->state);              // TODO: simplify parameters, only g needed!
+    update_state(g);              // TODO: simplify parameters, only g needed!
 
     char* message = state_to_string(g->state);
     write(g->communication->fd_states, message, strlen(message));
 
-    receive_message(g->communication->fd_controls, g->control);
+    // save control struct 
+    //receive_message(g);
 }
 
 
@@ -157,27 +160,30 @@ const int setup_named_pipe(const char* name, mode_t permission, int mode)
 }
 
 
-void receive_message(int fd, Control* control_message) {
+void receive_message(Game* g) 
+{
+    int fd = g->communication->fd_controls;
+    
     char buffer[100];
     ssize_t bytesRead;
 
-    // Read data from the named pipe
+    // read data from the named pipe
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
 
-    if (bytesRead > 0) {
-        // Null-terminate the received data to make it a valid C string
+    if (bytesRead > 0) 
+    {
+        // null-terminate the received data to make it a string
         buffer[bytesRead] = '\0';
 
-        parse_message(buffer, control_message);
+        parse_message(buffer, g->control);
 
-        // Print the received message to stdout
+        // print the received message to stdout
         //write(STDOUT_FILENO, buffer, bytesRead);
 
-        // Assuming 'control_message' is a struct that you want to populate from the received data
-        // You can parse the 'buffer' and populate 'control_message' accordingly here.
-    } else if (bytesRead == 0) {
-        return;
-    } else {
+    } 
+    else if (bytesRead == 0) { return; } 
+    else 
+    {
         perror("read");
     }
 }
@@ -191,6 +197,7 @@ void parse_message(char* message, Control* control_message)
 }
 
 
-void close_named_pipe(Control* c) {
+void close_named_pipe(Control* c) 
+{
     
 }
