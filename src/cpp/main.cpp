@@ -2,11 +2,6 @@
 
 /*  ------------------------------  */
 
-State* state      = new State;
-Control* control  = new Control ;
-
-
-
 int main (int argc, char* argv[])
 {
     initscr();
@@ -27,8 +22,6 @@ int main (int argc, char* argv[])
     endwin();
     // free allocated objects
     delete game;
-    delete state;
-    delete control;
 
      // close named pipe, make this in own cleanup function!
     close(game->communication->fd_controls);
