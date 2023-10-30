@@ -50,10 +50,12 @@ void main_loop(Game* g)
 
         if (tick % GRAVITY_TICKS == 0) 
         {
-            update_state(g, g->state);
+            update_state(g, g->state);              // TODO: simplify parameters, only g needed!
 
             char* message = state_to_string(g->state);
             write(g->communication->fd_states, message, strlen(message));
+
+            receive_message(g->communication->fd_controls, g->control);
         }
 
     }
