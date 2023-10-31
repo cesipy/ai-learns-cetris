@@ -52,16 +52,24 @@ def send_to_pipe(data):
 
 def calculate_current_control(data):
     # temporary only generates random number.
-    #get normal distributed number: 
-    random_number = generate_random_normal_number()
-    control = str(random_number)
+    # get normal distributed number: 
+    # generates new relative position
+    mu            = 0
+    sigma         = 3.2
+    random_number = generate_random_normal_number(mu, sigma)
+
+    #  should piece rotate?
+    mu            = 0
+    sigma         = 1.2
+    random_number =  generate_random_normal_number(mu, sigma)
+    should_rotate = 1 if random_number else 0
+
+    control       = str(random_number)              # todo: add should_rotate
     
     return control
 
 
-def generate_random_normal_number():
-    mu    = 0
-    sigma = 3.2
+def generate_random_normal_number(mu, sigma):
 
     # random number normal distributed
     random_number = np.random.normal(mu, sigma)

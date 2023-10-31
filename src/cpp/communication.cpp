@@ -221,6 +221,8 @@ void parse_message(char* message, Control* control_message)
     // printf("%s\n", message);
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
+
+    // split string after ',' ; parse rotation
     return;
 }
 
