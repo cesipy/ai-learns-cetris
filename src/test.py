@@ -13,7 +13,9 @@ def generate_random_normal_number():
    sigma = 3.2
 
    random_number = np.random.normal(mu, sigma)
-   return random_number
+   # rount to integers
+   number = int(random_number)
+   return number
 
 
 def main():

@@ -1,8 +1,7 @@
-import signal
 import subprocess as sub
 import os
 import time
-import random
+import numpy as np
 
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
@@ -53,9 +52,23 @@ def send_to_pipe(data):
 
 def calculate_current_control(data):
     # temporary only generates random number.
-    control = str(random.randint(-6, 6))
+    #get normal distributed number: 
+    random_number = generate_random_normal_number()
+    control = str(random_number)
     
     return control
+
+
+def generate_random_normal_number():
+   mu    = 0
+   sigma = 3.2
+
+   random_number = np.random.normal(mu, sigma)
+   # rount to integers
+   number = int(random_number)
+   
+   return number
+
 
 def main():
     pid = os.fork()
