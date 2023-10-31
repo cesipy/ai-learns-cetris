@@ -30,7 +30,10 @@ void main_loop(Game* g)
         // check for input (q, arrow up, down, right, left)
         status = check_input(g);
 
-        if (status == 0) { break; }
+        if (status == 0) 
+        { 
+            g->running = false;
+        }
 
         manage_full_lines(g);
         display_board(g);
