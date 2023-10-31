@@ -189,6 +189,32 @@ void receive_message(Game* g)
 }
 
 
+void process_control(Game* g) 
+{
+    if (g->control->new_control_available) 
+        {
+            // update state, no new control is available
+            g->control->new_control_available = false;
+            
+            int new_relative_position = g->control->new_position;
+            
+            while (new_relative_position > 0) 
+            {
+                move_piece(left, g);
+                new_relative_position--;
+            }
+
+
+            while ( new_relative_position < 0) 
+            {
+                move_piece(right, g);
+                new_relative_position++;
+            }
+            
+        }
+}
+
+
 void parse_message(char* message, Control* control_message)
 {
     // for debugging
