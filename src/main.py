@@ -60,14 +60,15 @@ def calculate_current_control(data):
 
 
 def generate_random_normal_number():
-   mu    = 0
-   sigma = 3.2
+    mu    = 0
+    sigma = 3.2
 
-   random_number = np.random.normal(mu, sigma)
-   # rount to integers
-   number = int(random_number)
+    # random number normal distributed
+    random_number = np.random.normal(mu, sigma)
+    # rount to integers
+    number = int(random_number)
    
-   return number
+    return number
 
 
 def main():
