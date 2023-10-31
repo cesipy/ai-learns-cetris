@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
     bool new_control_available;       // indicate new control received from pipe
     int new_position;                 // relative to current position (can be negative or positive
+    bool should_rotate;               // should piece rotate
     // needs further implementation
 
 }Control;
