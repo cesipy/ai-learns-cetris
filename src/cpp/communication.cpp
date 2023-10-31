@@ -135,7 +135,7 @@ void communicate(Game* g)
     write(g->communication->fd_states, message, strlen(message));
 
     // save control struct 
-    //receive_message(g);
+    receive_message(g);
 }
 
 
@@ -191,6 +191,8 @@ void receive_message(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
+    // for debugging
+    // printf("%s\n", message);
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
     return;

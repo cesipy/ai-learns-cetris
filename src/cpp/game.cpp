@@ -13,8 +13,10 @@ void initialize_game(Game* g)
 
 void main_loop(Game* g)
 {
-    int tick = 0;   // used for gravity rate
+    int tick = 0;                       // used for gravity rate
     int status;
+    
+    int new_relative_position = 0;      // new relative position from controls
 
     while (g->running)
     {
@@ -25,6 +27,26 @@ void main_loop(Game* g)
             insert_falling_piece(static_cast<type>(random_piece), g);
 
             g->need_new_piece = false;
+        }
+
+        if (g->control->new_control_available) 
+        {
+            g->control->new_control_available = false;
+            new_relative_position = g->control->new_position;
+            
+            while (new_relative_position > 0) 
+            {
+                move_piece(left, g);
+                new_relative_position--;
+            }
+
+
+            while ( new_relative_position < 0) 
+            {
+                move_piece(right, g);
+                new_relative_position++;
+            }
+            
         }
 
         // check for input (q, arrow up, down, right, left)
