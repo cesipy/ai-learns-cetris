@@ -54,6 +54,8 @@ def send_to_pipe(data):
 def calculate_current_control(data):
     # temporary only generates random number.
     control = str(random.randint(-6, 6))
+    
+    return control
 
 def main():
     pid = os.fork()
