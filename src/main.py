@@ -13,7 +13,7 @@ def parse_control(relative_position_change: int, should_rotate: bool, ):
     pass
 
 
-def receive_from_pipe():
+def receive_from_pipe() -> str:
     try:
         # Open the FIFO for reading
         fifo_fd = os.open(FIFO_STATES, os.O_RDONLY)
@@ -33,16 +33,15 @@ def receive_from_pipe():
         return ""
 
 
-def send_to_pipe():
+def send_to_pipe(data):
     try:
         # Open the FIFO for writing
         fifo_fd = os.open(FIFO_CONTROLS, os.O_WRONLY)
 
-        # Generate some data (e.g., a random number)
-        data = str(random.randint(-6, 6))
+        control = calculate_current_control(data)
 
         # Write data to the FIFO
-        os.write(fifo_fd, data.encode('utf-8'))  # Encode data if not in bytes
+        os.write(fifo_fd, control.encode('utf-8'))  # Encode data if not in bytes
 
         # Close the FIFO
         os.close(fifo_fd)
@@ -51,6 +50,10 @@ def send_to_pipe():
     except Exception as e:
         print(f"Error while writing to {FIFO_CONTROLS}: {e}")
 
+
+def calculate_current_control(data):
+    # temporary only generates random number.
+    control = str(random.randint(-6, 6))
 
 def main():
     pid = os.fork()
@@ -65,7 +68,7 @@ def main():
 
             time.sleep(350/1000)
 
-            send_to_pipe()
+            send_to_pipe(data)
 
         print("reached!")
         exit(0)
