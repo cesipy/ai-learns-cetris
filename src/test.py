@@ -1,32 +1,29 @@
 import subprocess as sub
-import os
-import time
-
-FIFO = "named_pipe"
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-def child():
-    with open(FIFO) as f:
-        while True:
-            data = f.read()
-            if len(data) != 0:
-                print("read: {}".format(data))
-            else: break
+def plot_results(numbers, bins):
+    plt.hist(numbers, bins=bins, edgecolor='k', alpha=0.65)
+    plt.show()
+
+
+def generate_random_normal_number():
+   mu    = 0
+   sigma = 3.2
+
+   random_number = np.random.normal(mu, sigma)
+   return random_number
 
 
 def main():
-    pid = os.fork()
+    random_numbers = []
+    indices        = []
+    for i in range(1000):
+        rand_number = generate_random_normal_number()
+        random_numbers.append(int(rand_number))
+        indices.append(i)
 
-    if pid == 0:
-        # child process to handle the tetris game
-        time.sleep(1)
-        child()
-
-    else:
-        # parent
-        tetris_command = './tetris_implementation/tetris'
-
-        sub.run(tetris_command, shell=True)
-
+    plot_results(random_numbers, 30)
 
 main()
