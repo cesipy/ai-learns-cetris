@@ -204,7 +204,6 @@ void process_control(Game* g)
                 new_relative_position--;
             }
 
-
             while ( new_relative_position < 0) 
             {
                 move_piece(right, g);
@@ -215,6 +214,9 @@ void process_control(Game* g)
             {
                 rotate_piece(DIRECTION, g);
             }
+            
+            // after each received control 'press down key'
+            skip_tick_gravity(g);
             
         }
 }
