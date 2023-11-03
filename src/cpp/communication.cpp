@@ -210,6 +210,11 @@ void process_control(Game* g)
                 move_piece(right, g);
                 new_relative_position++;
             }
+
+            if (g->control->should_rotate) 
+            {
+                rotate_piece(DIRECTION, g);
+            }
             
         }
 }
@@ -217,12 +222,16 @@ void process_control(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
-    // for debugging
-    // printf("%s\n", message);
     char* new_relative_position = strtok(message, ",");
 
     char* should_rotate         = strtok(message, ", ");
-    control_message->should_rotate = (strcmp(should_rotate, "0")) ? false : true;
+
+    if (!should_rotate)
+    {
+        fprintf(stderr, "incorrect strucuture of control struct. ");
+        exit(EXIT_FAILURE);
+    }
+    control_message->should_rotate = (strcmp(should_rotate, "0")) ? true : false;
 
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);

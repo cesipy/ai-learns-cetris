@@ -44,8 +44,10 @@ def send_to_pipe(data):
 
         # Close the FIFO
         os.close(fifo_fd)
+
     except FileNotFoundError:
         print(f"Error: {FIFO_CONTROLS} does not exist.")
+        
     except Exception as e:
         print(f"Error while writing to {FIFO_CONTROLS}: {e}")
 
@@ -62,9 +64,10 @@ def calculate_current_control(data):
     mu            = 0
     sigma         = 1.2
     random_number =  generate_random_normal_number(mu, sigma)
+
     should_rotate = 1 if random_number else 0
 
-    control       = str(random_number)              # todo: add should_rotate
+    control       = str(random_number) + "," +  str(should_rotate)    
     
     return control
 
