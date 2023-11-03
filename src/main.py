@@ -62,10 +62,10 @@ def calculate_current_control(data):
 
     #  should piece rotate?
     mu            = 0
-    sigma         = 1.2
-    random_number =  generate_random_normal_number(mu, sigma)
+    sigma         = 0.7
+    random_rotate =  abs (generate_random_normal_number(mu, sigma))
 
-    should_rotate = 1 if random_number else 0
+    should_rotate = 1 if random_rotate else 0
 
     control       = str(random_number) + "," +  str(should_rotate)    
     

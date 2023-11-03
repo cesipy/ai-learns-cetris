@@ -10,7 +10,7 @@ def plot_results(numbers, bins):
 
 def generate_random_normal_number():
    mu    = 0
-   sigma = 1.3
+   sigma = 0.7
 
    random_number = np.random.normal(mu, sigma)
    # rount to integers
@@ -22,9 +22,11 @@ def main():
     random_numbers = []
     indices        = []
     for i in range(1000):
+        
         rand_number = generate_random_normal_number()
         random_numbers.append(int(rand_number))
         indices.append(i)
+        print(int(rand_number))
 
     plot_results(random_numbers, 30)
 
