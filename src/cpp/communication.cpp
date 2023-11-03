@@ -223,10 +223,16 @@ void process_control(Game* g)
 void parse_message(char* message, Control* control_message)
 {
     Logger(message);
-    
+
     char* new_relative_position = strtok(message, ",");
 
-    char* should_rotate         = strtok(message, ", ");
+    char* should_rotate         = strtok(NULL, ", ");
+
+    Logger("rel_pos: ");
+    Logger(new_relative_position);
+
+    Logger("should_rotate");
+    Logger(should_rotate);
 
     if (!should_rotate)
     {

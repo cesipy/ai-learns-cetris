@@ -1,6 +1,6 @@
 # todo
 
-- [ ] render state in python
-- [ ] send code back from python
-- [ ] send random instructions from python to tetris
-- [ ] two separate fifos
+- [ ] open fifos only once in python
+- [ ] convert char to std::string (+ other cpp functionalities)
+- [ ] gravity_skip() after python sends a control. AI should only make one guess.
+- [ ] further refactor modules (e.g. logger.cpp for logging, ...)
