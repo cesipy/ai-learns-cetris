@@ -11,3 +11,4 @@ src/cpp/communication.o
 src/cpp/tetris.o
 src/cpp/tetris
 src/cpp/main.o
+logs/log_*

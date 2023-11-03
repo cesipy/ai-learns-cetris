@@ -1,4 +1,4 @@
-#include "tetris.h"
+#include "tetris.hpp"
 
 
 void calculate_lines_cleared(Game* g)
@@ -222,6 +222,8 @@ void process_control(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
+    Logger(message);
+    
     char* new_relative_position = strtok(message, ",");
 
     char* should_rotate         = strtok(message, ", ");
