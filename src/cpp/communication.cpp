@@ -219,8 +219,15 @@ void parse_message(char* message, Control* control_message)
 {
     // for debugging
     // printf("%s\n", message);
+    char* new_relative_position = strtok(message, ",");
+
+    char* should_rotate         = strtok(message, ", ");
+    control_message->should_rotate = (strcmp(should_rotate, "0")) ? false : true;
+
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
+
+
 
     // split string after ',' ; parse rotation
     return;
