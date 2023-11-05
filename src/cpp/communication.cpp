@@ -131,9 +131,11 @@ void communicate(Game* g)
 {
     update_state(g);      
 
-    char* message = state_to_string(g->state);
-    write(g->communication->fd_states, message, strlen(message));
+    char* state_string = state_to_string(g->state);
+    write(g->communication->fd_states, state_string, strlen(state_string));
 
+    // temporarily write state to logger
+    Logger(state_string);
     // save control struct 
     receive_message(g);
 }
