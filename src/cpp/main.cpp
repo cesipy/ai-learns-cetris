@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
      // close named pipe, make this in own cleanup function!
     close(game->communication->fd_controls);
     close(game->communication->fd_states);
-    unlink(game->communication->fifo_control_name);
+    // unlink(game->communication->fifo_control_name);
     unlink(game->communication->fifo_states_name);
 
 }

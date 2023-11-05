@@ -101,14 +101,15 @@ def main():
             send_to_pipe(data)
 
         print("reached!")
+        os.unlink("fifo_control")
         exit(0)
     else:
         # parent
         # executes the tetris binary
         tetris_command = './tetris'
 
-        sub.run(tetris_command, shell=True)
-
+        status = sub.call(tetris_command)# shell=True)
+        print("status: ", status)
         exit(0)
 
 
