@@ -129,7 +129,7 @@ char* state_to_string(const State* s) {
 
 void communicate(Game* g) 
 {
-    update_state(g);              // TODO: simplify parameters, only g needed!
+    update_state(g);      
 
     char* message = state_to_string(g->state);
     write(g->communication->fd_states, message, strlen(message));
@@ -176,10 +176,6 @@ void receive_message(Game* g)
         buffer[bytesRead] = '\0';
 
         parse_message(buffer, g->control);
-
-        // print the received message to stdout
-        //write(STDOUT_FILENO, buffer, bytesRead);
-
     } 
     else if (bytesRead == 0) { return; } 
     else 
@@ -224,8 +220,7 @@ void process_control(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
-    Logger(message);
-
+    // parse control message. string is split after ","
     char* new_relative_position = strtok(message, ",");
 
     char* should_rotate         = strtok(NULL, ", ");
@@ -246,9 +241,6 @@ void parse_message(char* message, Control* control_message)
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
 
-
-
-    // split string after ',' ; parse rotation
     return;
 }
 
