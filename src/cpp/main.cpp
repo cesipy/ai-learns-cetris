@@ -21,9 +21,11 @@ int main (int argc, char* argv[])
 
     endwin();
   
+  
     clean_up_named_pipes(game);
     // free allocated objects
     delete game;
+    
 
 }
 
