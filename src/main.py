@@ -65,7 +65,7 @@ def calculate_current_control(data):
 
     #  should piece rotate?
     mu            = 0
-    sigma         = 0.7
+    sigma         = 2
     random_rotate =  abs (generate_random_normal_number(mu, sigma))
 
     should_rotate = 1 if random_rotate else 0
@@ -92,16 +92,17 @@ def main():
         # child process to handle the tetris game
         time.sleep(1)
         data: str = ""
-        while not data == "end":
+        while True:
 
             data = receive_from_pipe()
+            if data == "end": break
 
             time.sleep(350/1000)
 
             send_to_pipe(data)
 
         print("reached!")
-        os.unlink("fifo_control")
+        os.unlink("fifo_controls")
         exit(0)
     else:
         # parent
