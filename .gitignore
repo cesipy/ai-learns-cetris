@@ -13,3 +13,7 @@ src/cpp/tetris.o
 src/cpp/tetris
 src/cpp/main.o
 logs/log_*
+logs/py_log*
+src/__pycache__
+tests/__pycache__
+
