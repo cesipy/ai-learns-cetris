@@ -3,9 +3,12 @@ import os
 import time
 import numpy as np
 
+from simpleLogger import SimpleLogger
+
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 iterations = 100
+logger = SimpleLogger()
 
 # TODO: fifo should be opened only once, not every time 
 # `receive_from_pipe()` is created.
@@ -23,6 +26,10 @@ def receive_from_pipe() -> str:
         # Read data from the FIFO
         data = os.read(fifo_fd, 1024)  # Adjust the buffer size as needed
 
+        # log data
+        logger.log("data read from fifo_states: " + data.decode('utf-8'))
+
+
         # Close the FIFO
         os.close(fifo_fd)
 
@@ -35,12 +42,14 @@ def receive_from_pipe() -> str:
         return ""
 
 
-def send_to_pipe(data):
+def send_to_pipe(data) -> None:
     try:
         # Open the FIFO for writing
         fifo_fd = os.open(FIFO_CONTROLS, os.O_WRONLY)
 
         control = calculate_current_control(data)
+        # control = control.encode('utf-8')
+        #logger.log("send via fifo_controls: " + str(control))
 
         # Write data to the FIFO
         os.write(fifo_fd, control.encode('utf-8'))  # Encode data if not in bytes
@@ -101,7 +110,7 @@ def main():
 
             send_to_pipe(data)
 
-        print("reached!")
+        logger.log("successfully reached end!")
         os.unlink("fifo_controls")
         exit(0)
     else:
@@ -110,7 +119,7 @@ def main():
         tetris_command = './tetris'
 
         status = sub.call(tetris_command)# shell=True)
-        print("status: ", status)
+        logger.log("parent process(tetris) exited successfully!")
         exit(0)
 
 

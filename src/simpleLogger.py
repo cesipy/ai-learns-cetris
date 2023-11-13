@@ -6,9 +6,9 @@ class SimpleLogger:
         today = datetime.datetime.today().strftime("%Y-%m-%d")
         self.filename = "../logs/py_log_" + today
 
-    def log(self, message: str):
+    def log(self, message: str) -> None:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        log_entry = f"{timestamp} {message}\n"
+        log_entry = f"{timestamp}- {message}\n"
 
         with open(self.filename, "a") as f:
             f.write(log_entry)
