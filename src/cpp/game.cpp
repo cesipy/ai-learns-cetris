@@ -165,6 +165,7 @@ void game_init(Game* g, int rows, int cols)
     g->state         = state;
     g->control       = control;
 
+    // TODO: decouple pipes from a single game, should be global ( in main.cpp)
     // set up named pipes
     Communication* communication = new Communication;
     communication->fifo_control_name = "fifo_controls";
