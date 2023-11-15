@@ -31,12 +31,11 @@ class Communicator:
             return ""
 
 
-    def send_to_pipe(self, data) -> None:
+    def send_to_pipe(self, control) -> None:
         try:
             # Open the FIFO for writing
             fifo_fd = os.open(self.fifo_controls_name, os.O_WRONLY)
 
-            control = calculate_current_control(data)
             # control = control.encode('utf-8')
             #logger.log("send via fifo_controls: " + str(control))
 

@@ -57,15 +57,18 @@ def main():
         # child process to handle the tetris game
         time.sleep(1)
         communicator = communication.Communicator(logger, FIFO_STATES, FIFO_CONTROLS)
-        data: str = ""
+        game_state: str = ""
         while True:
 
-            data = communicator.receive_from_pipe()
-            if data == "end": break
+            game_state = communicator.receive_from_pipe()
+            if game_state == "end": break
 
             time.sleep(350/1000)
 
-            communicator.send_to_pipe(data)
+            # based on current state calculate next control
+            control = calculate_current_control(game_state)
+
+            communicator.send_to_pipe(control)
 
         logger.log("successfully reached end!")
         os.unlink(FIFO_CONTROLS)
