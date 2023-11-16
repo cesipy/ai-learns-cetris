@@ -5,11 +5,15 @@ import numpy as np
 import communication
 
 from simpleLogger import SimpleLogger
+from metadata import Metadata
 
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-iterations = 100
-logger = SimpleLogger()
+iterations  = 100
+logger      = SimpleLogger()
+
+# object containing all global vars
+#meta        =  None
 
 # TODO: fifo should be opened only once, not every time 
 # `receive_from_pipe()` is created.
@@ -50,28 +54,50 @@ def generate_random_normal_number(mu, sigma):
     return number
 
 
+def setup_communication(): 
+    fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
+    fd_states   = os.open(FIFO_STATES, os.O_RDONLY)
+    metadata    = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
+
+    logger.log(metadata.debug())
+    return metadata
+
+
+def clean_up(metadata: Metadata):
+    # close the named pipes
+    os.close(metadata.fd_controls)
+    os.close(metadata.fd_states)
+    os.unlink(FIFO_CONTROLS)
+    logger.log("successfully closed pipes!")
+
+
+
 def main():
     pid = os.fork()
 
     if pid == 0:
         # child process to handle the tetris game
         time.sleep(1)
-        communicator = communication.Communicator(logger, FIFO_STATES, FIFO_CONTROLS)
+        meta = setup_communication()
+
+        communicator = communication.Communicator(meta)
         game_state: str = ""
         while True:
 
             game_state = communicator.receive_from_pipe()
             if game_state == "end": break
 
-            time.sleep(350/1000)
+            # time.sleep(350/1000)
+            time.sleep(350/5000)
 
             # based on current state calculate next control
             control = calculate_current_control(game_state)
 
             communicator.send_to_pipe(control)
 
+        clean_up(meta)                  # close named pipes
         logger.log("successfully reached end!")
-        os.unlink(FIFO_CONTROLS)
+
         exit(0)
     else:
         # parent
@@ -79,7 +105,7 @@ def main():
         tetris_command = './tetris'
 
         status = sub.call(tetris_command)# shell=True)
-        logger.log("parent process(tetris) exited successfully!")
+        logger.log(f"parent process(tetris) exited with code: {status}")
         exit(0)
 
 
