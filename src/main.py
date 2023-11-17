@@ -10,10 +10,8 @@ from metadata import Metadata
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 iterations  = 100
-logger      = SimpleLogger()
+logger = SimpleLogger()
 
-# object containing all global vars
-#meta        =  None
 
 # TODO: fifo should be opened only once, not every time 
 # `receive_from_pipe()` is created.
@@ -54,20 +52,30 @@ def generate_random_normal_number(mu, sigma):
     return number
 
 
-def setup_communication(): 
+def init() -> Metadata: 
+    """
+    opens file descriptors for named pipes.
+    for one unit of the program, we need to open it only
+    once.
+    """
     fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
     fd_states   = os.open(FIFO_STATES, os.O_RDONLY)
     metadata    = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
+
 
     logger.log(metadata.debug())
     return metadata
 
 
-def clean_up(metadata: Metadata):
+def clean_up(metadata: Metadata) -> None:
+    """
+    cleans up named fifos. 
+    """
     # close the named pipes
     os.close(metadata.fd_controls)
     os.close(metadata.fd_states)
     os.unlink(FIFO_CONTROLS)
+
     logger.log("successfully closed pipes!")
 
 
@@ -78,15 +86,15 @@ def main():
     if pid == 0:
         # child process to handle the tetris game
         time.sleep(1)
-        meta = setup_communication()
+        meta = init()
 
         communicator = communication.Communicator(meta)
         game_state: str = ""
         while True:
 
-            game_state = communicator.receive_from_pipe()
-            if game_state == "end": break
-
+            received_game_state = communicator.receive_from_pipe()
+            if received_game_state == "end": break
+            
             # time.sleep(350/1000)
             time.sleep(350/5000)
 
@@ -96,7 +104,7 @@ def main():
             communicator.send_to_pipe(control)
 
         clean_up(meta)                  # close named pipes
-        logger.log("successfully reached end!")
+        meta.logger.log("successfully reached end!")
 
         exit(0)
     else:
