@@ -9,7 +9,7 @@ from metadata import Metadata
 
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-iterations  = 100   # temp
+iterations  = 4   # temp
 logger = SimpleLogger()
 
 
@@ -85,6 +85,16 @@ def main():
         meta = init()
 
         communicator = communication.Communicator(meta)
+
+        handshake: str = ""
+        # handle handshake
+        handshake = communicator.receive_from_pipe()
+        logger.log("handshake: "+ handshake)
+        #print(handshake)
+
+        communicator.send_handshake(str(iterations))
+        logger.log("sent handshake back")
+
         game_state: str = ""
         while True:
 
@@ -106,7 +116,7 @@ def main():
     else:
         # parent
         # executes the tetris binary
-        tetris_command = './tetris'
+        tetris_command = './cpp/tetris'
 
         status = sub.call(tetris_command)# shell=True)
         logger.log(f"parent process(tetris) exited with code: {status}")

@@ -167,14 +167,7 @@ void game_init(Game* g, int rows, int cols)
 
     // TODO: decouple pipes from a single game, should be global ( in main.cpp)
     // set up named pipes
-    Communication* communication = new Communication;
-    communication->fifo_control_name = "fifo_controls";
-    communication->fifo_states_name  = "fifo_states";
-
-    communication->fd_controls = setup_named_pipe(communication->fifo_control_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR);
-    communication->fd_states   = setup_named_pipe(communication->fifo_states_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR );
-  
-    g->communication = communication;
+   
     for (int i=0; i<g->rows;i++)
     {
         for (int j=0; j < g->cols;j++)

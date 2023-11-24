@@ -47,3 +47,13 @@ class Communicator:
             
         except Exception as e:
             print(f"Error while writing to {self.fifo_controls_name}: {e}")
+
+    def send_handshake(self, message: str) -> None:
+
+        try: 
+            os.write(self.fd_controls, message.encode('utf-8'))
+        except FileNotFoundError:
+            print(f"Error: {self.fifo_controls_name} does not exist.")
+            
+        except Exception as e:
+            print(f"Error while writing to {self.fifo_controls_name}: {e}")
