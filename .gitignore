@@ -11,7 +11,6 @@ src/cpp/logger.o
 src/cpp/game.o
 src/cpp/communication.o
 src/cpp/tetris.o
-src/cpp/tetris
 src/cpp/main.o
 logs/log_*
 logs/py_log*
