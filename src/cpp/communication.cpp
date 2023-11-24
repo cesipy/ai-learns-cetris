@@ -247,11 +247,11 @@ void parse_message(char* message, Control* control_message)
 }
 
 
-void clean_up_named_pipes(Game* g) 
+void clean_up_named_pipes(Communication* communication) 
 {
-    close(g->communication->fd_controls);
-    close(g->communication->fd_states);
-    unlink(g->communication->fifo_states_name);
+    close(communication->fd_controls);
+    close(communication->fd_states);
+    unlink(communication->fifo_states_name);
 
     std::string message = "closed & cleaned up fifos!";
     Logger(message);

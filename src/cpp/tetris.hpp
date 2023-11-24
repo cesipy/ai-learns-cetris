@@ -275,7 +275,7 @@ void receive_message(Game* g);
 void parse_message(char* message, Control* control_message);
 void communicate(Game* g);
 void process_control(Game* g);
-void clean_up_named_pipes(Game* g);
+void clean_up_named_pipes(Communication* communication);
 
 /**
  *
