@@ -9,12 +9,8 @@ from metadata import Metadata
 
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-iterations  = 100
+iterations  = 100   # temp
 logger = SimpleLogger()
-
-
-# TODO: fifo should be opened only once, not every time 
-# `receive_from_pipe()` is created.
 
 
 def parse_control(relative_position_change: int, should_rotate: bool, ):
