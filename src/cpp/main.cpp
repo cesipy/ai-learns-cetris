@@ -35,6 +35,16 @@ int main (int argc, char* argv[])
         delete game;
 
         iterations--;
+
+        // reset the terminal
+        endwin();
+        refresh();
+        initscr();
+        noecho();
+        resize_term(BOARD_HEIGHT, BOARD_WIDTH);
+        timeout(0);
+        curs_set(0);
+        keypad(stdscr, TRUE);
     }
 
     // send closing message to fifo_states
