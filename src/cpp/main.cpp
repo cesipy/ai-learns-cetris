@@ -1,36 +1,5 @@
 #include "tetris.hpp"
 
-int handshake(Communication* communication) 
-{
-    std::string handshake_message = "handshake";
-    write(communication->fd_states, handshake_message.c_str(), strlen(handshake_message.c_str()));
-    Logger("sent handshake message");
-
-    int fd = communication->fd_controls;
-    
-    char buffer[100];
-    ssize_t bytesRead;
-
-    // read data from the named pipe
-    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-
-    if (bytesRead > 0) 
-    {
-        // null-terminate the received data to make it a string
-        buffer[bytesRead] = '\0';
-       
-        int iterations = std::stoi(buffer);
-        Logger("received iterations from handshake: " + std::to_string(iterations));
-        
-        return iterations;
-    } 
-    else if (bytesRead == 0) { return 0; } 
-    else 
-    {
-        perror("read");
-        exit(EXIT_FAILURE);
-    }
-}
 
 /*  ------------------------------  */
 
@@ -52,6 +21,8 @@ int main (int argc, char* argv[])
     communication->fd_controls = setup_named_pipe(communication->fifo_control_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR);
     communication->fd_states   = setup_named_pipe(communication->fifo_states_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR );
 
+    // send handshake message to python. establish connection
+    // receive iterations. specifies the number of times the game should be repeated
     int iterations = handshake(communication);
 
     while (iterations > 0) {
@@ -66,18 +37,14 @@ int main (int argc, char* argv[])
         iterations--;
     }
 
-    
-      // send closing message to fifo_states
+    // send closing message to fifo_states
     write(communication->fd_states, "end", strlen("end"));
 
-    endwin();
-
-
     clean_up_named_pipes(communication);
-
     delete communication;
+    endwin();
    
-
+    return EXIT_SUCCESS;
 }
 
 /*  ------------------------------  */

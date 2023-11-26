@@ -17,7 +17,6 @@ def parse_control(relative_position_change: int, should_rotate: bool, ):
     pass
 
 
-
 def calculate_current_control(data):
     # temporary only generates random number.
     # get normal distributed number: 

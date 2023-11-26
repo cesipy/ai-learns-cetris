@@ -247,6 +247,39 @@ void parse_message(char* message, Control* control_message)
 }
 
 
+int handshake(Communication* communication) 
+{
+    std::string handshake_message = "handshake";
+    write(communication->fd_states, handshake_message.c_str(), strlen(handshake_message.c_str()));
+    Logger("sent handshake message");
+
+    // read iterations from pipe
+    int fd = communication->fd_controls;
+    char buffer[100];
+    ssize_t bytesRead;
+
+    // read data from the named pipe
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+
+    if (bytesRead > 0) 
+    {
+        // null-terminate the received data to make it a string
+        buffer[bytesRead] = '\0';
+       
+        int iterations = std::stoi(buffer);
+        Logger("received iterations from handshake: " + std::to_string(iterations));
+        
+        return iterations;
+    } 
+    else if (bytesRead == 0) { return 0; } 
+    else 
+    {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 void clean_up_named_pipes(Communication* communication) 
 {
     close(communication->fd_controls);
