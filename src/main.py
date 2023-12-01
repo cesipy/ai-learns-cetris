@@ -9,7 +9,7 @@ from metadata import Metadata
 
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-iterations  = 4   # temp
+iterations  = 10   # temp
 logger = SimpleLogger()
 
 
