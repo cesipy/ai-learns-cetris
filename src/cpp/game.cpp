@@ -11,7 +11,7 @@ void initialize_game(Game* g)
 }
 
 
- void main_loop(Game* g)
+int main_loop(Game* g)
 {
     int tick = 0;                       // used for gravity rate
     int status;
@@ -36,6 +36,7 @@ void initialize_game(Game* g)
         if (status == 0) 
         { 
             g->running = false;
+            return EARLY_QUIT;      // to quit program before playing multiple iterations
         }
 
         manage_full_lines(g);
@@ -52,8 +53,10 @@ void initialize_game(Game* g)
         doupdate();             // update all windows
         usleep(SLEEP_TIME);     // sleep for a bit
         tick++;
+
         int game_state = check_game_state(g);
-        if (game_state) {
+        if (game_state) 
+        {
             g->running = false;
         }
 
@@ -63,6 +66,7 @@ void initialize_game(Game* g)
                               // terminates, fifo_controls is called one more time
         }
     }
+    return NORMAL_QUIT;
 }
 
 

@@ -33,6 +33,9 @@
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))
 #define ADD_EMPTY(w) waddch((w), ' '); waddch((w), ' ')
 
+#define EARLY_QUIT 1
+#define NORMAL_QUIT 0
+
 /* ----------------------------------------------------------- */
 
 enum type {
@@ -139,7 +142,7 @@ typedef struct {
 
 /* ----------------------------------------------------------- */
 void initialize_game(Game* g);
-void main_loop(Game* g);
+int main_loop(Game* g);
 void insert_falling_piece(type type, Game* g);
 int hit_bottom();
 void init_colors();

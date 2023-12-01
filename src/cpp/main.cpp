@@ -30,10 +30,14 @@ int main (int argc, char* argv[])
         game->communication = communication;
 
         initialize_game(game);
-        // example_fill_board(game);
-        main_loop(game);
+        int status = main_loop(game);
         delete game;
-
+        
+        if (status == EARLY_QUIT)
+        {
+            Logger("early quitting");
+            iterations = 1;
+        }
         iterations--;
 
         // reset the terminal
