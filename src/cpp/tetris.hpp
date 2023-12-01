@@ -212,7 +212,7 @@ bool is_empty_block(int, int, Game* g);
  */
 void skip_tick_gravity( Game* g);
 
-void check_game_state(Game* g);
+int check_game_state(Game* g);
 
 /**
  * Generates number in range (min, max).

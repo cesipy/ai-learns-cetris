@@ -11,7 +11,7 @@ void initialize_game(Game* g)
 }
 
 
-void main_loop(Game* g)
+ void main_loop(Game* g)
 {
     int tick = 0;                       // used for gravity rate
     int status;
@@ -52,7 +52,10 @@ void main_loop(Game* g)
         doupdate();             // update all windows
         usleep(SLEEP_TIME);     // sleep for a bit
         tick++;
-        check_game_state(g);
+        int game_state = check_game_state(g);
+        if (game_state) {
+            g->running = false;
+        }
 
         if (tick % GRAVITY_TICKS == 0) 
         {

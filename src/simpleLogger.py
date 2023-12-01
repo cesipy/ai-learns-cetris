@@ -4,7 +4,7 @@ import datetime
 class SimpleLogger:
     def __init__(self ):
         today = datetime.datetime.today().strftime("%Y-%m-%d")
-        self.filename = "../logs/py_log_" + today
+        self.filename = "../logs/py_log_" + today + ".txt"
 
     def log(self, message: str) -> None:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")

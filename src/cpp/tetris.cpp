@@ -491,13 +491,14 @@ void skip_tick_gravity(Game* g)
 
 
 // check for highest current block
-void check_game_state(Game* g)
+int check_game_state(Game* g)
 {
     // check if highest current block reaches top -> game-over
     if (g->highest_fixed_block >= BOARD_HEIGHT-1)
     {
-        g->running = false;
+        return 1;
     }
+    return 0;
 }
 
 
