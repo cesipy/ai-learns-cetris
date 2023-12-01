@@ -73,6 +73,14 @@ def clean_up(metadata: Metadata) -> None:
 
     logger.log("successfully closed pipes!")
 
+def step(communicator: communication.Communicator) -> str: 
+    received_game_state = communicator.receive_from_pipe()
+    if received_game_state == "end": return "end"
+    
+   # time.sleep(350/5000)
+    time.sleep(0.01)
+    
+    return received_game_state
 
 
 def main():
@@ -97,12 +105,9 @@ def main():
         game_state: str = ""
         while True:
 
-            received_game_state = communicator.receive_from_pipe()
+            received_game_state = step(communicator)
             if received_game_state == "end": break
             
-            # time.sleep(350/1000)
-            time.sleep(350/5000)
-
             # based on current state calculate next control
             control = calculate_current_control(game_state)
 
