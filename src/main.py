@@ -75,7 +75,13 @@ def clean_up(metadata: Metadata) -> None:
     logger.log("successfully closed pipes!")
 
 
-def step(communicator: communication.Communicator) -> int: 
+def step(communicator: communication.Communicator) -> int:
+    """ 
+    step function for ai agent. 
+    one step represents one piece falling in the game.
+
+    returns int indicating normal exit (=0) vs. ealy exit.
+    """ 
     received_game_state = communicator.receive_from_pipe()
     if received_game_state == "end": 
         return 1
