@@ -7,6 +7,7 @@ import communication
 from simpleLogger import SimpleLogger
 from metadata import Metadata
 
+SLEEPTIME = 3          # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 iterations  = 10   # temp
@@ -73,21 +74,27 @@ def clean_up(metadata: Metadata) -> None:
 
     logger.log("successfully closed pipes!")
 
-def step(communicator: communication.Communicator) -> str: 
+
+def step(communicator: communication.Communicator) -> int: 
     received_game_state = communicator.receive_from_pipe()
-    if received_game_state == "end": return "end"
+    if received_game_state == "end": 
+        return 1
     
-   # time.sleep(350/5000)
-    time.sleep(0.01)
+    time.sleep(SLEEPTIME)
     
-    return received_game_state
+    # based on current state calculate next control
+    control = calculate_current_control(received_game_state)
+
+    communicator.send_to_pipe(control)
+    return 0
 
 
 def main():
     pid = os.fork()
 
     if pid == 0:
-        # child process to handle the tetris game
+        # child 
+        # process to handle the tetris game
         time.sleep(1)
         meta = init()
 
@@ -105,13 +112,8 @@ def main():
         game_state: str = ""
         while True:
 
-            received_game_state = step(communicator)
-            if received_game_state == "end": break
-            
-            # based on current state calculate next control
-            control = calculate_current_control(game_state)
-
-            communicator.send_to_pipe(control)
+            game_state = step(communicator)
+            if game_state: break
 
         clean_up(meta)                  # close named pipes
         meta.logger.log("successfully reached end!")
@@ -122,7 +124,7 @@ def main():
         # executes the tetris binary
         tetris_command = './cpp/tetris'
 
-        status = sub.call(tetris_command)# shell=True)
+        status = sub.call(tetris_command)
         logger.log(f"parent process(tetris) exited with code: {status}")
         exit(0)
 
