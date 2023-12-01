@@ -3,6 +3,7 @@ import os
 import time
 import numpy as np
 import communication
+import re
 
 from simpleLogger import SimpleLogger
 from metadata import Metadata
@@ -18,9 +19,36 @@ def parse_control(relative_position_change: int, should_rotate: bool, ):
     pass
 
 
+def parse_state(state_string: str):
+    matches = re.findall(r'\b\d+\b', state_string)
+
+    lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
+    
+    logger.log("lines c.:" + str(lines_cleared))
+    logger.log("holes:" + str(holes))
+    logger.log("bumpiness" + str(bumpiness))
+    logger.log("piece type:" + str(piece_type))
+
+
 def calculate_current_control(data):
-    # temporary only generates random number.
-    # get normal distributed number: 
+    # temporarily only generates random numbers
+    control = generate_random_control()
+    
+    return control
+
+
+def generate_random_normal_number(mu, sigma):
+
+    # randomly generated number is normally distributed
+    random_number = np.random.normal(mu, sigma)
+    # round to integers
+    number = int(random_number)
+   
+    return number
+
+
+def generate_random_control() -> str:
+    # get normally distributed number: 
     # generates new relative position
     mu            = 0
     sigma         = 3.2
@@ -37,15 +65,6 @@ def calculate_current_control(data):
     
     return control
 
-
-def generate_random_normal_number(mu, sigma):
-
-    # random number normal distributed
-    random_number = np.random.normal(mu, sigma)
-    # rount to integers
-    number = int(random_number)
-   
-    return number
 
 
 def init() -> Metadata: 
@@ -87,6 +106,8 @@ def step(communicator: communication.Communicator) -> int:
         return 1
     
     time.sleep(SLEEPTIME)
+
+    game_state = parse_state(received_game_state)
     
     # based on current state calculate next control
     control = calculate_current_control(received_game_state)
