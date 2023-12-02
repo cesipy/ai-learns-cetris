@@ -7,6 +7,7 @@ import re
 
 from simpleLogger import SimpleLogger
 from metadata import Metadata
+from metadata import State
 
 SLEEPTIME = 3          # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
@@ -28,6 +29,11 @@ def parse_state(state_string: str):
     logger.log("holes:" + str(holes))
     logger.log("bumpiness" + str(bumpiness))
     logger.log("piece type:" + str(piece_type))
+
+    state = State(lines_cleared, height, holes, bumpiness, piece_type)
+    logger.log(state)
+
+    return state
 
 
 def calculate_current_control(data):
