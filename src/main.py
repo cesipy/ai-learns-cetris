@@ -36,8 +36,10 @@ def parse_state(state_string: str):
     return state
 
 
-def calculate_current_control(data):
+def calculate_current_control(game_state: State) -> str:
     # temporarily only generates random numbers
+    # todo: based on received game state calculate a new control string
+
     control = generate_random_control()
     
     return control
@@ -113,10 +115,10 @@ def step(communicator: communication.Communicator) -> int:
     
     time.sleep(SLEEPTIME)
 
-    game_state = parse_state(received_game_state)
+    parsed_game_state = parse_state(received_game_state)
     
     # based on current state calculate next control
-    control = calculate_current_control(received_game_state)
+    control = calculate_current_control(parsed_game_state)
 
     communicator.send_to_pipe(control)
     return 0
