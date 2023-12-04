@@ -9,6 +9,9 @@ class Metadata:
     def debug(self):
         return "fd_states: " + str(self.fd_states) + " fd_controls: " + str(self.fd_controls)
     
+
+
+    
 class State:
     def __init__(self, lines_cleared, height, holes, bumpiness, piece_type):
         self.lines_cleared = lines_cleared
