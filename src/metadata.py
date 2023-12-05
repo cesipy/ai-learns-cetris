@@ -20,6 +20,7 @@ class State:
         self.bumpiness     = bumpiness
         self.piece_type    = piece_type
 
+
     def __repr__(self):
         message: str = f"""
     lines cleared: {self.lines_cleared}
@@ -29,3 +30,7 @@ class State:
     piece type {self.piece_type}
                         """
         return message
+    
+
+    def convert_to_array(self):
+        return [self.lines_cleared, self.height, self.holes, self.bumpiness, self.piece_type]
