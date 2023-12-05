@@ -2,6 +2,7 @@ import keras
 import numpy as np
 import random
 from simpleLogger import SimpleLogger
+from collections import deque
 
 logger = SimpleLogger()
 MODEL_NAME = "model.h5"
@@ -11,32 +12,34 @@ class Agent:
         self.n_neurons = n_neurons
         self.epsilon = epsilon
         self.q_table = q_table
+        self.memory  = deque(maxlen=1000)   # deque of quintuple (x,x,x,x,x)
 
         if load_model:
             # load keras model from file
-            self.model = self.load_model()
+            self.model = self._load_model()
 
         else:
             # build a new keras sequential model
-            self.model = self.init_model()
+            self.model = self._init_model()
 
 
     def epsilon_greedy_policy(self, state):
         if random.random() < self.epsilon:
-            # Explore: choose a random action
+            #  choose a random action
             return random.choice(["rotate", "left", "right"])
         else:
-            # Exploit: choose the action with the highest Q-value
+            #choose the action with the highest Q-value
             q_values = self.predict(state)
             return max(q_values, key=q_values.get)
 
+
     def predict(self, state):
-        # Assuming state is a list of features [holes, lines_cleared, bumpiness, piece_type, height]
+        
         q_values = self.model.predict(np.array([state]))[0]
         return {action: q_values[i] for i, action in enumerate(["rotate", "left", "right"])}
 
 
-    def init_model(self):
+    def _init_model(self):
         # temp: magic numbers
         n_output = 3  # rotate, left, right
         input_shape = [5]  # holes, lines cleared, bumpiness, piece_type, height
@@ -48,28 +51,28 @@ class Agent:
         model.add(keras.layers.Dense(self.n_neurons, activation="relu"))  # one hidden layer
         model.add(keras.layers.Dense(n_output))  # for output (rotate, left, right)
 
-        self.log_model_summary(model, logger)
+        self._log_model_summary(model, logger)
     
         model.compile(optimizer='adam', loss='mean_squared_error')
 
         return model
 
 
-    def save_model(self):
+    def _save_model(self):
         """
         saves keras model as a file.
         """
         self.model.save(MODEL_NAME)
 
 
-    def load_model(self):
+    def _load_model(self):
         """
         loads a saved keras model.
         """
         return keras.models.load_model(MODEL_NAME)
 
 
-    def log_model_summary(self, model: keras.Sequential, logger):
+    def _log_model_summary(self, model: keras.Sequential, logger):
 
         summary_str = []
         model.summary(print_fn=lambda x: summary_str.append(x))
@@ -78,6 +81,7 @@ class Agent:
         logger.log(summary_str+"\n\n")
 
 
+# ----------------------------------- #
 
 def testing():
     n_neurons = 30

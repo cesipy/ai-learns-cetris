@@ -12,7 +12,7 @@ from metadata import State
 SLEEPTIME = 3          # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-iterations  = 10   # temp
+ITERATIONS    = 10   # temp
 logger = SimpleLogger()
 
 
@@ -141,7 +141,7 @@ def main():
         logger.log("handshake: "+ handshake)
         #print(handshake)
 
-        communicator.send_handshake(str(iterations))
+        communicator.send_handshake(str(ITERATIONS))
         logger.log("sent handshake back")
 
         game_state: str = ""
