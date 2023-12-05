@@ -1,7 +1,9 @@
 import keras
 import numpy as np
 import random
+from simpleLogger import SimpleLogger
 
+logger = SimpleLogger()
 MODEL_NAME = "model.h5"
 
 class Agent:
@@ -46,7 +48,8 @@ class Agent:
         model.add(keras.layers.Dense(self.n_neurons, activation="relu"))  # one hidden layer
         model.add(keras.layers.Dense(n_output))  # for output (rotate, left, right)
 
-        model.summary()
+        self.log_model_summary(model, logger)
+    
         model.compile(optimizer='adam', loss='mean_squared_error')
 
         return model
@@ -66,6 +69,16 @@ class Agent:
         return keras.models.load_model(MODEL_NAME)
 
 
+    def log_model_summary(self, model: keras.Sequential, logger):
+
+        summary_str = []
+        model.summary(print_fn=lambda x: summary_str.append(x))
+        summary_str = "\n".join(summary_str)
+
+        logger.log(summary_str+"\n\n")
+
+
+
 def testing():
     n_neurons = 30
     epsilon = 0.3
@@ -76,10 +89,10 @@ def testing():
     # temporary tests
     state = [1, 2, 3, 4, 5]  
     action = agent.epsilon_greedy_policy(state)
-    print(f"Selected action: {action}")
+    logger.log(f"Selected action: {action}")
 
     q_values = agent.predict(state)
-    print(f"Q-values: {q_values}")
+    logger.log(f"Q-values: {q_values}\n")
 
 
 def main():
