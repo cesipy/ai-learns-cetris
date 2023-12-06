@@ -34,3 +34,13 @@ class State:
 
     def convert_to_array(self):
         return [self.lines_cleared, self.height, self.holes, self.bumpiness, self.piece_type]
+    
+    
+    def get_values(self):
+        lines_cleared = self.lines_cleared
+        height = self.height
+        holes = self.holes
+        bumpiness = self.bumpiness
+        piece_type = self.piece_type
+
+        return lines_cleared, height, holes, bumpiness, piece_type
