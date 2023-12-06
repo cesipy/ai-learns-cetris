@@ -8,11 +8,12 @@ logger = SimpleLogger()
 MODEL_NAME = "model.h5"
 
 class Agent:
-    def __init__(self, n_neurons, epsilon, q_table, load_model: bool = False):
+    def __init__(self, n_neurons, epsilon, q_table, actions, load_model: bool = False):
         self.n_neurons = n_neurons
         self.epsilon = epsilon
         self.q_table = q_table
         self.memory  = deque(maxlen=1000)   # deque of quintuple (x,x,x,x,x)
+        self.actions = actions
 
         if load_model:
             # load keras model from file
@@ -26,9 +27,9 @@ class Agent:
     def epsilon_greedy_policy(self, state):
         if random.random() < self.epsilon:
             #  choose a random action
-            return random.choice(["rotate", "left", "right"])
+            return random.choice(self.actions)   # choose randomly from 'left', 'right' and 'rotate
         else:
-            #choose the action with the highest Q-value
+            #choose the action with the highest q value
             q_values = self.predict(state)
             return max(q_values, key=q_values.get)
 
@@ -36,7 +37,11 @@ class Agent:
     def predict(self, state):
         
         q_values = self.model.predict(np.array([state]))[0]
-        return {action: q_values[i] for i, action in enumerate(["rotate", "left", "right"])}
+        logger.log(q_values)
+        q_table = {}
+        for i, action in enumerate(["rotate", "left", "right"]):
+            q_table[action] = q_values[i]
+        return q_table #{action: q_values[i] for i, action in enumerate(["rotate", "left", "right"])}
 
 
     def _init_model(self):
@@ -87,8 +92,9 @@ def testing():
     n_neurons = 30
     epsilon = 0.3
     q_table = {}
+    actions = ["left", "rotate", "right"]
 
-    agent = Agent(n_neurons, epsilon, q_table)
+    agent = Agent(n_neurons, epsilon, q_table, actions)
 
     # temporary tests
     state = [1, 2, 3, 4, 5]  
