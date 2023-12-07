@@ -9,7 +9,7 @@ from simpleLogger import SimpleLogger
 from metadata import Metadata
 from metadata import State
 
-SLEEPTIME = 3        # default value should be (350/5000)
+SLEEPTIME = 0.1        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 ITERATIONS    = 10   # temp
@@ -126,6 +126,7 @@ def step(communicator: communication.Communicator) -> int:
     logger.log("reward:" + str(reward))
     return 0
 
+
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
 
@@ -160,7 +161,7 @@ def main():
         communicator.send_handshake(str(ITERATIONS))
         logger.log("sent handshake back")
 
-        game_state: str = ""
+        game_state: int = 0
         while True:
 
             game_state = step(communicator)
