@@ -8,6 +8,7 @@ import re
 from simpleLogger import SimpleLogger
 from metadata import Metadata
 from metadata import State
+from q_agent import Agent
 
 SLEEPTIME = 0.1        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
@@ -102,7 +103,7 @@ def clean_up(metadata: Metadata) -> None:
     logger.log("successfully closed pipes!")
 
 
-def step(communicator: communication.Communicator) -> int:
+def step(communicator: communication.Communicator, agent: Agent ) -> int:
     """ 
     step function for ai agent. 
     one step represents one piece falling in the game.
@@ -118,11 +119,15 @@ def step(communicator: communication.Communicator) -> int:
     time.sleep(SLEEPTIME)
 
     parsed_game_state = parse_state(received_game_state)
-    
-    # based on current state calculate next control
-    control = calculate_current_control(parsed_game_state)
 
-    perform_action(control, communicator)
+    action = agent.epsilon_greedy_policy(parsed_game_state)
+    perform_action(action, communicator)
+
+
+    # based on current state calculate next control
+    # control = calculate_current_control(parsed_game_state)
+
+    # perform_action(control, communicator)
 
     reward = calculate_reward(parsed_game_state)
     logger.log("reward:" + str(reward))
@@ -150,11 +155,11 @@ def calculate_reward(state: State):
     return reward
 
 
-def play_one_round(communicator: communication.Communicator) -> int:
+def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
     
     while True:
 
-        val = step(communicator)
+        val = step(communicator, agent=agent)
         if val == 1: return 1
         elif val == 2: 
             logger.log("one round is finished")
@@ -162,6 +167,17 @@ def play_one_round(communicator: communication.Communicator) -> int:
     
 
 def perform_action(control, communicator: communication.Communicator):
+    action = 0
+    should_rotate = 0
+    if control == "left":
+        action = -1
+    elif control == "right":
+        action = 1
+    elif control == "rotate":
+        should_rotate = 1
+
+    control = str(action) + "," + str(should_rotate)
+    
     communicator.send_to_pipe(control)
 
 
@@ -175,6 +191,10 @@ def main():
         meta = init()
 
         communicator = communication.Communicator(meta)
+        agent = Agent(n_neurons=30,
+                      epsilon=0.3,
+                      q_table={},
+                      actions=["left", "rotate", "right"])
 
         handshake: str = ""
         # handle handshake
@@ -190,7 +210,7 @@ def main():
 
         while True:
             
-            game_state = play_one_round(communicator)
+            game_state = play_one_round(communicator, agent)
             #game_state = step(communicator)
             if game_state == 1: break
             elif game_state == 2:
