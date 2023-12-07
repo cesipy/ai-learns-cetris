@@ -133,12 +133,19 @@ def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
 
     # only temp values
-    alpha   = 0.1
-    beta    = 0.1
-    gamma   = 0.1
-    delta   = 0.1
-    epsilon = 0.1
-    reward = alpha * lines_cleared + beta * height + gamma * holes + delta * bumpiness + piece_type * epsilon
+    weight_lines_cleared = 1.0
+    weight_height = -0.1
+    weight_holes = -1.0
+    weight_bumpiness = -0.5
+    weight_piece_type = 0.1
+
+    reward = (
+        weight_lines_cleared * lines_cleared +
+        weight_height * height + 
+        weight_holes * holes + 
+        weight_bumpiness * bumpiness + 
+        weight_piece_type * piece_type 
+    )
     
     return reward
 
