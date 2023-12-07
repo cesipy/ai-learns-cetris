@@ -25,13 +25,13 @@ def parse_state(state_string: str):
 
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
-    logger.log("lines c.:" + str(lines_cleared))
-    logger.log("holes:" + str(holes))
-    logger.log("bumpiness" + str(bumpiness))
-    logger.log("piece type:" + str(piece_type))
+    # logger.log("lines c.:" + str(lines_cleared))
+    # logger.log("holes:" + str(holes))
+    # logger.log("bumpiness" + str(bumpiness))
+    # logger.log("piece type:" + str(piece_type))
 
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    logger.log(state)
+    # logger.log(state)
 
     return state
 
@@ -112,6 +112,8 @@ def step(communicator: communication.Communicator) -> int:
     received_game_state = communicator.receive_from_pipe()
     if received_game_state == "end": 
         return 1
+    elif received_game_state == "game_end": 
+        return 2
     
     time.sleep(SLEEPTIME)
 
@@ -120,7 +122,7 @@ def step(communicator: communication.Communicator) -> int:
     # based on current state calculate next control
     control = calculate_current_control(parsed_game_state)
 
-    communicator.send_to_pipe(control)
+    perform_action(control, communicator)
 
     reward = calculate_reward(parsed_game_state)
     logger.log("reward:" + str(reward))
@@ -139,6 +141,21 @@ def calculate_reward(state: State):
     reward = alpha * lines_cleared + beta * height + gamma * holes + delta * bumpiness + piece_type * epsilon
     
     return reward
+
+
+def play_one_round(communicator: communication.Communicator) -> int:
+    
+    while True:
+
+        val = step(communicator)
+        if val == 1: return 1
+        elif val == 2: 
+            logger.log("one round is finished")
+            return 2
+    
+
+def perform_action(control, communicator: communication.Communicator):
+    communicator.send_to_pipe(control)
 
 
 def main():
@@ -162,10 +179,15 @@ def main():
         logger.log("sent handshake back")
 
         game_state: int = 0
-        while True:
+        current_iteration = ITERATIONS
 
-            game_state = step(communicator)
-            if game_state: break
+        while True:
+            
+            game_state = play_one_round(communicator)
+            #game_state = step(communicator)
+            if game_state == 1: break
+            elif game_state == 2:
+                current_iteration -= 1
 
         clean_up(meta)                  # close named pipes
         meta.logger.log("successfully reached end!")

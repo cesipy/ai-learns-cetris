@@ -33,7 +33,7 @@ int main (int argc, char* argv[])
         int status = main_loop(game);
 
         // TODO: end of episode, notify python via pipe
-        //end_of_game_notify(communication);
+        end_of_game_notify(communication);
 
         delete game;
         
