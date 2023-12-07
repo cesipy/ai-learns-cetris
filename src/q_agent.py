@@ -8,6 +8,7 @@ logger = SimpleLogger()
 MODEL_NAME = "model.h5"
 
 class Agent:
+
     def __init__(self, n_neurons, epsilon, q_table, actions, load_model: bool = False):
         self.n_neurons = n_neurons
         self.epsilon = epsilon
@@ -39,22 +40,25 @@ class Agent:
         q_values = self.model.predict(np.array([state]))[0]
         logger.log(q_values)
         q_table = {}
+
         for i, action in enumerate(["rotate", "left", "right"]):
             q_table[action] = q_values[i]
-        return q_table #{action: q_values[i] for i, action in enumerate(["rotate", "left", "right"])}
+            
+        return q_table 
 
 
     def _init_model(self):
         # temp: magic numbers
         n_output = 3  # rotate, left, right
-        input_shape = [5]  # holes, lines cleared, bumpiness, piece_type, height
+        n_input  = 5
+        input_shape = (5,)  # holes, lines cleared, bumpiness, piece_type, height
 
         model = keras.models.Sequential()
 
         # input layer with 5 nodes
-        model.add(keras.layers.Dense(input_shape[0], activation="relu", input_shape=input_shape))
-        model.add(keras.layers.Dense(self.n_neurons, activation="relu"))  # one hidden layer
-        model.add(keras.layers.Dense(n_output))  # for output (rotate, left, right)
+        model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
+        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))  # one hidden layer
+        model.add(keras.layers.Dense(units=n_output))  # for output (rotate, left, right)
 
         self._log_model_summary(model, logger)
     
@@ -78,7 +82,9 @@ class Agent:
 
 
     def _log_model_summary(self, model: keras.Sequential, logger):
-
+        """
+        logs teras model summary to logger file.
+        """
         summary_str = []
         model.summary(print_fn=lambda x: summary_str.append(x))
         summary_str = "\n".join(summary_str)
