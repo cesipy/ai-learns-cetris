@@ -102,14 +102,14 @@ def clean_up(metadata: Metadata) -> None:
 
     logger.log("successfully closed pipes!")
 
-
+"""
 def step(communicator: communication.Communicator, agent: Agent ) -> int:
-    """ 
+   
     step function for ai agent. 
     one step represents one piece falling in the game.
 
     returns int indicating normal exit (=0) vs. ealy exit.
-    """ 
+ 
     received_game_state = communicator.receive_from_pipe()
     if received_game_state == "end": 
         return 1
@@ -132,6 +132,32 @@ def step(communicator: communication.Communicator, agent: Agent ) -> int:
     reward = calculate_reward(parsed_game_state)
     logger.log("reward:" + str(reward))
     return 0
+"""
+
+def step(communicator, agent:Agent):
+    received_game_state = communicator.receive_from_pipe()
+    if received_game_state == "end": 
+        return 1
+    elif received_game_state == "game_end": 
+        return 2
+    
+    state = parse_state(received_game_state)
+    time.sleep(SLEEPTIME)
+    action = agent.epsilon_greedy_policy(state)
+    perform_action(action)
+
+    # get next state
+    received_game_state = communicator.receive_from_pipe()
+    if received_game_state == "end": 
+        return 1
+    elif received_game_state == "game_end": 
+        return 2
+    
+    next_state = parse_state(received_game_state)
+
+    reward = calculate_reward(next_state)
+
+    agent.train(state, action, next_state, reward)
 
 
 def calculate_reward(state: State):
@@ -210,6 +236,7 @@ def main():
 
         while True:
             
+            # each one episode played
             game_state = play_one_round(communicator, agent)
             #game_state = step(communicator)
             if game_state == 1: break

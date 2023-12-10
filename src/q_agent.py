@@ -15,6 +15,9 @@ class Agent:
         self.q_table = q_table
         self.memory  = deque(maxlen=1000)   # deque of quintuple (x,x,x,x,x)
         self.actions = actions
+        self.current_action = None
+        self.current_state  = None
+        self.discount_factor = 0.9 # temp magic number
 
         if load_model:
             # load keras model from file
@@ -25,18 +28,20 @@ class Agent:
             self.model = self._init_model()
 
 
-    def epsilon_greedy_policy(self, state):
-        if random.random() < self.epsilon:
-            #  choose a random action
-            value =random.choice(self.actions)   # choose randomly from 'left', 'right' and 'rotate
-            logger.log(f"selected action {value}")
-            return value
+    def train(self, state, action, next_state, reward):
+        target = reward + self.discount_factor
+        target_q_values = self.model.predict(state.reshape(1, -1))
+        target_q_values[0, action] = target
+
+        self.model.fit(state.reshape(1, -1), target_q_values, epochs=1, verbose=0)
+
+
+    def epsilon_greedy_policy(self, state, epsilon=0.1):
+        if np.random.rand() < epsilon:
+            return np.random.randint(self.model.output_shape[1])
         else:
-            #choose the action with the highest q value
-            q_values = self.predict(state)
-            value = max(q_values, key=q_values.get)
-            logger.log(f"selected action {value}")
-            return value
+            q_values = self.model.predict(state.reshape(1, -1))[0]
+            return np.argmax(q_values)
 
 
     def predict(self, state):
