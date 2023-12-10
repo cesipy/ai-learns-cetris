@@ -28,23 +28,28 @@ class Agent:
     def epsilon_greedy_policy(self, state):
         if random.random() < self.epsilon:
             #  choose a random action
-            return random.choice(self.actions)   # choose randomly from 'left', 'right' and 'rotate
+            value =random.choice(self.actions)   # choose randomly from 'left', 'right' and 'rotate
+            logger.log(f"selected action {value}")
+            return value
         else:
             #choose the action with the highest q value
             q_values = self.predict(state)
-            return max(q_values, key=q_values.get)
+            value = max(q_values, key=q_values.get)
+            logger.log(f"selected action {value}")
+            return value
 
 
     def predict(self, state):
-        
-        q_values = self.model.predict(np.array([state]))[0]
+        state_values = state.get_values()
+        q_values = self.model.predict(np.array([state_values]))[0]
         logger.log(q_values)
         q_table = {}
 
         for i, action in enumerate(["rotate", "left", "right"]):
             q_table[action] = q_values[i]
             
-        return q_table 
+        return q_table
+
 
 
     def _init_model(self):

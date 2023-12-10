@@ -31,6 +31,10 @@ int main (int argc, char* argv[])
 
         initialize_game(game);
         int status = main_loop(game);
+
+        // TODO: end of episode, notify python via pipe
+        end_of_game_notify(communication);
+
         delete game;
         
         if (status == EARLY_QUIT)

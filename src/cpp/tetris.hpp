@@ -280,6 +280,7 @@ void communicate(Game* g);
 void process_control(Game* g);
 void clean_up_named_pipes(Communication* communication);
 int handshake(Communication* communication);
+void end_of_game_notify(Communication* communication);
 
 /**
  *

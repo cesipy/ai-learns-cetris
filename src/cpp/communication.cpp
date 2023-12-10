@@ -247,6 +247,14 @@ void parse_message(char* message, Control* control_message)
 }
 
 
+void end_of_game_notify(Communication* communication)
+{
+    std::string end_message = "game_end";
+    write(communication->fd_states, end_message.c_str(), strlen(end_message.c_str()));
+    Logger("end of episode");
+}
+
+
 int handshake(Communication* communication) 
 {
     std::string handshake_message = "handshake";
