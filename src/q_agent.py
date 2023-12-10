@@ -5,7 +5,7 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 logger = SimpleLogger()
-MODEL_NAME = "model"
+MODEL_NAME = "../models/model"
 
 class Agent:
 
@@ -41,14 +41,19 @@ class Agent:
         self._save_model()
 
 
-    def epsilon_greedy_policy(self, state, epsilon=0.1):
+    def epsilon_greedy_policy(self, state, epsilon=1.0):
         state_array = state.convert_to_array()
 
-        if np.random.rand() < epsilon:
-            return np.random.randint(self.model.output_shape[1])
+        if random.random() <= epsilon:
+            return_val = np.random.randint(-3, 3)
+            logger.log(f"return val {return_val}")
+            return return_val
         else:
-            q_values = self.model.predict(state_array.reshape(1, -1))[0]
-            return np.argmax(q_values)
+            #q_values = self.model.predict(state_array.reshape(1, -1))[0]
+            q_values = self.predict(state)
+            return_val = np.argmax(q_values)
+            logger.log(f"return val {return_val}")
+            return return_val
 
 
     def predict(self, state):

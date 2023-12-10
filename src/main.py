@@ -10,7 +10,7 @@ from metadata import Metadata
 from metadata import State
 from q_agent import Agent
 
-SLEEPTIME = 0.1        # default value should be (350/5000)
+SLEEPTIME = 0.7        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 ITERATIONS    = 10   # temp
@@ -155,8 +155,10 @@ def step(communicator, agent:Agent):
     
     next_state = parse_state(received_game_state)
     communicator.send_fake_action()
+    logger.log("sending fake controls")
 
     reward = calculate_reward(next_state)
+    logger.log(f"reward: {reward}")
 
     agent.train(state, action, next_state, reward)
 
@@ -204,7 +206,7 @@ def perform_action(control, communicator: communication.Communicator):
         should_rotate = 1
 
     control = str(action) + "," + str(should_rotate)
-    
+    logger.log(f"action performed: {control}")
     communicator.send_to_pipe(control)
 
 
