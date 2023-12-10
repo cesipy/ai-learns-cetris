@@ -57,3 +57,16 @@ class Communicator:
             
         except Exception as e:
             print(f"Error while writing to {self.fifo_controls_name}: {e}")
+
+    
+    def send_fake_action(self):
+        try:
+            # write data to the FIFO
+            control = "1,1"
+            os.write(self.fd_controls, control.encode('utf-8'))  # Encode data if not in bytes
+
+        except FileNotFoundError:
+            print(f"Error: {self.fifo_controls_name} does not exist.")
+            
+        except Exception as e:
+            print(f"Error while writing to {self.fifo_controls_name}: {e}")

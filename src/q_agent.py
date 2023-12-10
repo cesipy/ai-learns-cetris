@@ -29,18 +29,25 @@ class Agent:
 
 
     def train(self, state, action, next_state, reward):
-        target = reward + self.discount_factor
-        target_q_values = self.model.predict(state.reshape(1, -1))
+        next_state_array = next_state.convert_to_array()
+        state_array      = state.convert_to_array()
+
+        target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
+        target_q_values = self.model.predict(state_array.reshape(1, -1))
         target_q_values[0, action] = target
 
-        self.model.fit(state.reshape(1, -1), target_q_values, epochs=1, verbose=0)
+        self.model.fit(state_array.reshape(1, -1), target_q_values, epochs=1, verbose=0)
+
+        self._save_model()
 
 
     def epsilon_greedy_policy(self, state, epsilon=0.1):
+        state_array = state.convert_to_array()
+
         if np.random.rand() < epsilon:
             return np.random.randint(self.model.output_shape[1])
         else:
-            q_values = self.model.predict(state.reshape(1, -1))[0]
+            q_values = self.model.predict(state_array.reshape(1, -1))[0]
             return np.argmax(q_values)
 
 

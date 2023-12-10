@@ -16,6 +16,8 @@ int main_loop(Game* g)
     int tick = 0;                       // used for gravity rate
     int status;
 
+    // temp
+    bool proper_state = true;
 
     while (g->running)
     {
@@ -28,7 +30,16 @@ int main_loop(Game* g)
             g->need_new_piece = false;
         }
 
-        process_control(g);
+        // only process if real thing is sent
+        if (!proper_state)
+        {
+            proper_state = true;
+        }
+        else 
+        {
+            process_control(g);
+            proper_state  = false;
+        }
 
         // check for input (q, arrow up, down, right, left)
         status = check_input(g);

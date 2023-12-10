@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Metadata:
     def __init__(self, logger, fifo_states_name, fifo_controls_name, fd_states:int, fd_controls:int):
         self.logger = logger
@@ -33,7 +36,7 @@ class State:
     
 
     def convert_to_array(self):
-        return [self.lines_cleared, self.height, self.holes, self.bumpiness, self.piece_type]
+        return np.array([self.lines_cleared, self.height, self.holes, self.bumpiness, self.piece_type])
     
     
     def get_values(self):

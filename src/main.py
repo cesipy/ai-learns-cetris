@@ -144,7 +144,7 @@ def step(communicator, agent:Agent):
     state = parse_state(received_game_state)
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
-    perform_action(action)
+    perform_action(action, communicator)
 
     # get next state
     received_game_state = communicator.receive_from_pipe()
@@ -154,6 +154,7 @@ def step(communicator, agent:Agent):
         return 2
     
     next_state = parse_state(received_game_state)
+    communicator.send_fake_action()
 
     reward = calculate_reward(next_state)
 
