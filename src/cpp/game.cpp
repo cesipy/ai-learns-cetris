@@ -31,15 +31,9 @@ int main_loop(Game* g)
         }
 
         // only process if real thing is sent
-        if (!proper_state)
-        {
-            proper_state = true;
-        }
-        else 
-        {
-            process_control(g);
-            proper_state  = false;
-        }
+      
+        process_control(g);
+       
 
         // check for input (q, arrow up, down, right, left)
         status = check_input(g);
@@ -75,6 +69,15 @@ int main_loop(Game* g)
         {
             communicate(g);   // maybe put this on beginning. when tetris
                               // terminates, fifo_controls is called one more time
+            if (!proper_state)
+            {
+                g->control->new_control_available = false;
+                proper_state = true;
+            }
+            else 
+            {
+                proper_state = false;
+            }
         }
     }
     return NORMAL_QUIT;
