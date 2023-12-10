@@ -5,7 +5,7 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 logger = SimpleLogger()
-MODEL_NAME = "model.h5"
+MODEL_NAME = "model"
 
 class Agent:
 
@@ -88,7 +88,8 @@ class Agent:
         """
         saves keras model as a file.
         """
-        self.model.save(MODEL_NAME)
+        #self.model.save(MODEL_NAME)
+        self.model.save(f"{MODEL_NAME}.keras")
 
 
     def _load_model(self):
@@ -121,11 +122,12 @@ def testing():
 
     # temporary tests
     state = [1, 2, 3, 4, 5]  
-    action = agent.epsilon_greedy_policy(state)
-    logger.log(f"Selected action: {action}")
+    #action = agent.epsilon_greedy_policy(state)
+    # logger.log(f"Selected action: {action}")
 
-    q_values = agent.predict(state)
-    logger.log(f"Q-values: {q_values}\n")
+    #q_values = agent.predict(state)
+    #logger.log(f"Q-values: {q_values}\n")
+    agent._save_model()
 
 
 def main():
