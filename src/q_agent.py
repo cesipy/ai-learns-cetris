@@ -18,6 +18,9 @@ class Agent:
         self.current_action = None
         self.current_state  = None
         self.discount_factor = 0.9 # temp magic number
+        
+        # only for debugging and print out all weigths od nn
+        self.counter = 0
 
         if load_model:
             # load keras model from file
@@ -41,19 +44,20 @@ class Agent:
         self._save_model()
 
 
-    def epsilon_greedy_policy(self, state, epsilon=1.0):
+    def epsilon_greedy_policy(self, state, epsilon=0.5):
         state_array = state.convert_to_array()
 
         if random.random() <= epsilon:
-            return_val = np.random.randint(-3, 3)
+            return_val = np.random.choice(self.actions)
             logger.log(f"return val {return_val}")
             return return_val
         else:
-            #q_values = self.model.predict(state_array.reshape(1, -1))[0]
             q_values = self.predict(state)
-            return_val = np.argmax(q_values)
-            logger.log(f"return val {return_val}")
+            logger.log(f"q_values: {q_values}")
+            return_val = np.argmax(list(q_values.values()))
+            logger.log(f"return val IN Q TABLE {return_val}")
             return return_val
+
 
 
     def predict(self, state):
@@ -65,6 +69,7 @@ class Agent:
         for i, action in enumerate(["rotate", "left", "right"]):
             q_table[action] = q_values[i]
             
+        logger.log(f"in prediction: {q_table}")
         return q_table
 
 
@@ -84,7 +89,7 @@ class Agent:
 
         self._log_model_summary(model, logger)
     
-        model.compile(optimizer='adam', loss='mean_squared_error')
+        model.compile(optimizer='adam', loss='mse')
 
         return model
 
@@ -95,6 +100,13 @@ class Agent:
         """
         #self.model.save(MODEL_NAME)
         self.model.save(f"{MODEL_NAME}.keras")
+
+        self.counter += 1
+        if self.counter == 50:
+            self.counter = 0
+
+            for layer in self.model.layers:
+                logger.log(layer.get_weights())
 
 
     def _load_model(self):

@@ -10,10 +10,10 @@ from metadata import Metadata
 from metadata import State
 from q_agent import Agent
 
-SLEEPTIME = 0.7        # default value should be (350/5000)
+SLEEPTIME = 0.01        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 10   # temp
+ITERATIONS    = 100   # temp
 logger = SimpleLogger()
 
 
@@ -27,15 +27,18 @@ def parse_state(state_string: str) -> State:
 
     return state
 
-def parse_control(control: str) -> str:
-    action = 0
+
+def parse_control(control) -> str:
+    #action = 0
+    action = control
     should_rotate = 0
-    if control == "left":
+    """if control == "left":
         action = -1
     elif control == "right":
         action = 1
     elif control == "rotate":
         should_rotate = 1
+    """
 
     control = str(action) + "," + str(should_rotate)
 
@@ -197,7 +200,7 @@ def main():
         agent = Agent(n_neurons=30,
                       epsilon=0.3,
                       q_table={},
-                      actions=["left", "rotate", "right"])
+                      actions=[-1, 0, 1])
 
         handshake: str = ""
         # handle handshake
