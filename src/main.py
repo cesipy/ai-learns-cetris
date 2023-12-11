@@ -17,24 +17,29 @@ ITERATIONS    = 10   # temp
 logger = SimpleLogger()
 
 
-def parse_control(relative_position_change: int, should_rotate: bool, ):
-    pass
-
-
-def parse_state(state_string: str):
+def parse_state(state_string: str) -> State:
     matches = re.findall(r'\b\d+\b', state_string)
 
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
-    # logger.log("lines c.:" + str(lines_cleared))
-    # logger.log("holes:" + str(holes))
-    # logger.log("bumpiness" + str(bumpiness))
-    # logger.log("piece type:" + str(piece_type))
-
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
     # logger.log(state)
 
     return state
+
+def parse_control(control: str) -> str:
+    action = 0
+    should_rotate = 0
+    if control == "left":
+        action = -1
+    elif control == "right":
+        action = 1
+    elif control == "rotate":
+        should_rotate = 1
+
+    control = str(action) + "," + str(should_rotate)
+
+    return control
 
 
 def calculate_current_control(game_state: State) -> str:
@@ -102,39 +107,11 @@ def clean_up(metadata: Metadata) -> None:
 
     logger.log("successfully closed pipes!")
 
-"""
-def step(communicator: communication.Communicator, agent: Agent ) -> int:
-   
-    step function for ai agent. 
-    one step represents one piece falling in the game.
 
-    returns int indicating normal exit (=0) vs. ealy exit.
- 
-    received_game_state = communicator.receive_from_pipe()
-    if received_game_state == "end": 
-        return 1
-    elif received_game_state == "game_end": 
-        return 2
-    
-    time.sleep(SLEEPTIME)
-
-    parsed_game_state = parse_state(received_game_state)
-
-    action = agent.epsilon_greedy_policy(parsed_game_state)
-    perform_action(action, communicator)
-
-
-    # based on current state calculate next control
-    # control = calculate_current_control(parsed_game_state)
-
-    # perform_action(control, communicator)
-
-    reward = calculate_reward(parsed_game_state)
-    logger.log("reward:" + str(reward))
-    return 0
-"""
-
-def step(communicator, agent:Agent):
+def step(communicator, agent:Agent) -> int:
+    """
+    agent steps one step further in environment.
+    """
     received_game_state = communicator.receive_from_pipe()
     if received_game_state == "end": 
         return 1
@@ -154,7 +131,7 @@ def step(communicator, agent:Agent):
         return 2
     
     next_state = parse_state(received_game_state)
-    communicator.send_fake_action()
+    communicator.send_placeholder_action()
     logger.log("sending fake controls")
 
     reward = calculate_reward(next_state)
@@ -166,7 +143,7 @@ def step(communicator, agent:Agent):
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
 
-    # only temp values
+    # only temp values: magic numbers
     weight_lines_cleared = 1.0
     weight_height = -0.1
     weight_holes = -1.0
@@ -185,6 +162,12 @@ def calculate_reward(state: State):
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
+    """
+    finishes one episode.
+
+    @param communicator - communicator object used to communicate via named pipe.
+    @param agent 
+    """
     
     while True:
 
@@ -196,18 +179,9 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     
 
 def perform_action(control, communicator: communication.Communicator):
-    action = 0
-    should_rotate = 0
-    if control == "left":
-        action = -1
-    elif control == "right":
-        action = 1
-    elif control == "rotate":
-        should_rotate = 1
-
-    control = str(action) + "," + str(should_rotate)
-    logger.log(f"action performed: {control}")
-    communicator.send_to_pipe(control)
+    action = parse_control(control)
+    logger.log(f"action performed: {action}")
+    communicator.send_to_pipe(action)
 
 
 def main():

@@ -124,14 +124,7 @@ def testing():
     actions = ["left", "rotate", "right"]
 
     agent = Agent(n_neurons, epsilon, q_table, actions)
-
-    # temporary tests
-    state = [1, 2, 3, 4, 5]  
-    #action = agent.epsilon_greedy_policy(state)
-    # logger.log(f"Selected action: {action}")
-
-    #q_values = agent.predict(state)
-    #logger.log(f"Q-values: {q_values}\n")
+    
     agent._save_model()
 
 
