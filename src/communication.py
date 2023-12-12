@@ -21,7 +21,7 @@ class Communicator:
             data = os.read(self.fd_states, 1024)  # Adjust the buffer size as needed
 
             # log data
-            self.logger.log("data read from fifo_states: " + data.decode('utf-8'))
+            #self.logger.log("data read from fifo_states: " + data.decode('utf-8'))
             
             return data.decode('utf-8')  # Assuming data is in UTF-8 encoding
         except FileNotFoundError:
@@ -68,7 +68,7 @@ class Communicator:
         """
         try:
             # write data to the FIFO
-            control = "1,1"
+            control = "0,0"
             os.write(self.fd_controls, control.encode('utf-8'))  # Encode data if not in bytes
 
         except FileNotFoundError:

@@ -13,12 +13,13 @@ from q_agent import Agent
 SLEEPTIME = 0.01        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 100   # temp
+ITERATIONS    = 1   # temp
 logger = SimpleLogger()
 
 
 def parse_state(state_string: str) -> State:
     matches = re.findall(r'\b\d+\b', state_string)
+    logger.log(f"matches: {matches}")
 
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
@@ -120,6 +121,8 @@ def step(communicator, agent:Agent) -> int:
         return 1
     elif received_game_state == "game_end": 
         return 2
+    elif received_game_state == "game_endend":
+        return 1
     
     state = parse_state(received_game_state)
     time.sleep(SLEEPTIME)
@@ -132,13 +135,15 @@ def step(communicator, agent:Agent) -> int:
         return 1
     elif received_game_state == "game_end": 
         return 2
+    elif received_game_state == "game_endend":
+        return 1
     
     next_state = parse_state(received_game_state)
     communicator.send_placeholder_action()
     logger.log("sending fake controls")
 
     reward = calculate_reward(next_state)
-    logger.log(f"reward: {reward}")
+    logger.log(f"reward: {reward}\n")
 
     agent.train(state, action, next_state, reward)
 
@@ -182,7 +187,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     
 
 def perform_action(control, communicator: communication.Communicator):
-    action = parse_control(control)
+    action: str = parse_control(control)
     logger.log(f"action performed: {action}")
     communicator.send_to_pipe(action)
 
