@@ -66,7 +66,7 @@ class Agent:
         logger.log(q_values)
         q_table = {}
 
-        for i, action in enumerate(["rotate", "left", "right"]):
+        for i, action in enumerate(["right-rotate", "right", "nothing", "left", "left-rotate"]):
             q_table[action] = q_values[i]
             
         logger.log(f"in prediction: {q_table}")
@@ -76,7 +76,7 @@ class Agent:
 
     def _init_model(self):
         # temp: magic numbers
-        n_output = 3  # rotate, left, right
+        n_output = 5  # rotate, left, right
         n_input  = 5
         input_shape = (5,)  # holes, lines cleared, bumpiness, piece_type, height
 
