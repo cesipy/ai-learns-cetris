@@ -10,12 +10,12 @@ from metadata import Metadata
 from metadata import State
 from q_agent import Agent
 
-SLEEPTIME = 0.01        # default value should be (350/5000)
+SLEEPTIME = 0.001        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 ITERATIONS    = 100   # temp
 logger = SimpleLogger()
-ACTIONS = [-2, -1, 0, 1, 2]   # represents left and rotate, left, nothing, right, right and rotate
+ACTIONS = list(range(-8, 9))   # represents left and rotate, left, nothing, right, right and rotate
 
 
 def parse_state(state_string: str) -> State:
@@ -33,27 +33,11 @@ def parse_state(state_string: str) -> State:
 def parse_control(control) -> str:
     action = 0
     should_rotate = 0
-   
-   # only temporyry parsing 0-4
-    if control == 0:        
-        # right and rotation
-        action = -1
+    
+    action = control // 2
+    
+    if control % 2 == 1:
         should_rotate = 1
-    
-    elif control == 1:
-        # just right
-        action = -1
-
-    elif control == 3:
-        # left
-        action = 1
-    
-    elif control == 4:
-        # left and rotation
-        action = 1
-        should_rotate = 1
-    
-    
 
     control = str(action) + "," + str(should_rotate)
 
