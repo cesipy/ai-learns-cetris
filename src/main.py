@@ -13,7 +13,7 @@ from q_agent import Agent
 SLEEPTIME = 0.001        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 100   # temp
+ITERATIONS    = 10000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
 ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -22,12 +22,10 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
 
 def parse_state(state_string: str) -> State:
     matches = re.findall(r'\b\d+\b', state_string)
-    logger.log(f"matches: {matches}")
-
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    # logger.log(state)
+    logger.log(f"lines_cleared={lines_cleared}")
 
     return state
 
@@ -140,7 +138,7 @@ def step(communicator, agent:Agent) -> int:
     
     next_state = parse_state(received_game_state)
     communicator.send_placeholder_action()
-    logger.log("sending fake controls")
+    #logger.log("sending fake controls")
 
     reward = calculate_reward(next_state)
     logger.log(f"reward: {reward}\n")
@@ -151,12 +149,13 @@ def step(communicator, agent:Agent) -> int:
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
 
-    # only temp values: magic numbers
-    weight_lines_cleared = 1.0
-    weight_height = -0.1
-    weight_holes = -1.0
-    weight_bumpiness = -0.5
-    weight_piece_type = 0.1
+    # only temp values: magic numbers from 
+    # https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
+    weight_lines_cleared = 0.77
+    weight_height = -0.51
+    weight_holes = -0.35
+    weight_bumpiness = -0.1844
+    weight_piece_type = 0.01
 
     reward = (
         weight_lines_cleared * lines_cleared +
@@ -188,7 +187,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    logger.log(f"action performed: {action}")
+    # logger.log(f"action performed: {action}")
     communicator.send_to_pipe(action)
 
 
@@ -221,8 +220,8 @@ def main():
 
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
-        agent = Agent(n_neurons=30,
-                      epsilon=0.3,
+        agent = Agent(n_neurons=200,
+                      epsilon=0.6,
                       q_table={},
                       actions=ACTIONS, 
                       action_space_string=action_space)

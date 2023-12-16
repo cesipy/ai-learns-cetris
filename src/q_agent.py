@@ -57,9 +57,9 @@ class Agent:
             # temp
             # TODO: improve epsilon decrease
             self.counter_epsilon += 1
-            logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
 
             if (self.counter_epsilon == EPSILON_COUNTER_EPOCH ):
+                logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
                 
                 if self.epsilon >= 0.02:
@@ -78,7 +78,6 @@ class Agent:
     def predict(self, state):
         state_values = state.get_values()
         q_values = self.model.predict(np.array([state_values]))[0]
-        logger.log(q_values)
         q_table = {}
 
     
@@ -101,6 +100,7 @@ class Agent:
 
         # input layer with 5 nodes
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
+        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))  # one hidden layer
         model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))  # one hidden layer
         model.add(keras.layers.Dense(units=n_output))  # for output (rotate, left, right)
 
