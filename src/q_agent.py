@@ -6,6 +6,7 @@ from collections import deque
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
+EPSILON_COUNTER_EPOCH = 50
 
 class Agent:
 
@@ -22,6 +23,7 @@ class Agent:
         
         # only for debugging and print out all weigths od nn
         self.counter = 0
+        self.counter_epsilon = 0
 
         if load_model:
             # load keras model from file
@@ -45,12 +47,24 @@ class Agent:
         self._save_model()
 
 
-    def epsilon_greedy_policy(self, state, epsilon=0.5):
+    def epsilon_greedy_policy(self, state):
         state_array = state.convert_to_array()
 
-        if random.random() <= epsilon:
+        if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
             logger.log(f"return val {return_val}")
+
+            # temp
+            # TODO: improve epsilon decrease
+            self.counter_epsilon += 1
+            logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
+
+            if (self.counter_epsilon == EPSILON_COUNTER_EPOCH ):
+                self.counter_epsilon = 0
+                
+                if self.epsilon >= 0.02:
+                    self.epsilon -= 0.01
+                
             return return_val
         else:
             q_values = self.predict(state)

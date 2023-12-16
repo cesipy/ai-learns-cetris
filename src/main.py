@@ -15,7 +15,9 @@ FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 ITERATIONS    = 100   # temp
 logger = SimpleLogger()
-ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate
+POSSIBLE_NUMBER_STEPS = 4
+ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
+                                 # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 
 
 def parse_state(state_string: str) -> State:
@@ -190,10 +192,10 @@ def perform_action(control, communicator: communication.Communicator):
     communicator.send_to_pipe(action)
 
 
-def construct_action_space():
+def construct_action_space(n):
     action_space = []
 
-    for i in range (-4, 5):
+    for i in range (-n, n+1):
         if i < 0:
             direction = "right"
         else:
@@ -217,7 +219,7 @@ def main():
         time.sleep(1)
         meta = init()
 
-        action_space = construct_action_space()
+        action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
         agent = Agent(n_neurons=30,
                       epsilon=0.3,
