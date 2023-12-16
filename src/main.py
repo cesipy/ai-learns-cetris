@@ -10,31 +10,38 @@ from metadata import Metadata
 from metadata import State
 from q_agent import Agent
 
-SLEEPTIME = 0.1        # default value should be (350/5000)
+SLEEPTIME = 0.001        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 10   # temp
+ITERATIONS    = 10000   # temp
 logger = SimpleLogger()
+POSSIBLE_NUMBER_STEPS = 4
+ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
+                                 # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 
 
-def parse_control(relative_position_change: int, should_rotate: bool, ):
-    pass
-
-
-def parse_state(state_string: str):
+def parse_state(state_string: str) -> State:
     matches = re.findall(r'\b\d+\b', state_string)
-
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
-    # logger.log("lines c.:" + str(lines_cleared))
-    # logger.log("holes:" + str(holes))
-    # logger.log("bumpiness" + str(bumpiness))
-    # logger.log("piece type:" + str(piece_type))
-
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    # logger.log(state)
+    logger.log(f"lines_cleared={lines_cleared}")
 
     return state
+
+
+def parse_control(control) -> str:
+    action = 0
+    should_rotate = 0
+    
+    action = control // 2
+    
+    if control % 2 == 1:
+        should_rotate = 1
+
+    control = str(action) + "," + str(should_rotate)
+
+    return control
 
 
 def calculate_current_control(game_state: State) -> str:
@@ -103,46 +110,52 @@ def clean_up(metadata: Metadata) -> None:
     logger.log("successfully closed pipes!")
 
 
-def step(communicator: communication.Communicator, agent: Agent ) -> int:
-    """ 
-    step function for ai agent. 
-    one step represents one piece falling in the game.
-
-    returns int indicating normal exit (=0) vs. ealy exit.
-    """ 
+def step(communicator, agent:Agent) -> int:
+    """
+    agent steps one step further in environment.
+    """
     received_game_state = communicator.receive_from_pipe()
     if received_game_state == "end": 
         return 1
     elif received_game_state == "game_end": 
         return 2
+    elif received_game_state == "game_endend":
+        return 1
     
+    state = parse_state(received_game_state)
     time.sleep(SLEEPTIME)
-
-    parsed_game_state = parse_state(received_game_state)
-
-    action = agent.epsilon_greedy_policy(parsed_game_state)
+    action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
 
+    # get next state
+    received_game_state = communicator.receive_from_pipe()
+    if received_game_state == "end": 
+        return 1
+    elif received_game_state == "game_end": 
+        return 2
+    elif received_game_state == "game_endend":
+        return 1
+    
+    next_state = parse_state(received_game_state)
+    communicator.send_placeholder_action()
+    #logger.log("sending fake controls")
 
-    # based on current state calculate next control
-    # control = calculate_current_control(parsed_game_state)
+    reward = calculate_reward(next_state)
+    logger.log(f"reward: {reward}\n")
 
-    # perform_action(control, communicator)
-
-    reward = calculate_reward(parsed_game_state)
-    logger.log("reward:" + str(reward))
-    return 0
+    agent.train(state, action, next_state, reward)
 
 
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
 
-    # only temp values
-    weight_lines_cleared = 1.0
-    weight_height = -0.1
-    weight_holes = -1.0
-    weight_bumpiness = -0.5
-    weight_piece_type = 0.1
+    # only temp values: magic numbers from 
+    # https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
+    weight_lines_cleared = 0.77
+    weight_height = -0.51
+    weight_holes = -0.35
+    weight_bumpiness = -0.1844
+    weight_piece_type = 0.01
 
     reward = (
         weight_lines_cleared * lines_cleared +
@@ -156,6 +169,12 @@ def calculate_reward(state: State):
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
+    """
+    finishes one episode.
+
+    @param communicator - communicator object used to communicate via named pipe.
+    @param agent 
+    """
     
     while True:
 
@@ -167,18 +186,27 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     
 
 def perform_action(control, communicator: communication.Communicator):
-    action = 0
-    should_rotate = 0
-    if control == "left":
-        action = -1
-    elif control == "right":
-        action = 1
-    elif control == "rotate":
-        should_rotate = 1
+    action: str = parse_control(control)
+    # logger.log(f"action performed: {action}")
+    communicator.send_to_pipe(action)
 
-    control = str(action) + "," + str(should_rotate)
-    
-    communicator.send_to_pipe(control)
+
+def construct_action_space(n):
+    action_space = []
+
+    for i in range (-n, n+1):
+        if i < 0:
+            direction = "right"
+        else:
+            direction = "left"
+
+        for j in range (0, 4):
+
+            action_space.append(str(i)+direction+"-rotate"+str(j))
+    logger.log(action_space)
+    logger.log(ACTIONS)
+    return action_space
+
 
 
 def main():
@@ -190,11 +218,13 @@ def main():
         time.sleep(1)
         meta = init()
 
+        action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
-        agent = Agent(n_neurons=30,
-                      epsilon=0.3,
+        agent = Agent(n_neurons=200,
+                      epsilon=0.6,
                       q_table={},
-                      actions=["left", "rotate", "right"])
+                      actions=ACTIONS, 
+                      action_space_string=action_space)
 
         handshake: str = ""
         # handle handshake
@@ -210,6 +240,7 @@ def main():
 
         while True:
             
+            # each one episode played
             game_state = play_one_round(communicator, agent)
             #game_state = step(communicator)
             if game_state == 1: break

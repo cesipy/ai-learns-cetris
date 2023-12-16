@@ -17,4 +17,5 @@ logs/py_log*
 logs/cpp_log*
 src/__pycache__
 tests/__pycache__
-
+models/model.keras
+src/test.py

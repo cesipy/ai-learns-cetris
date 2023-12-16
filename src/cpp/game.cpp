@@ -16,6 +16,8 @@ int main_loop(Game* g)
     int tick = 0;                       // used for gravity rate
     int status;
 
+    // is 'fake' control message?
+    bool proper_state = true;
 
     while (g->running)
     {
@@ -29,7 +31,7 @@ int main_loop(Game* g)
         }
 
         process_control(g);
-
+       
         // check for input (q, arrow up, down, right, left)
         status = check_input(g);
 
@@ -64,6 +66,16 @@ int main_loop(Game* g)
         {
             communicate(g);   // maybe put this on beginning. when tetris
                               // terminates, fifo_controls is called one more time
+            if (!proper_state)
+            {
+                // new 'fake' control is ignored
+                g->control->new_control_available = false;
+                proper_state = true;
+            }
+            else 
+            {
+                proper_state = false;
+            }
         }
     }
     return NORMAL_QUIT;
