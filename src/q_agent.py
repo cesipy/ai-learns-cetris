@@ -9,7 +9,7 @@ MODEL_NAME = "../models/model"
 
 class Agent:
 
-    def __init__(self, n_neurons, epsilon, q_table, actions, load_model: bool = False):
+    def __init__(self, n_neurons, epsilon, q_table, actions, action_space_string, load_model: bool = False):
         self.n_neurons = n_neurons
         self.epsilon = epsilon
         self.q_table = q_table
@@ -18,6 +18,7 @@ class Agent:
         self.current_action = None
         self.current_state  = None
         self.discount_factor = 0.9 # temp magic number
+        self.action_space_string = action_space_string
         
         # only for debugging and print out all weigths od nn
         self.counter = 0
@@ -66,13 +67,9 @@ class Agent:
         logger.log(q_values)
         q_table = {}
 
-        action_space = [
-            "4right-rotate", "4right", "3right-rotate", "3right", "2right-rotate", "2right", "right-rotate", "right", 
-            "nothing", "left-rotate", "left", "2left-rotate", "2left", "3left-rotate", "3left", "4left-rotate", "4left"
-            ]
+    
 
-
-        for i, action in enumerate(action_space):
+        for i, action in enumerate(self.action_space_string):
             q_table[action] = q_values[i]
             
         logger.log(f"in prediction: {q_table}")
@@ -82,7 +79,7 @@ class Agent:
 
     def _init_model(self):
         # temp: magic numbers
-        n_output = 17  # rotate, left, right
+        n_output = 36  # rotate, left, right
         n_input  = 5
         input_shape = (5,)  # holes, lines cleared, bumpiness, piece_type, height
 
@@ -131,6 +128,8 @@ class Agent:
         summary_str = "\n".join(summary_str)
 
         logger.log(summary_str+"\n\n")
+
+
 
 
 # ----------------------------------- #

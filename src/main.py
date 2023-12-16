@@ -15,7 +15,7 @@ FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 ITERATIONS    = 100   # temp
 logger = SimpleLogger()
-ACTIONS = list(range(-8, 9))   # represents left and rotate, left, nothing, right, right and rotate
+ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate
 
 
 def parse_state(state_string: str) -> State:
@@ -190,6 +190,24 @@ def perform_action(control, communicator: communication.Communicator):
     communicator.send_to_pipe(action)
 
 
+def construct_action_space():
+    action_space = []
+
+    for i in range (-4, 5):
+        if i < 0:
+            direction = "right"
+        else:
+            direction = "left"
+
+        for j in range (0, 4):
+
+            action_space.append(str(i)+direction+"-rotate"+str(j))
+    logger.log(action_space)
+    logger.log(ACTIONS)
+    return action_space
+
+
+
 def main():
     pid = os.fork()
 
@@ -199,11 +217,13 @@ def main():
         time.sleep(1)
         meta = init()
 
+        action_space = construct_action_space()
         communicator = communication.Communicator(meta)
         agent = Agent(n_neurons=30,
                       epsilon=0.3,
                       q_table={},
-                      actions=ACTIONS)
+                      actions=ACTIONS, 
+                      action_space_string=action_space)
 
         handshake: str = ""
         # handle handshake
