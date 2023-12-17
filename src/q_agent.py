@@ -22,8 +22,9 @@ class Agent:
         self.action_space_string = action_space_string
         
         # only for debugging and print out all weigths od nn
-        self.counter = 0
-        self.counter_epsilon = 0
+        self.counter            = 0
+        self.counter_weight_log = 0
+        self.counter_epsilon    = 0
 
         if load_model:
             # load keras model from file
@@ -36,15 +37,20 @@ class Agent:
 
     def train(self, state, action, next_state, reward):
         next_state_array = next_state.convert_to_array()
-        state_array      = state.convert_to_array()
+        state_array = state.convert_to_array()
 
         target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
         target_q_values = self.model.predict(state_array.reshape(1, -1))
-        target_q_values[0, action] = target
+
+        # Gradual update using a learning rate (e.g., 0.1)
+        target_q_values[0, action] = (1 - 0.1) * target_q_values[0, action] + 0.1 * target
 
         self.model.fit(state_array.reshape(1, -1), target_q_values, epochs=1, verbose=0)
 
-        self._save_model()
+        self.counter += 1
+        if self.counter == 50:
+            self.counter = 0
+            self._save_model()
 
 
     def epsilon_greedy_policy(self, state):
@@ -62,18 +68,17 @@ class Agent:
             if (self.counter_epsilon == EPSILON_COUNTER_EPOCH ):
                 logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
-                
-                if self.epsilon >= 0.1:
+                    
+                if self.epsilon >= 0.2:
                     self.epsilon -= 0.0025
-                
+                    
             return return_val
         else:
-            q_values = self.predict(state)
+            q_values = self.model.predict(state_array.reshape(1, -1))[0]
             logger.log(f"q_values: {q_values}")
-            return_val = np.argmax(list(q_values.values()))
+            return_val = np.argmax(q_values)
             logger.log(f"return val IN Q TABLE {return_val}")
             return return_val
-
 
 
     def predict(self, state):
@@ -81,14 +86,11 @@ class Agent:
         q_values = self.model.predict(np.array([state_values]))[0]
         q_table = {}
 
-    
-
         for i, action in enumerate(self.action_space_string):
             q_table[action] = q_values[i]
             
         logger.log(f"in prediction: {q_table}")
         return q_table
-
 
 
     def _init_model(self):
@@ -119,9 +121,9 @@ class Agent:
         #self.model.save(MODEL_NAME)
         self.model.save(f"{MODEL_NAME}.keras")
 
-        self.counter += 1
-        if self.counter == 500:
-            self.counter = 0
+        self.counter_weight_log += 1
+        if self.counter_weight_log == 50:
+            self.counter_weight_log = 0
 
             for layer in self.model.layers:
                 logger.log(layer.get_weights())

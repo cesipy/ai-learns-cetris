@@ -24,7 +24,7 @@
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
 #define CELL 1
-#define AMOUNT_OF_PIECES 7
+#define AMOUNT_OF_PIECES 1
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
@@ -39,7 +39,7 @@
 /* ----------------------------------------------------------- */
 
 enum type {
-     I, J, L, T, S, Z, O, initial // initial only for the first initialization
+    O, I, J, L, T, S, Z,  initial // initial only for the first initialization
 };
 
 
