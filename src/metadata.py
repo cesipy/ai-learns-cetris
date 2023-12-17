@@ -58,6 +58,7 @@ class Game:
         self.epoch         = 0
         self.counter       = 0
         self.epsilon       = 0
+        self.lines_cleared_current_epoch = 0
 
     def increase_epoch(self):
         self.epoch += 1
@@ -73,8 +74,19 @@ class Game:
     def set_epoch(self, epoch):
         self.epoch = epoch
 
+
     def set_epsilon(self, epsilon):
         self.epsilon = epsilon
+
+
+    def set_lines_cleared_current_epoch(self, lines_cleared_current_epoch):
+        self.lines_cleared_current_epoch = lines_cleared_current_epoch
+
+
+    def update_after_epoch(self):
+        self.lines_cleared += self.lines_cleared_current_epoch
+        self.lines_cleared_current_epoch = 0
+
 
     def load_model(self):
         file_path = "../res/saved_game.pkl"
@@ -92,15 +104,15 @@ class Game:
 
     def __repr__(self):
         string:str = f"""
-    ----------------------------------------------------------------------
+    -------------------------------------------------------------------------
 
-    ----------------------------------------------------------------------
+    -------------------------------------------------------------------------
     current epoch        ={self.epoch}
     current lines cleared={self.lines_cleared}
     current epsilon      ={self.epsilon}
-    ----------------------------------------------------------------------
+    -------------------------------------------------------------------------
 
-    ----------------------------------------------------------------------
+    -------------------------------------------------------------------------
 
     """
         return string
