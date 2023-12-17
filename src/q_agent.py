@@ -52,7 +52,8 @@ class Agent:
 
         if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
-            logger.log(f"return val {return_val}")
+            logger.log(f"randomly chosen return val {return_val}")
+            logger.log(f"current state{state}")
 
             # temp
             # TODO: improve epsilon decrease
@@ -62,8 +63,8 @@ class Agent:
                 logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
                 
-                if self.epsilon >= 0.02:
-                    self.epsilon -= 0.01
+                if self.epsilon >= 0.1:
+                    self.epsilon -= 0.0025
                 
             return return_val
         else:
@@ -119,7 +120,7 @@ class Agent:
         self.model.save(f"{MODEL_NAME}.keras")
 
         self.counter += 1
-        if self.counter == 50:
+        if self.counter == 500:
             self.counter = 0
 
             for layer in self.model.layers:
@@ -130,7 +131,7 @@ class Agent:
         """
         loads a saved keras model.
         """
-        return keras.models.load_model(MODEL_NAME)
+        return keras.models.load_model(f"{MODEL_NAME}.keras")
 
 
     def _log_model_summary(self, model: keras.Sequential, logger):
@@ -142,6 +143,10 @@ class Agent:
         summary_str = "\n".join(summary_str)
 
         logger.log(summary_str+"\n\n")
+
+
+    def get_epsilon(self):
+        return self.epsilon
 
 
 

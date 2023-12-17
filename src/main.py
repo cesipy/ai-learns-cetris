@@ -9,15 +9,18 @@ from simpleLogger import SimpleLogger
 from metadata import Metadata
 from metadata import State
 from q_agent import Agent
+from metadata import Game
 
 SLEEPTIME = 0.001        # default value should be (350/5000)
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 10000   # temp
+ITERATIONS    = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
 ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
+game = Game()
+LOAD_MODEL = False            # is model loaded?
 
 
 def parse_state(state_string: str) -> State:
@@ -25,7 +28,7 @@ def parse_state(state_string: str) -> State:
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    logger.log(f"lines_cleared={lines_cleared}")
+    game.set_lines_cleared(lines_cleared)
 
     return state
 
@@ -145,6 +148,8 @@ def step(communicator, agent:Agent) -> int:
 
     agent.train(state, action, next_state, reward)
 
+    return 0
+
 
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
@@ -175,15 +180,26 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     @param communicator - communicator object used to communicate via named pipe.
     @param agent 
     """
-    
+    return_value = 0
     while True:
 
         val = step(communicator, agent=agent)
-        if val == 1: return 1
+
+        if val == 1:
+            return_value = 1
+            break
+
         elif val == 2: 
             logger.log("one round is finished")
-            return 2
+            return_value = 2
+            break
     
+    game.set_epsilon(agent.get_epsilon())
+    game.increase_epoch()
+    logger.log(game)
+    
+    return return_value
+
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
@@ -218,13 +234,17 @@ def main():
         time.sleep(1)
         meta = init()
 
+        if LOAD_MODEL:
+            game.load_model()
+
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
         agent = Agent(n_neurons=200,
-                      epsilon=0.6,
+                      epsilon=1,
                       q_table={},
                       actions=ACTIONS, 
-                      action_space_string=action_space)
+                      action_space_string=action_space, 
+                      load_model=LOAD_MODEL)
 
         handshake: str = ""
         # handle handshake
@@ -246,6 +266,8 @@ def main():
             if game_state == 1: break
             elif game_state == 2:
                 current_iteration -= 1
+            
+        game.save_model()
 
         clean_up(meta)                  # close named pipes
         meta.logger.log("successfully reached end!")
