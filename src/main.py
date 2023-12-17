@@ -20,7 +20,7 @@ POSSIBLE_NUMBER_STEPS = 4
 ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
-LOAD_MODEL = False            # is model loaded?
+LOAD_MODEL = False            # load model?
 
 
 def parse_state(state_string: str) -> State:
@@ -28,7 +28,6 @@ def parse_state(state_string: str) -> State:
     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
     
     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    game.set_lines_cleared(lines_cleared)
 
     return state
 
@@ -156,7 +155,7 @@ def calculate_reward(state: State):
 
     # only temp values: magic numbers from 
     # https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
-    weight_lines_cleared = 0.77
+    weight_lines_cleared = 80
     weight_height = -0.51
     weight_holes = -0.35
     weight_bumpiness = -0.1844
@@ -169,6 +168,11 @@ def calculate_reward(state: State):
         weight_bumpiness * bumpiness + 
         weight_piece_type * piece_type 
     )
+
+    # temporary to detect number of lines cleared
+    if lines_cleared > game.lines_cleared_current_epoch:
+        logger.log("increase lines_cleared_current_epoch")
+        game.set_lines_cleared_current_epoch(lines_cleared)
     
     return reward
 
@@ -194,6 +198,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
             return_value = 2
             break
     
+    game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     logger.log(game)
@@ -240,7 +245,7 @@ def main():
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
         agent = Agent(n_neurons=200,
-                      epsilon=1,
+                      epsilon=1,                # TODO: make dependent on `LOAD_MODEL``
                       q_table={},
                       actions=ACTIONS, 
                       action_space_string=action_space, 
