@@ -7,6 +7,7 @@ from collections import deque
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 EPSILON_COUNTER_EPOCH = 50
+MIN_EPSILON = 0.2
 
 class Agent:
 
@@ -47,8 +48,9 @@ class Agent:
 
         self.model.fit(state_array.reshape(1, -1), target_q_values, epochs=1, verbose=0)
 
+        # don't save model each iteration
         self.counter += 1
-        if self.counter == 50:
+        if self.counter == EPSILON_COUNTER_EPOCH:
             self.counter = 0
             self._save_model()
 
@@ -69,7 +71,7 @@ class Agent:
                 logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
                     
-                if self.epsilon >= 0.2:
+                if self.epsilon >= MIN_EPSILON:
                     self.epsilon -= 0.0025
                     
             return return_val
@@ -149,9 +151,6 @@ class Agent:
 
     def get_epsilon(self):
         return self.epsilon
-
-
-
 
 # ----------------------------------- #
 
