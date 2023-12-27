@@ -20,7 +20,8 @@ POSSIBLE_NUMBER_STEPS = 4
 ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
-LOAD_MODEL = False            # load model?
+LOAD_MODEL = False          # load model?
+EPSILON    = 1
 
 
 def parse_state(state_string: str) -> State:
@@ -117,12 +118,8 @@ def step(communicator, agent:Agent) -> int:
     agent steps one step further in environment.
     """
     received_game_state = communicator.receive_from_pipe()
-    if received_game_state == "end": 
-        return 1
-    elif received_game_state == "game_end": 
-        return 2
-    elif received_game_state == "game_endend":
-        return 1
+    status = parse_ending_message(received_game_state)
+    if status: return status
     
     state = parse_state(received_game_state)
     time.sleep(SLEEPTIME)
@@ -131,12 +128,8 @@ def step(communicator, agent:Agent) -> int:
 
     # get next state
     received_game_state = communicator.receive_from_pipe()
-    if received_game_state == "end": 
-        return 1
-    elif received_game_state == "game_end": 
-        return 2
-    elif received_game_state == "game_endend":
-        return 1
+    status = parse_ending_message(received_game_state)
+    if status: return status
     
     next_state = parse_state(received_game_state)
     communicator.send_placeholder_action()
@@ -147,7 +140,14 @@ def step(communicator, agent:Agent) -> int:
 
     agent.train(state, action, next_state, reward)
 
-    return 0
+
+def parse_ending_message(game_state: str) -> int:
+    if game_state == "end" or game_state == "game_endend":
+        return 1
+    elif game_state == "game_end": 
+        return 2
+    else:
+        return 0
 
 
 def calculate_reward(state: State):
@@ -155,10 +155,10 @@ def calculate_reward(state: State):
 
     # only temp values: magic numbers from 
     # https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
-    weight_lines_cleared = 80
-    weight_height = -0.51
+    weight_lines_cleared = 10
+    weight_height = -1.5
     weight_holes = -0.35
-    weight_bumpiness = -0.1844
+    weight_bumpiness = -1.44
     weight_piece_type = 0.01
 
     reward = (
@@ -245,7 +245,7 @@ def main():
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
         agent = Agent(n_neurons=200,
-                      epsilon=1,                # TODO: make dependent on `LOAD_MODEL``
+                      epsilon=EPSILON,                # TODO: make dependent on `LOAD_MODEL``
                       q_table={},
                       actions=ACTIONS, 
                       action_space_string=action_space, 
