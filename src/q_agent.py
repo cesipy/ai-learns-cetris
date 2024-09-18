@@ -10,70 +10,49 @@ EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.2
 
 class Agent:
-
     def __init__(self, n_neurons, epsilon, q_table, actions, action_space_string, load_model: bool = False):
         self.n_neurons = n_neurons
         self.epsilon = epsilon
         self.q_table = q_table
-        self.memory  = deque(maxlen=1000)   # deque of quintuple (x,x,x,x,x)
+        self.memory = deque(maxlen=1000)
         self.actions = actions
         self.current_action = None
-        self.current_state  = None
-        self.discount_factor = 0.9 # temp magic number
+        self.current_state = None
+        self.discount_factor = 0.9
         self.action_space_string = action_space_string
-        
-        # only for debugging and print out all weigths od nn
-        self.counter            = 0
+        self.counter = 0
         self.counter_weight_log = 0
-        self.counter_epsilon    = 0
+        self.counter_epsilon = 0
 
         if load_model:
-            # load keras model from file
             self.model = self._load_model()
-
         else:
-            # build a new keras sequential model
             self.model = self._init_model()
-
 
     def train(self, state, action, next_state, reward):
         next_state_array = next_state.convert_to_array()
         state_array = state.convert_to_array()
-
         target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
         target_q_values = self.model.predict(state_array.reshape(1, -1))
-
-        # Gradual update using a learning rate (e.g., 0.1)
         target_q_values[0, action] = (1 - 0.1) * target_q_values[0, action] + 0.1 * target
-
         self.model.fit(state_array.reshape(1, -1), target_q_values, epochs=1, verbose=0)
-
-        # don't save model each iteration
         self.counter += 1
         if self.counter == EPSILON_COUNTER_EPOCH:
             self.counter = 0
             self._save_model()
 
-
     def epsilon_greedy_policy(self, state):
         state_array = state.convert_to_array()
-
         if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
             logger.log(f"randomly chosen return val {return_val}")
             logger.log(f"current state{state}")
-
-            # temp
-            # TODO: improve epsilon decrease
             self.counter_epsilon += 1
-
-            if (self.counter_epsilon == EPSILON_COUNTER_EPOCH ):
+            if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
                 logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
-                    
                 if self.epsilon >= MIN_EPSILON:
                     self.epsilon -= 0.0025
-                    
             return return_val
         else:
             q_values = self.model.predict(state_array.reshape(1, -1))[0]
@@ -82,92 +61,42 @@ class Agent:
             logger.log(f"return val IN Q TABLE {return_val}")
             return return_val
 
-
     def predict(self, state):
         state_values = state.get_values()
         q_values = self.model.predict(np.array([state_values]))[0]
-        q_table = {}
-
-        for i, action in enumerate(self.action_space_string):
-            q_table[action] = q_values[i]
-            
+        q_table = {action: q_values[i] for i, action in enumerate(self.action_space_string)}
         logger.log(f"in prediction: {q_table}")
         return q_table
 
-
     def _init_model(self):
-        # temp: magic numbers
-        n_output = 36  # rotate, left, right
-        n_input  = 5
-        input_shape = (5,)  # holes, lines cleared, bumpiness, piece_type, height
-
+        n_output = 36
+        n_input = 5
+        input_shape = (5,)
         model = keras.models.Sequential()
-
-        # input layer with 5 nodes
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
-        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))  # one hidden layer
-        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))  # one hidden layer
-        model.add(keras.layers.Dense(units=n_output))  # for output (rotate, left, right)
-
+        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
+        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
+        model.add(keras.layers.Dense(units=n_output))
         self._log_model_summary(model, logger)
-    
         model.compile(optimizer='adam', loss='mse')
-
         return model
 
-
     def _save_model(self):
-        """
-        saves keras model as a file.
-        """
-        #self.model.save(MODEL_NAME)
         self.model.save(f"{MODEL_NAME}.keras")
-
         self.counter_weight_log += 1
         if self.counter_weight_log == 50:
             self.counter_weight_log = 0
-
             for layer in self.model.layers:
                 logger.log(layer.get_weights())
 
-
     def _load_model(self):
-        """
-        loads a saved keras model.
-        """
         return keras.models.load_model(f"{MODEL_NAME}.keras")
 
-
     def _log_model_summary(self, model: keras.Sequential, logger):
-        """
-        logs teras model summary to logger file.
-        """
         summary_str = []
         model.summary(print_fn=lambda x: summary_str.append(x))
         summary_str = "\n".join(summary_str)
-
-        logger.log(summary_str+"\n\n")
-
+        logger.log(summary_str + "\n\n")
 
     def get_epsilon(self):
         return self.epsilon
-
-# ----------------------------------- #
-
-def testing():
-    n_neurons = 30
-    epsilon = 0.3
-    q_table = {}
-    actions = ["left", "rotate", "right"]
-
-    agent = Agent(n_neurons, epsilon, q_table, actions)
-    
-    agent._save_model()
-
-
-def main():
-    testing()
-
-
-if __name__ == '__main__':
-    main()
