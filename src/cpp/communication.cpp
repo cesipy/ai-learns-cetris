@@ -29,7 +29,7 @@ void calculate_holes(Game* g)
 {
     int number_holes = 0;
 
-    for (int col=0; col < 15; col++)
+    for (int col=0; col < 15; col++)       
     {
         bool encountered_fixed_piece = false;
 
@@ -96,15 +96,54 @@ void calculate_bumpiness(Game* g)
 }
 
 
+
 void update_state(Game* g)
 {
+    char buffer[1024];
+    char* ptr = buffer;
+    int remaining = sizeof(buffer);
+
+    // serialize game board
+    for (int i=0; i<g->rows-2; i++)             // TODO: find out magic numbers and replace with dynamic way
+    {
+        for (int j=0; j < g->cols -16; j++)     // TODO: find out magic numbers and replace with dynamic way
+        {
+            if (remaining <= 1) 
+            {
+                break; // ensure space for null termonation
+            }
+            if (g->game_board[i][j].fixed_piece || g->game_board[i][j].falling_piece)
+            {
+                *ptr++ = '1';
+            }
+            else 
+            {
+            // no block
+                *ptr++ = '0';
+            }
+            remaining--;
+        }
+        if (remaining <= 1) 
+        {
+            break;
+        }
+        *ptr++ = ',';
+        remaining--;
+    }
+    *ptr = '\0';
+
+    Logger(buffer);
+
     calculate_lines_cleared(g);
     calculate_height(g);
     calculate_bumpiness(g);
     calculate_holes(g);
 
     // save piece type to state
-    g->state->piece_type = g->piece_type;
+    strncpy(g->state->game_state, buffer, sizeof(g->state->game_state) - 1);
+    g->state->game_state[sizeof(g->state->game_state) - 1] = '\0';
+
+    Logger(g->state->game_state);
 }
 
 
@@ -127,16 +166,17 @@ char* state_to_string(const State* s) {
 }
 
 
-void communicate(Game* g) 
+void communicate(Game* g)
 {
-    update_state(g);      
+    update_state(g);
 
-    char* state_string = state_to_string(g->state);
+    //char* state_string = state_to_string(g->state);
+    char* state_string = g->state->game_state;
     write(g->communication->fd_states, state_string, strlen(state_string));
 
     // temporarily write state to logger
     Logger(state_string);
-    // save control struct 
+    // save control struct
     receive_message(g);
 }
 
@@ -162,60 +202,60 @@ const int setup_named_pipe(const char* name, mode_t permission, int mode)
 }
 
 
-void receive_message(Game* g) 
+void receive_message(Game* g)
 {
     int fd = g->communication->fd_controls;
-    
+
     char buffer[100];
     ssize_t bytesRead;
 
     // read data from the named pipe
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
 
-    if (bytesRead > 0) 
+    if (bytesRead > 0)
     {
         // null-terminate the received data to make it a string
         buffer[bytesRead] = '\0';
 
         parse_message(buffer, g->control);
-    } 
-    else if (bytesRead == 0) { return; } 
-    else 
+    }
+    else if (bytesRead == 0) { return; }
+    else
     {
         perror("read");
     }
 }
 
 
-void process_control(Game* g) 
+void process_control(Game* g)
 {
-    if (g->control->new_control_available) 
+    if (g->control->new_control_available)
         {
             // update state, no new control is available
             g->control->new_control_available = false;
-            
+
             int new_relative_position = g->control->new_position;
-            
-            while (new_relative_position > 0) 
+
+            while (new_relative_position > 0)
             {
                 move_piece(left, g);
                 new_relative_position--;
             }
 
-            while ( new_relative_position < 0) 
+            while ( new_relative_position < 0)
             {
                 move_piece(right, g);
                 new_relative_position++;
             }
 
-            if (g->control->should_rotate) 
+            if (g->control->should_rotate)
             {
                 rotate_piece(DIRECTION, g);
             }
-            
+
             // after each received control 'press down key'
             skip_tick_gravity(g);
-            
+
         }
 }
 
@@ -255,7 +295,7 @@ void end_of_game_notify(Communication* communication)
 }
 
 
-int handshake(Communication* communication) 
+int handshake(Communication* communication)
 {
     std::string handshake_message = "handshake";
     write(communication->fd_states, handshake_message.c_str(), strlen(handshake_message.c_str()));
@@ -269,18 +309,18 @@ int handshake(Communication* communication)
     // read data from the named pipe
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
 
-    if (bytesRead > 0) 
+    if (bytesRead > 0)
     {
         // null-terminate the received data to make it a string
         buffer[bytesRead] = '\0';
-       
+
         int iterations = std::stoi(buffer);
         Logger("received iterations from handshake: " + std::to_string(iterations));
-        
+
         return iterations;
-    } 
-    else if (bytesRead == 0) { return 0; } 
-    else 
+    }
+    else if (bytesRead == 0) { return 0; }
+    else
     {
         perror("read");
         exit(EXIT_FAILURE);
@@ -288,7 +328,7 @@ int handshake(Communication* communication)
 }
 
 
-void clean_up_named_pipes(Communication* communication) 
+void clean_up_named_pipes(Communication* communication)
 {
     close(communication->fd_controls);
     close(communication->fd_states);

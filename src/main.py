@@ -21,11 +21,29 @@ game = Game()
 LOAD_MODEL = False          # load model?
 EPSILON = 1
 
-def parse_state(state_string: str) -> State:
-    matches = re.findall(r'\b\d+\b', state_string)
-    lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
-    state = State(lines_cleared, height, holes, bumpiness, piece_type)
-    return state
+# def parse_state(state_string: str) -> State:
+#     print(state_string)
+#     logger.log(f"state string: {state_string}")
+#     matches = re.findall(r'\b\d+\b', state_string)
+#     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
+#     state = State(lines_cleared, height, holes, bumpiness, piece_type)
+#     return state
+
+def parse_state(state_string:str):
+    logger.log(f"state_string: {state_string}")
+    game_board = []
+    row = []
+    for char in state_string: 
+        if char == ",":
+            game_board.append(row)
+            row = []
+        else:
+            row.append(int(char))
+    
+    logger.log(f"game board: {game_board}")
+    return game_board
+    
+    
 
 def parse_control(control) -> str:
     action = control // 2
