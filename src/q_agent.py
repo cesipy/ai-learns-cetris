@@ -10,7 +10,7 @@ EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.2
 
 class Agent:
-    def __init__(self, n_neurons, epsilon, q_table, actions, action_space_string, load_model: bool = False):
+    def __init__(self, n_neurons, epsilon, q_table, actions, action_space_string, load_model: bool = False, board_shape=None):
         self.n_neurons = n_neurons
         self.epsilon = epsilon
         self.q_table = q_table
@@ -23,6 +23,7 @@ class Agent:
         self.counter = 0
         self.counter_weight_log = 0
         self.counter_epsilon = 0
+        self.board_shape = board_shape
 
         if load_model:
             self.model = self._load_model()
@@ -30,8 +31,8 @@ class Agent:
             self.model = self._init_model()
 
     def train(self, state, action, next_state, reward):
-        next_state_array = next_state.convert_to_array()
-        state_array = state.convert_to_array()
+        next_state_array = state.convert_to_array()
+        state_array = next_state.convert_to_array()
         target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
         target_q_values = self.model.predict(state_array.reshape(1, -1))
         target_q_values[0, action] = (1 - 0.1) * target_q_values[0, action] + 0.1 * target
@@ -42,7 +43,7 @@ class Agent:
             self._save_model()
 
     def epsilon_greedy_policy(self, state):
-        state_array = state.convert_to_array()
+        state_array = np.array(state).flatten()
         if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
             logger.log(f"randomly chosen return val {return_val}")
@@ -70,8 +71,8 @@ class Agent:
 
     def _init_model(self):
         n_output = 36
-        n_input = 5
-        input_shape = (5,)
+        n_input = np.prod(self.board_shape)  # Flatten the board
+        input_shape = (n_input,)
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
         model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))

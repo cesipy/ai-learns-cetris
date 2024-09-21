@@ -19,15 +19,8 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON = 1
+EPSILON = 0.99
 
-# def parse_state(state_string: str) -> State:
-#     print(state_string)
-#     logger.log(f"state string: {state_string}")
-#     matches = re.findall(r'\b\d+\b', state_string)
-#     lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
-#     state = State(lines_cleared, height, holes, bumpiness, piece_type)
-#     return state
 
 def parse_state(state_string:str):
     logger.log(f"state_string: {state_string}")
@@ -40,10 +33,14 @@ def parse_state(state_string:str):
         else:
             row.append(int(char))
     
+    lines_cleared = game_board[0][0]
+    
+    game_board = game_board[1:]     # remove lines cleared
     logger.log(f"game board: {game_board}")
-    return game_board
+    logger.log(f"lines cleared: {lines_cleared}")
+    state = State(game_board, lines_cleared)
     
-    
+    return state
 
 def parse_control(control) -> str:
     action = control // 2
@@ -110,18 +107,17 @@ def parse_ending_message(game_state: str) -> int:
         return 0
 
 def calculate_reward(state: State):
-    lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
-    weight_lines_cleared = 10
+    lines_cleared, height, holes, bumpiness= state.get_values()
+    logger.log(f"lines_cleared: {lines_cleared}, height: {height}, holes: {holes}, bumpiness: {bumpiness}")
+    weight_lines_cleared = 3
     weight_height = -1.5
     weight_holes = -0.35
     weight_bumpiness = -1.44
-    weight_piece_type = 0.01
     reward = (
         weight_lines_cleared * lines_cleared +
         weight_height * height + 
         weight_holes * holes + 
-        weight_bumpiness * bumpiness + 
-        weight_piece_type * piece_type 
+        weight_bumpiness * bumpiness 
     )
     if lines_cleared > game.lines_cleared_current_epoch:
         logger.log("increase lines_cleared_current_epoch")
@@ -160,6 +156,7 @@ def construct_action_space(n):
     return action_space
 
 def main():
+    board_shape = (14, 28)
     pid = os.fork()
     if pid == 0:
         time.sleep(1)
@@ -174,7 +171,8 @@ def main():
             q_table={},
             actions=ACTIONS, 
             action_space_string=action_space, 
-            load_model=LOAD_MODEL
+            load_model=LOAD_MODEL, 
+            board_shape=board_shape
         )
         handshake = communicator.receive_from_pipe()
         logger.log(f"handshake: {handshake}")

@@ -103,6 +103,13 @@ void update_state(Game* g)
     char* ptr = buffer;
     int remaining = sizeof(buffer);
 
+    // include lines cleared
+    *ptr++ = g->state->lines_cleared + '0';     // convert to char
+    remaining--;
+    *ptr++ = ',';
+    remaining--;
+
+
     // serialize game board
     for (int i=0; i<g->rows-2; i++)             // TODO: find out magic numbers and replace with dynamic way
     {
@@ -112,9 +119,13 @@ void update_state(Game* g)
             {
                 break; // ensure space for null termonation
             }
-            if (g->game_board[i][j].fixed_piece || g->game_board[i][j].falling_piece)
+            if (g->game_board[i][j].fixed_piece)
             {
                 *ptr++ = '1';
+            }
+            else if (g->game_board[i][j].falling_piece)
+            {
+                *ptr++ = '2';
             }
             else 
             {
