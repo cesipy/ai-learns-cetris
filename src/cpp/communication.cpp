@@ -189,6 +189,11 @@ void communicate(Game* g)
     Logger(state_string);
     // save control struct
     receive_message(g);
+    
+    //TODO: problem is here, when another episode starts, the message gets not received and is stuck waiting.
+
+    Logger("received message");
+
 }
 
 

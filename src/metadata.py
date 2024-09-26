@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 from typing import List
+import config
 
 COUNTER_THRESH = 20
 
@@ -76,10 +77,11 @@ class State:
 
     def __repr__(self):
         message: str = f"""
+    game_board:    {self.game_board}  
     lines cleared: {self.lines_cleared}
-    holes: {self.holes}
-    height: {self.height}
-    bumpiness {self.bumpiness}
+    holes:         {self.holes}
+    height:        {self.height}
+    bumpiness      {self.bumpiness}
                         """
         return message
     
@@ -135,7 +137,7 @@ class Game:
 
 
     def load_model(self):
-        file_path = "../res/saved_game.pkl"
+        file_path = config.RES_DIR + "/saved_game.pkl"
         with open(file_path, 'rb') as f:
             obj:Game = pickle.load(f)
         
@@ -144,7 +146,7 @@ class Game:
         
 
     def save_model(self):
-        file_path = "../res/saved_game.pkl"
+        file_path = config.RES_DIR + "/saved_game.pkl"
         with open(file_path, 'wb') as f:
             pickle.dump(self, f)
 

@@ -4,14 +4,17 @@ import time
 import numpy as np
 import communication
 import re
+import config
+from config import *
 
 from simpleLogger import SimpleLogger
 from metadata import Metadata, State, Game
 from q_agent import Agent
 
+os.chdir(SRC_DIR)
+
 SLEEPTIME = 0.001        # default value should be (350/5000)
-FIFO_STATES = "fifo_states"
-FIFO_CONTROLS = "fifo_controls"
+
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
@@ -19,7 +22,7 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON = 0.99
+EPSILON = 0.50
 
 
 def parse_state(state_string:str):
@@ -35,7 +38,7 @@ def parse_state(state_string:str):
     
     lines_cleared = game_board[0][0]
     
-    game_board = game_board[1:]     # remove lines cleared
+    game_board = game_board[1:]     # remove lines cleared parameter
     logger.log(f"game board: {game_board}")
     logger.log(f"lines cleared: {lines_cleared}")
     state = State(game_board, lines_cleared)
@@ -146,6 +149,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     logger.log(game)
+    logger.log(f"return_value: {return_value}")
     return return_value
 
 def perform_action(control, communicator: communication.Communicator):
@@ -197,7 +201,7 @@ def main():
         meta.logger.log("successfully reached end!")
         exit(0)
     else:
-        tetris_command = './cpp/tetris'
+        tetris_command = config.TETRIS_COMMAND
         status = sub.call(tetris_command)
         logger.log(f"parent process(tetris) exited with code: {status}")
         exit(0)

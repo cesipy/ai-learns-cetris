@@ -30,7 +30,11 @@ int main (int argc, char* argv[])
         game->communication = communication;
 
         initialize_game(game);
+        Logger("game initialized");
+
         int status = main_loop(game);
+
+        Logger("main loop finished");
 
         // TODO: end of episode, notify python via pipe
         end_of_game_notify(communication);

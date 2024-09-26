@@ -4,6 +4,8 @@ import random
 from simpleLogger import SimpleLogger
 from collections import deque
 
+from metadata import State
+
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 EPSILON_COUNTER_EPOCH = 50
@@ -30,7 +32,11 @@ class Agent:
         else:
             self.model = self._init_model()
 
-    def train(self, state, action, next_state, reward):
+    def train(self, 
+              state: State, 
+              action, 
+              next_state, 
+              reward):
         next_state_array = state.convert_to_array()
         state_array = next_state.convert_to_array()
         target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
@@ -42,8 +48,9 @@ class Agent:
             self.counter = 0
             self._save_model()
 
-    def epsilon_greedy_policy(self, state):
-        state_array = np.array(state).flatten()
+    def epsilon_greedy_policy(self, 
+                              state: State):
+        state_array = state.convert_to_array()
         if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
             logger.log(f"randomly chosen return val {return_val}")
@@ -56,6 +63,7 @@ class Agent:
                     self.epsilon -= 0.0025
             return return_val
         else:
+            logger.log(f"state array in q_agent -epsilon_greedy_policy: {state_array}\n state: {state}")
             q_values = self.model.predict(state_array.reshape(1, -1))[0]
             logger.log(f"q_values: {q_values}")
             return_val = np.argmax(q_values)

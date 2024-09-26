@@ -1,1 +1,7 @@
-rm -rf fifo* && cd cpp && make clean && make && cd .. && python main.py && rm -rf fifo_*
+rm -rf fifo* && \
+cd cpp && \
+make clean && \
+make && \
+cd .. && \
+python main.py && \
+rm -rf fifo_*
