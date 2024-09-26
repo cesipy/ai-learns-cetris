@@ -20,15 +20,16 @@
 
 
 #define GRAVITY_TICKS 350
-#define SLEEP_TIME 1000
+#define SLEEP_TIME 500
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
 #define CELL 1
-#define AMOUNT_OF_PIECES 3
+#define AMOUNT_OF_PIECES 6
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
+#define DETERMINISTIC 1
 
 #define ADD_BLOCK(w,x) waddch((w),' '|A_REVERSE|COLOR_PAIR(x));     \
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))
@@ -125,6 +126,7 @@ typedef struct {
     Control* control;
     State* state;
     Communication* communication;
+    int piece_counter;
 }Game;
 
 

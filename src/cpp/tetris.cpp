@@ -201,6 +201,7 @@ void insert_falling_piece(type type, Game* g)
     }
 
     g->middle_coordinate = pos;
+    g->piece_counter++;
 }
 
 

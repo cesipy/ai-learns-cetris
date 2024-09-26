@@ -22,7 +22,7 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON = 0.50
+EPSILON = 0.98
 
 
 def parse_state(state_string:str):
