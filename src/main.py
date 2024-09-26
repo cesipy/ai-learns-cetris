@@ -81,27 +81,34 @@ def clean_up(metadata: Metadata) -> None:
 
 def step(communicator, agent: Agent) -> int:
     received_game_state = communicator.receive_from_pipe()
+    logger.log(f"received_game_state: {received_game_state}")
     status = parse_ending_message(received_game_state)
+    logger.log(f"status after parse ending message: {status}")
     if status: return status
     
     state = parse_state(received_game_state)
+    logger.log(f"parsed state: {state}")
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
     received_game_state = communicator.receive_from_pipe()
+    logger.log(f"received_game_state2: {received_game_state}")
     status = parse_ending_message(received_game_state)
+    logger.log(f"status after parse ending message2: {status}")
     if status: return status
     
     next_state = parse_state(received_game_state)
+    logger.log(f"parsed next state: {next_state}")
     communicator.send_placeholder_action()
     reward = calculate_reward(next_state)
     logger.log(f"reward: {reward}\n")
     agent.train(state, action, next_state, reward)
 
 def parse_ending_message(game_state: str) -> int:
-    if game_state in ["end", "game_endend"]:
+    if game_state.startswith("end") or game_state.startswith("game_endend"):
+    #if game_state in ["end", "game_endend"]:
         return 1
-    elif game_state == "game_end": 
+    elif game_state.startswith("game_end"):
         return 2
     else:
         return 0
