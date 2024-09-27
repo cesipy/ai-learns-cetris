@@ -48,7 +48,7 @@ class State:
     def _calculate_holes(self):
         holes = 0
         for i, row in enumerate(self.game_board_copy):
-            if sum(row) > len(self.game_board_copy[0])  * 0.75: # 75% are filled
+            if sum(row) > len(self.game_board_copy[0])  * 0.3: # 30% are filled
                 full_row = len(self.game_board_copy[0])
                 holes += full_row - sum(row)
             
@@ -73,7 +73,6 @@ class State:
         
         return bumpiness
             
-
 
     def __repr__(self):
         message: str = f"""

@@ -182,9 +182,13 @@ void game_init(Game* g, int rows, int cols)
     g->piece_counter       = 0;
 
     // further implementation
-
     State* state     = new State;
     Control* control = new Control;
+
+    state->bumpiness     = 0;
+    state->height        = 0;
+    state->holes         = 0;
+    state->lines_cleared = 0;
 
     control->new_control_available = false;
 

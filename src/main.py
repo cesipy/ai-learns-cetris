@@ -22,7 +22,7 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON = 0.98
+EPSILON = 0.5
 
 
 def parse_state(state_string:str):
@@ -162,7 +162,7 @@ def construct_action_space(n):
         direction = "right" if i < 0 else "left"
         for j in range(0, 4):
             action_space.append(f"{i}{direction}-rotate{j}")
-    logger.log(action_space)
+    logger.log(f"action space: {action_space}")
     logger.log(ACTIONS)
     return action_space
 

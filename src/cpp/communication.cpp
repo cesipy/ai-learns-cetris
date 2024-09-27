@@ -100,48 +100,43 @@ void calculate_bumpiness(Game* g)
 void update_state(Game* g)
 {
     char buffer[1024];
-    char* ptr = buffer;
+    int offset = 0;
     int remaining = sizeof(buffer);
 
-    // include lines cleared
-    *ptr++ = g->state->lines_cleared + '0';     // convert to char
-    remaining--;
-    *ptr++ = ',';
-    remaining--;
+    // add lines_cleared to buffer, at first position
+    offset += snprintf(buffer + offset, remaining, "%d,", g->state->lines_cleared);
+    remaining = sizeof(buffer) - offset;
 
+    if (remaining <= 0) {
+        Logger("Buffer overflow in update_state");
+        return;
+    }
 
-    // serialize game board
-    for (int i=0; i<g->rows-2; i++)             // TODO: find out magic numbers and replace with dynamic way
+    // serialize game
+    for (int i = 0; i < g->rows - 2 && remaining > 1; i++)
     {
-        for (int j=0; j < g->cols -16; j++)     // TODO: find out magic numbers and replace with dynamic way
+        for (int j = 0; j < g->cols - 16 && remaining > 1; j++)
         {
-            if (remaining <= 1) 
-            {
-                break; // ensure space for null termonation
-            }
+            char cell = '0';
             if (g->game_board[i][j].fixed_piece)
-            {
-                *ptr++ = '1';
-            }
+                cell = '1';
             else if (g->game_board[i][j].falling_piece)
-            {
-                *ptr++ = '2';
-            }
-            else 
-            {
-            // no block
-                *ptr++ = '0';
-            }
+                cell = '2';
+            
+            buffer[offset++] = cell;
             remaining--;
         }
-        if (remaining <= 1) 
-        {
-            break;
+        if (remaining > 1) {
+            buffer[offset++] = ',';
+            remaining--;
         }
-        *ptr++ = ',';
-        remaining--;
     }
-    *ptr = '\0';
+
+    if (remaining > 0) {
+        buffer[offset] = '\0';
+    } else {
+        buffer[sizeof(buffer) - 1] = '\0';
+    }
 
     Logger(buffer);
 
@@ -150,7 +145,7 @@ void update_state(Game* g)
     calculate_bumpiness(g);
     calculate_holes(g);
 
-    // save piece type to state
+    // save to state
     strncpy(g->state->game_state, buffer, sizeof(g->state->game_state) - 1);
     g->state->game_state[sizeof(g->state->game_state) - 1] = '\0';
 

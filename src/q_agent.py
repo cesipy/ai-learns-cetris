@@ -63,7 +63,6 @@ class Agent:
                     self.epsilon -= 0.0025
             return return_val
         else:
-            logger.log(f"state array in q_agent -epsilon_greedy_policy: {state_array}\n state: {state}")
             q_values = self.model.predict(state_array.reshape(1, -1))[0]
             logger.log(f"q_values: {q_values}")
             return_val = np.argmax(q_values)
