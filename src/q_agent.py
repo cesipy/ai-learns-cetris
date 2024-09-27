@@ -39,8 +39,8 @@ class Agent:
               reward):
         next_state_array = state.convert_to_array()
         state_array = next_state.convert_to_array()
-        target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1)))
-        target_q_values = self.model.predict(state_array.reshape(1, -1))
+        target = reward + self.discount_factor * np.max(self.model.predict(next_state_array.reshape(1, -1), verbose=0))
+        target_q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)
         target_q_values[0, action] = (1 - 0.1) * target_q_values[0, action] + 0.1 * target
         self.model.fit(state_array.reshape(1, -1), target_q_values, epochs=1, verbose=0)
         self.counter += 1
@@ -63,7 +63,7 @@ class Agent:
                     self.epsilon -= 0.0025
             return return_val
         else:
-            q_values = self.model.predict(state_array.reshape(1, -1))[0]
+            q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
             logger.log(f"q_values: {q_values}")
             return_val = np.argmax(q_values)
             logger.log(f"return val IN Q TABLE {return_val}")
@@ -71,7 +71,7 @@ class Agent:
 
     def predict(self, state):
         state_values = state.get_values()
-        q_values = self.model.predict(np.array([state_values]))[0]
+        q_values = self.model.predict(np.array([state_values]), verbose=0)[0]
         q_table = {action: q_values[i] for i, action in enumerate(self.action_space_string)}
         logger.log(f"in prediction: {q_table}")
         return q_table

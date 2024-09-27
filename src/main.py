@@ -166,6 +166,7 @@ def construct_action_space(n):
     logger.log(ACTIONS)
     return action_space
 
+
 def main():
     board_shape = (14, 28)
     pid = os.fork()
