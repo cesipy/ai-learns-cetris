@@ -157,7 +157,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     logger.log(game)
-    logger.log(f"return_value: {return_value}")
+    logger.log(f"return_value in play one round: {return_value}")
     return return_value
 
 
@@ -206,7 +206,8 @@ def main():
         current_iteration = ITERATIONS
         while True:
             game_state = play_one_round(communicator, agent)
-            if game_state == 1: break
+            if game_state == 1: 
+                break
             elif game_state == 2:
                 current_iteration -= 1
         game.save_model()

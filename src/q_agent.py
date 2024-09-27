@@ -92,7 +92,7 @@ class Agent:
     def _init_model(self):
         n_output = len(self.actions)
         logger.log(f"n_output: {n_output}")
-        n_input = np.prod(self.board_shape)
+        n_input = np.prod(self.board_shape) + 4
         input_shape = (n_input,)
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))

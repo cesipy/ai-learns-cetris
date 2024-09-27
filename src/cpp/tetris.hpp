@@ -20,7 +20,7 @@
 
 
 #define GRAVITY_TICKS 350
-#define SLEEP_TIME 5000
+#define SLEEP_TIME 100
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0

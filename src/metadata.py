@@ -38,39 +38,39 @@ class State:
             new_row = [0 if cell == 2 else cell for cell in row]
             game_board_copy.append(new_row)
         return np.array(game_board_copy, dtype=np.float32)
-            
-    def _calculate_height(self): 
+
+    def _calculate_height(self):
         for i, row in enumerate(self.game_board_copy):
-            if sum(row) != 0: 
+            if sum(row) != 0:
                 return len(self.game_board_copy) - i
         return 0
 
     def _calculate_holes(self):
         holes = 0
-        for i, row in enumerate(self.game_board_copy):
-            if sum(row) > len(self.game_board_copy[0])  * 0.3: # 30% are filled
-                full_row = len(self.game_board_copy[0])
-                holes += full_row - sum(row)
-            
+        for col in range(len(self.game_board_copy[0])):
+            block_found = False
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    block_found = True
+                elif block_found and self.game_board_copy[row][col] == 0:
+                    holes += 1
         return holes
-    
+
     def _calculate_bumpiness(self):
         bumpiness = 0
-        
         highest_in_column = []
-        
         # get highest point in each column
         for i in range(len(self.game_board_copy[0])):
-             
-             for j in range(len(self.game_board_copy)):
+            for j in range(len(self.game_board_copy)):
                 if self.game_board_copy[j][i] == 1:
-                    highest_in_column.append(j)
+                    highest_in_column.append(len(self.game_board_copy) - j)
                     break
-            
+            else:
+                highest_in_column.append(0)
+        
         for i in range(len(highest_in_column) - 1):
             delta = abs(highest_in_column[i] - highest_in_column[i + 1])
             bumpiness += delta
-        
         return bumpiness
             
 
@@ -86,7 +86,8 @@ class State:
     
 
     def convert_to_array(self):
-        return self.game_board.flatten()
+        flattened_array = np.array(self.game_board).flatten()
+        return np.concatenate((flattened_array, [self.lines_cleared, self.height, self.holes, self.bumpiness]))
     
     
     def get_values(self):
