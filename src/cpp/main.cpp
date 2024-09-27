@@ -26,6 +26,7 @@ int main (int argc, char* argv[])
     int iterations = handshake(communication);
 
     while (iterations > 0) {
+
         Game* game = new Game;    // alloc memory
         game->communication = communication;
 
@@ -38,9 +39,17 @@ int main (int argc, char* argv[])
 
         // TODO: end of episode, notify python via pipe
         end_of_game_notify(communication);
+        Logger("end of episode noticifaction sent");
 
         delete game;
+        Logger("game deleted");
+
         
+        // sleep for a bit after each game to let communication sync
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        Logger("sleeped for 500 milliseconds");
+
+
         if (status == EARLY_QUIT)
         {
             Logger("early quitting");

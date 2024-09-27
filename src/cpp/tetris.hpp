@@ -17,10 +17,12 @@
 #include <fstream>
 #include <ctime>
 #include <string>
+#include <chrono>
+#include <thread>
 
 
-#define GRAVITY_TICKS 350
-#define SLEEP_TIME 100
+#define GRAVITY_TICKS 10
+#define SLEEP_TIME 10
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0

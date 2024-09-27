@@ -13,6 +13,7 @@ void initialize_game(Game* g)
 
 int main_loop(Game* g)
 {
+    Logger("start another episonde in main loop");
     int tick = 0;                       // used for gravity rate
     int status;
 
@@ -86,6 +87,7 @@ int main_loop(Game* g)
             }
         }
     }
+    communicate(g);
     return NORMAL_QUIT;
 }
 

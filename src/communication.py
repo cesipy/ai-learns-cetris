@@ -18,7 +18,7 @@ class Communicator:
         """
         try:
             # read data from the FIFO
-            data = os.read(self.fd_states, 1024)  # Adjust the buffer size as needed
+            data = os.read(self.fd_states, 1024)  
 
             # log data
             #self.logger.log("data read from fifo_states: " + data.decode('utf-8'))

@@ -150,6 +150,7 @@ void update_state(Game* g)
     g->state->game_state[sizeof(g->state->game_state) - 1] = '\0';
 
     Logger(g->state->game_state);
+    Logger("updated game state");
 }
 
 

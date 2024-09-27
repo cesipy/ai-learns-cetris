@@ -126,10 +126,10 @@ def parse_ending_message(game_state: str) -> int:
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness= state.get_values()
     logger.log(f"lines_cleared: {lines_cleared}, height: {height}, holes: {holes}, bumpiness: {bumpiness}")
-    weight_lines_cleared = 3
+    weight_lines_cleared = 3.0
     weight_height = -1.5
-    weight_holes = -0.35
-    weight_bumpiness = -1.44
+    weight_holes = -1.0
+    weight_bumpiness = -5.
     reward = (
         weight_lines_cleared * lines_cleared +
         weight_height * height + 
@@ -143,6 +143,7 @@ def calculate_reward(state: State):
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
+    logger.log("entering play_one_round")
     return_value = 0
     while True:
         val = step(communicator, agent=agent)
