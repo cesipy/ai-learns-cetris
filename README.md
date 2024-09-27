@@ -1,4 +1,5 @@
-# AI learns cetris
+# AI learns cetris - Reinforement Machine Learning
+
 
 ## TODOs
 - [ ] improve state function for tetris board - encode state to matrix with current position and all the blocks in the field. 
