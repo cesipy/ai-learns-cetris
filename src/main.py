@@ -13,7 +13,7 @@ from q_agent import Agent
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.001        # default value should be (350/5000)
+SLEEPTIME = 0.00001        # default value should be (350/5000)
 
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -45,11 +45,13 @@ def parse_state(state_string:str):
     
     return state
 
+
 def parse_control(control) -> str:
     action = control // 2
     should_rotate = 1 if control % 2 == 1 else 0
     control = f"{action},{should_rotate}"
     return control
+
 
 def calculate_current_control(game_state: State) -> str:
     control = generate_random_control()
@@ -60,6 +62,7 @@ def generate_random_normal_number(mu, sigma):
     number = int(random_number)
     return number
 
+
 def generate_random_control() -> str:
     mu, sigma = 0, 3.2
     random_number = generate_random_normal_number(mu, sigma)
@@ -69,6 +72,7 @@ def generate_random_control() -> str:
     control = f"{random_number},{should_rotate}"    
     return control
 
+
 def init() -> Metadata: 
     fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
     fd_states = os.open(FIFO_STATES, os.O_RDONLY)
@@ -76,11 +80,13 @@ def init() -> Metadata:
     logger.log(metadata.debug())
     return metadata
 
+
 def clean_up(metadata: Metadata) -> None:
     os.close(metadata.fd_controls)
     os.close(metadata.fd_states)
     os.unlink(FIFO_CONTROLS)
     logger.log("successfully closed pipes!")
+
 
 def step(communicator, agent: Agent) -> int:
     received_game_state = communicator.receive_from_pipe()
@@ -106,6 +112,7 @@ def step(communicator, agent: Agent) -> int:
     reward = calculate_reward(next_state)
     logger.log(f"reward: {reward}\n")
     agent.train(state, action, next_state, reward)
+
 
 def parse_ending_message(game_state: str) -> int:
     if game_state.startswith("end") or game_state.startswith("game_endend"):
@@ -134,6 +141,7 @@ def calculate_reward(state: State):
         game.set_lines_cleared_current_epoch(lines_cleared)
     return reward
 
+
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
     return_value = 0
     while True:
@@ -152,9 +160,11 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     logger.log(f"return_value: {return_value}")
     return return_value
 
+
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
     communicator.send_to_pipe(action)
+
 
 def construct_action_space(n):
     action_space = []
@@ -168,7 +178,8 @@ def construct_action_space(n):
 
 
 def main():
-    board_shape = (14, 28)
+    num_actions = len(ACTIONS)
+    board_shape = (28,14)
     pid = os.fork()
     if pid == 0:
         time.sleep(1)
@@ -184,6 +195,7 @@ def main():
             actions=ACTIONS, 
             action_space_string=action_space, 
             load_model=LOAD_MODEL, 
+            num_actions=num_actions, 
             board_shape=board_shape
         )
         handshake = communicator.receive_from_pipe()

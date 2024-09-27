@@ -78,6 +78,7 @@ int main_loop(Game* g)
                 // new 'fake' control is ignored
                 g->control->new_control_available = false;
                 proper_state = true;
+                Logger("ignoring control");
             }
             else 
             {

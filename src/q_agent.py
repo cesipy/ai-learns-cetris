@@ -12,25 +12,35 @@ EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.2
 
 class Agent:
-    def __init__(self, n_neurons, epsilon, q_table, actions, action_space_string, load_model: bool = False, board_shape=None):
-        self.n_neurons = n_neurons
-        self.epsilon = epsilon
-        self.q_table = q_table
-        self.memory = deque(maxlen=1000)
-        self.actions = actions
-        self.current_action = None
-        self.current_state = None
-        self.discount_factor = 0.9
+    def __init__(self, 
+                 n_neurons, 
+                 epsilon, 
+                 q_table, 
+                 actions, 
+                 action_space_string, 
+                 load_model: bool = False, 
+                 num_actions=None, 
+                 board_shape=None):
+        self.n_neurons           = n_neurons
+        self.epsilon             = epsilon
+        self.q_table             = q_table
+        self.memory              = deque(maxlen=1000)
+        self.actions             = actions
+        self.current_action      = None
+        self.current_state       = None
+        self.discount_factor     = 0.9
         self.action_space_string = action_space_string
-        self.counter = 0
-        self.counter_weight_log = 0
-        self.counter_epsilon = 0
-        self.board_shape = board_shape
+        self.counter             = 0
+        self.counter_weight_log  = 0
+        self.counter_epsilon     = 0
+        self.num_actions         = num_actions
+        self.board_shape         = board_shape
 
         if load_model:
             self.model = self._load_model()
         else:
             self.model = self._init_model()
+
 
     def train(self, 
               state: State, 
@@ -47,6 +57,7 @@ class Agent:
         if self.counter == EPSILON_COUNTER_EPOCH:
             self.counter = 0
             self._save_model()
+
 
     def epsilon_greedy_policy(self, 
                               state: State):
@@ -69,6 +80,7 @@ class Agent:
             logger.log(f"return val IN Q TABLE {return_val}")
             return return_val
 
+
     def predict(self, state):
         state_values = state.get_values()
         q_values = self.model.predict(np.array([state_values]), verbose=0)[0]
@@ -76,18 +88,21 @@ class Agent:
         logger.log(f"in prediction: {q_table}")
         return q_table
 
+
     def _init_model(self):
-        n_output = 36
-        n_input = np.prod(self.board_shape)  # Flatten the board
+        n_output = len(self.actions)
+        logger.log(f"n_output: {n_output}")
+        n_input = np.prod(self.board_shape)
         input_shape = (n_input,)
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
         model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
         model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
-        model.add(keras.layers.Dense(units=n_output))
+        model.add(keras.layers.Dense(units=n_output, activation="linear"))
         self._log_model_summary(model, logger)
         model.compile(optimizer='adam', loss='mse')
         return model
+
 
     def _save_model(self):
         self.model.save(f"{MODEL_NAME}.keras")
@@ -97,14 +112,17 @@ class Agent:
             for layer in self.model.layers:
                 logger.log(layer.get_weights())
 
+
     def _load_model(self):
         return keras.models.load_model(f"{MODEL_NAME}.keras")
+
 
     def _log_model_summary(self, model: keras.Sequential, logger):
         summary_str = []
         model.summary(print_fn=lambda x: summary_str.append(x))
         summary_str = "\n".join(summary_str)
         logger.log(summary_str + "\n\n")
+
 
     def get_epsilon(self):
         return self.epsilon
