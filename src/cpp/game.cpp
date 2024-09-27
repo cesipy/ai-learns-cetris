@@ -24,9 +24,16 @@ int main_loop(Game* g)
         // when a new piece is needed a new piece of random type is generated
         if (g->need_new_piece)
         {
-            int random_piece = generate_random_number(0, AMOUNT_OF_PIECES-1);
-            insert_falling_piece(static_cast<type>(random_piece), g);
-
+            int piece_type;
+            if (DETERMINISTIC)
+            {
+                piece_type = static_cast<type>(g->piece_counter % AMOUNT_OF_PIECES);
+            }
+            else 
+            {
+                piece_type = generate_random_number(0, AMOUNT_OF_PIECES-1);
+            }
+            insert_falling_piece(static_cast<type>(piece_type), g);
             g->need_new_piece = false;
         }
 
@@ -172,11 +179,16 @@ void game_init(Game* g, int rows, int cols)
     g->score               = 0;
     g->piece_type          = initial;
     g->difficulty          = GRAVITY_TICKS;
+    g->piece_counter       = 0;
 
     // further implementation
-
     State* state     = new State;
     Control* control = new Control;
+
+    state->bumpiness     = 0;
+    state->height        = 0;
+    state->holes         = 0;
+    state->lines_cleared = 0;
 
     control->new_control_available = false;
 
@@ -206,10 +218,8 @@ void game_init(Game* g, int rows, int cols)
 
 int generate_random_number(int min, int max)
 {
-
     std::random_device rd;
     std::mt19937 gen(rd());
-
 
     std::uniform_int_distribution<int> distribution(min, max);
     int random_number = distribution(gen);

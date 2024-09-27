@@ -1,5 +1,7 @@
 import numpy as np
 import pickle
+from typing import List
+import config
 
 COUNTER_THRESH = 20
 
@@ -18,27 +20,73 @@ class Metadata:
 
 
 class State:
-    def __init__(self, lines_cleared, height, holes, bumpiness, piece_type):
+    def __init__(
+        self, 
+        game_board: List [List [int]], 
+        lines_cleared: int
+    ):
+        self.game_board = np.array(game_board, dtype=np.float32)
+        self.game_board_copy = self._copy_game_board()
+        self.height     = self._calculate_height()
+        self.holes      = self._calculate_holes()
+        self.bumpiness  = self._calculate_bumpiness()
         self.lines_cleared = lines_cleared
-        self.height        = height
-        self.holes         = holes
-        self.bumpiness     = bumpiness
-        self.piece_type    = piece_type
+        
+    def _copy_game_board(self):
+        game_board_copy = []
+        for row in self.game_board:
+            new_row = [0 if cell == 2 else cell for cell in row]
+            game_board_copy.append(new_row)
+        return np.array(game_board_copy, dtype=np.float32)
+            
+    def _calculate_height(self): 
+        for i, row in enumerate(self.game_board_copy):
+            if sum(row) != 0: 
+                return len(self.game_board_copy) - i
+        return 0
 
+    def _calculate_holes(self):
+        holes = 0
+        for i, row in enumerate(self.game_board_copy):
+            if sum(row) > len(self.game_board_copy[0])  * 0.3: # 30% are filled
+                full_row = len(self.game_board_copy[0])
+                holes += full_row - sum(row)
+            
+        return holes
+    
+    def _calculate_bumpiness(self):
+        bumpiness = 0
+        
+        highest_in_column = []
+        
+        # get highest point in each column
+        for i in range(len(self.game_board_copy[0])):
+             
+             for j in range(len(self.game_board_copy)):
+                if self.game_board_copy[j][i] == 1:
+                    highest_in_column.append(j)
+                    break
+            
+        for i in range(len(highest_in_column) - 1):
+            delta = abs(highest_in_column[i] - highest_in_column[i + 1])
+            bumpiness += delta
+        
+        return bumpiness
+            
 
     def __repr__(self):
         message: str = f"""
+    game_board:    {self.game_board}  
     lines cleared: {self.lines_cleared}
-    holes: {self.holes}
-    height: {self.height}
-    bumpiness {self.bumpiness}
-    piece type {self.piece_type}
+    holes:         {self.holes}
+    height:        {self.height}
+    bumpiness      {self.bumpiness}
                         """
         return message
     
 
     def convert_to_array(self):
-        return np.array([self.lines_cleared, self.height, self.holes, self.bumpiness, self.piece_type])
+        return self.game_board.flatten()
     
     
     def get_values(self):
@@ -46,9 +94,8 @@ class State:
         height = self.height
         holes = self.holes
         bumpiness = self.bumpiness
-        piece_type = self.piece_type
 
-        return lines_cleared, height, holes, bumpiness, piece_type
+        return lines_cleared, height, holes, bumpiness
     
 
 
@@ -89,7 +136,7 @@ class Game:
 
 
     def load_model(self):
-        file_path = "../res/saved_game.pkl"
+        file_path = config.RES_DIR + "/saved_game.pkl"
         with open(file_path, 'rb') as f:
             obj:Game = pickle.load(f)
         
@@ -98,7 +145,7 @@ class Game:
         
 
     def save_model(self):
-        file_path = "../res/saved_game.pkl"
+        file_path = config.RES_DIR + "/saved_game.pkl"
         with open(file_path, 'wb') as f:
             pickle.dump(self, f)
 

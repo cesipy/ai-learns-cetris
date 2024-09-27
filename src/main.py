@@ -4,288 +4,207 @@ import time
 import numpy as np
 import communication
 import re
+import config
+from config import *
 
 from simpleLogger import SimpleLogger
-from metadata import Metadata
-from metadata import State
+from metadata import Metadata, State, Game
 from q_agent import Agent
-from metadata import Game
+
+os.chdir(SRC_DIR)
 
 SLEEPTIME = 0.001        # default value should be (350/5000)
-FIFO_STATES = "fifo_states"
-FIFO_CONTROLS = "fifo_controls"
-ITERATIONS    = 100000   # temp
+
+ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
 ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON    = 1
+EPSILON = 0.5
 
 
-def parse_state(state_string: str) -> State:
-    matches = re.findall(r'\b\d+\b', state_string)
-    lines_cleared, height, holes, bumpiness, piece_type = map(int, matches)
+def parse_state(state_string:str):
+    logger.log(f"state_string: {state_string}")
+    game_board = []
+    row = []
+    for char in state_string: 
+        if char == ",":
+            game_board.append(row)
+            row = []
+        else:
+            row.append(int(char))
     
-    state = State(lines_cleared, height, holes, bumpiness, piece_type)
-
+    lines_cleared = game_board[0][0]
+    
+    game_board = game_board[1:]     # remove lines cleared parameter
+    logger.log(f"game board: {game_board}")
+    logger.log(f"lines cleared: {lines_cleared}")
+    state = State(game_board, lines_cleared)
+    
     return state
 
-
 def parse_control(control) -> str:
-    action = 0
-    should_rotate = 0
-    
     action = control // 2
-    
-    if control % 2 == 1:
-        should_rotate = 1
-
-    control = str(action) + "," + str(should_rotate)
-
+    should_rotate = 1 if control % 2 == 1 else 0
+    control = f"{action},{should_rotate}"
     return control
-
 
 def calculate_current_control(game_state: State) -> str:
-    # temporarily only generates random numbers
-    # todo: based on received game state calculate a new control string
-
     control = generate_random_control()
-    
     return control
-
 
 def generate_random_normal_number(mu, sigma):
-
-    # randomly generated number is normally distributed
     random_number = np.random.normal(mu, sigma)
-    # round to integers
     number = int(random_number)
-   
     return number
 
-
 def generate_random_control() -> str:
-    # get normally distributed number: 
-    # generates new relative position
-    mu            = 0
-    sigma         = 3.2
+    mu, sigma = 0, 3.2
     random_number = generate_random_normal_number(mu, sigma)
-
-    #  should piece rotate?
-    mu            = 0
-    sigma         = 2
-    random_rotate =  abs (generate_random_normal_number(mu, sigma))
-
+    mu, sigma = 0, 2
+    random_rotate = abs(generate_random_normal_number(mu, sigma))
     should_rotate = 1 if random_rotate else 0
-
-    control       = str(random_number) + "," +  str(should_rotate)    
-    
+    control = f"{random_number},{should_rotate}"    
     return control
 
-
-
 def init() -> Metadata: 
-    """
-    opens file descriptors for named pipes.
-    for one unit of the program, we need to open it only
-    once.
-    """
     fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
-    fd_states   = os.open(FIFO_STATES, os.O_RDONLY)
-    metadata    = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
-
-
+    fd_states = os.open(FIFO_STATES, os.O_RDONLY)
+    metadata = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
     logger.log(metadata.debug())
     return metadata
 
-
 def clean_up(metadata: Metadata) -> None:
-    """
-    cleans up named fifos. 
-    """
-    # close the named pipes
     os.close(metadata.fd_controls)
     os.close(metadata.fd_states)
     os.unlink(FIFO_CONTROLS)
-
     logger.log("successfully closed pipes!")
 
-
-def step(communicator, agent:Agent) -> int:
-    """
-    agent steps one step further in environment.
-    """
+def step(communicator, agent: Agent) -> int:
     received_game_state = communicator.receive_from_pipe()
+    logger.log(f"received_game_state: {received_game_state}")
     status = parse_ending_message(received_game_state)
+    logger.log(f"status after parse ending message: {status}")
     if status: return status
     
     state = parse_state(received_game_state)
+    logger.log(f"parsed state: {state}")
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
-
-    # get next state
     received_game_state = communicator.receive_from_pipe()
+    logger.log(f"received_game_state2: {received_game_state}")
     status = parse_ending_message(received_game_state)
+    logger.log(f"status after parse ending message2: {status}")
     if status: return status
     
     next_state = parse_state(received_game_state)
+    logger.log(f"parsed next state: {next_state}")
     communicator.send_placeholder_action()
-    #logger.log("sending fake controls")
-
     reward = calculate_reward(next_state)
     logger.log(f"reward: {reward}\n")
-
     agent.train(state, action, next_state, reward)
 
-
 def parse_ending_message(game_state: str) -> int:
-    if game_state == "end" or game_state == "game_endend":
+    if game_state.startswith("end") or game_state.startswith("game_endend"):
+    #if game_state in ["end", "game_endend"]:
         return 1
-    elif game_state == "game_end": 
+    elif game_state.startswith("game_end"):
         return 2
     else:
         return 0
 
-
 def calculate_reward(state: State):
-    lines_cleared, height, holes, bumpiness, piece_type = state.get_values()
-
-    # only temp values: magic numbers from 
-    # https://codemyroad.wordpress.com/2013/04/14/tetris-ai-the-near-perfect-player/
-    weight_lines_cleared = 10
+    lines_cleared, height, holes, bumpiness= state.get_values()
+    logger.log(f"lines_cleared: {lines_cleared}, height: {height}, holes: {holes}, bumpiness: {bumpiness}")
+    weight_lines_cleared = 3
     weight_height = -1.5
     weight_holes = -0.35
     weight_bumpiness = -1.44
-    weight_piece_type = 0.01
-
     reward = (
         weight_lines_cleared * lines_cleared +
         weight_height * height + 
         weight_holes * holes + 
-        weight_bumpiness * bumpiness + 
-        weight_piece_type * piece_type 
+        weight_bumpiness * bumpiness 
     )
-
-    # temporary to detect number of lines cleared
     if lines_cleared > game.lines_cleared_current_epoch:
         logger.log("increase lines_cleared_current_epoch")
         game.set_lines_cleared_current_epoch(lines_cleared)
-    
     return reward
 
-
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
-    """
-    finishes one episode.
-
-    @param communicator - communicator object used to communicate via named pipe.
-    @param agent 
-    """
     return_value = 0
     while True:
-
         val = step(communicator, agent=agent)
-
         if val == 1:
             return_value = 1
             break
-
         elif val == 2: 
             logger.log("one round is finished")
             return_value = 2
             break
-    
     game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     logger.log(game)
-    
+    logger.log(f"return_value: {return_value}")
     return return_value
-
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    # logger.log(f"action performed: {action}")
     communicator.send_to_pipe(action)
-
 
 def construct_action_space(n):
     action_space = []
-
-    for i in range (-n, n+1):
-        if i < 0:
-            direction = "right"
-        else:
-            direction = "left"
-
-        for j in range (0, 4):
-
-            action_space.append(str(i)+direction+"-rotate"+str(j))
-    logger.log(action_space)
+    for i in range(-n, n+1):
+        direction = "right" if i < 0 else "left"
+        for j in range(0, 4):
+            action_space.append(f"{i}{direction}-rotate{j}")
+    logger.log(f"action space: {action_space}")
     logger.log(ACTIONS)
     return action_space
 
 
-
 def main():
+    board_shape = (14, 28)
     pid = os.fork()
-
     if pid == 0:
-        # child 
-        # process to handle the tetris game
         time.sleep(1)
         meta = init()
-
         if LOAD_MODEL:
             game.load_model()
-
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
-        agent = Agent(n_neurons=200,
-                      epsilon=EPSILON,                # TODO: make dependent on `LOAD_MODEL``
-                      q_table={},
-                      actions=ACTIONS, 
-                      action_space_string=action_space, 
-                      load_model=LOAD_MODEL)
-
-        handshake: str = ""
-        # handle handshake
+        agent = Agent(
+            n_neurons=200,
+            epsilon=EPSILON,
+            q_table={},
+            actions=ACTIONS, 
+            action_space_string=action_space, 
+            load_model=LOAD_MODEL, 
+            board_shape=board_shape
+        )
         handshake = communicator.receive_from_pipe()
-        logger.log("handshake: "+ handshake)
-        #print(handshake)
-
+        logger.log(f"handshake: {handshake}")
         communicator.send_handshake(str(ITERATIONS))
         logger.log("sent handshake back")
-
-        game_state: int = 0
+        game_state = 0
         current_iteration = ITERATIONS
-
         while True:
-            
-            # each one episode played
             game_state = play_one_round(communicator, agent)
-            #game_state = step(communicator)
             if game_state == 1: break
             elif game_state == 2:
                 current_iteration -= 1
-            
         game.save_model()
-
-        clean_up(meta)                  # close named pipes
+        clean_up(meta)
         meta.logger.log("successfully reached end!")
-
         exit(0)
     else:
-        # parent
-        # executes the tetris binary
-        tetris_command = './cpp/tetris'
-
+        tetris_command = config.TETRIS_COMMAND
         status = sub.call(tetris_command)
         logger.log(f"parent process(tetris) exited with code: {status}")
         exit(0)
-
 
 main()
