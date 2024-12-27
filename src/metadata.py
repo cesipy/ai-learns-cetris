@@ -32,6 +32,14 @@ class State:
         self.bumpiness  = self._calculate_bumpiness()
         self.lines_cleared = lines_cleared
         
+        #advanced 
+        self.column_heights = self._calculate_column_heights()
+        self.wells = self._calculate_wells()
+        self.row_transitions = self._calculate_row_transitions()
+        self.column_transitions = self._calculate_column_transitions()
+        self.landing_height = self._calculate_landing_height()
+        
+        
     def _copy_game_board(self):
         game_board_copy = []
         for row in self.game_board:
@@ -72,6 +80,59 @@ class State:
             delta = abs(highest_in_column[i] - highest_in_column[i + 1])
             bumpiness += delta
         return bumpiness
+    
+    
+    # advanced features
+    def _calculate_column_heights(self):
+        heights = []
+        for col in range(len(self.game_board_copy[0])):
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    heights.append(len(self.game_board_copy) - row)
+                    break
+            else:
+                heights.append(0)
+        return heights
+
+    def _calculate_wells(self):
+        wells = 0
+        heights = self.column_heights
+        for i in range(len(heights)):
+            if i == 0:
+                if heights[i] < heights[i+1] - 1:
+                    wells += heights[i+1] - heights[i] - 1
+            elif i == len(heights) - 1:
+                if heights[i] < heights[i-1] - 1:
+                    wells += heights[i-1] - heights[i] - 1
+            else:
+                min_neighbor = min(heights[i-1], heights[i+1])
+                if heights[i] < min_neighbor - 1:
+                    wells += min_neighbor - heights[i] - 1
+        return wells
+
+    def _calculate_row_transitions(self):
+        transitions = 0
+        for row in self.game_board_copy:
+            for i in range(len(row)-1):
+                if row[i] != row[i+1]:
+                    transitions += 1
+        return transitions
+
+    def _calculate_column_transitions(self):
+        transitions = 0
+        for col in range(len(self.game_board_copy[0])):
+            for row in range(len(self.game_board_copy)-1):
+                if self.game_board_copy[row][col] != self.game_board_copy[row+1][col]:
+                    transitions += 1
+        return transitions
+
+    def _calculate_landing_height(self):
+        # Height where the last piece landed
+        for row in range(len(self.game_board)):
+            for col in range(len(self.game_board[0])):
+                if self.game_board[row][col] == 2:  # falling piece
+                    return len(self.game_board) - row
+        return 0
             
 
     def __repr__(self):
@@ -81,13 +142,29 @@ class State:
     holes:         {self.holes}
     height:        {self.height}
     bumpiness      {self.bumpiness}
+    wells          {self.wells}
+    column_heights {self.column_heights}
+    row_transitions {self.row_transitions}
+    column_transitions {self.column_transitions}
+    landing_height {self.landing_height}
                         """
         return message
     
 
     def convert_to_array(self):
-        flattened_array = np.array(self.game_board).flatten()
-        return np.concatenate((flattened_array, [self.lines_cleared, self.height, self.holes, self.bumpiness]))
+        #flattened_array = np.array(self.game_board).flatten()  # wrong, we dont want to have the board, way too many possible configurations
+        #return np.concatenate((flattened_array, [self.lines_cleared, self.height, self.holes, self.bumpiness]))
+        return np.array([
+            self.lines_cleared,         # TODO: does this even make sense?
+            self.height, 
+            self.holes, 
+            self.bumpiness, 
+            self.wells,
+            self.row_transitions,
+            self.column_transitions,
+            self.landing_height
+            
+        ])
     
     
     def get_values(self):
@@ -102,7 +179,7 @@ class State:
 
 class Game:
     def __init__(self):
-        self.lines_cleared = 0
+        self.total_lines_cleared = 0
         self.epoch         = 0
         self.counter       = 0
         self.epsilon       = 0
@@ -132,7 +209,7 @@ class Game:
 
 
     def update_after_epoch(self):
-        self.lines_cleared += self.lines_cleared_current_epoch
+        self.total_lines_cleared += self.lines_cleared_current_epoch
         self.lines_cleared_current_epoch = 0
 
 
@@ -156,8 +233,9 @@ class Game:
 
     -------------------------------------------------------------------------
     current epoch        ={self.epoch}
-    current lines cleared={self.lines_cleared}
+    current lines cleared={self.lines_cleared_current_epoch}
     current epsilon      ={self.epsilon}
+    total lines cleared  ={self.total_lines_cleared}
     -------------------------------------------------------------------------
 
     -------------------------------------------------------------------------

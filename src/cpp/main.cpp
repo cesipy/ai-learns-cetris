@@ -1,5 +1,5 @@
 #include "tetris.hpp"
-
+#include <thread>
 
 /*  ------------------------------  */
 
@@ -20,6 +20,9 @@ int main (int argc, char* argv[])
 
     communication->fd_controls = setup_named_pipe(communication->fifo_control_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR);
     communication->fd_states   = setup_named_pipe(communication->fifo_states_name, (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH), O_RDWR );
+    
+    // small delay after setting up, because otherwise there is pa problem with python communication and it is stuck in a deadlock
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // send handshake message to python. establish connection
     // receive iterations. specifies the number of times the game should be repeated

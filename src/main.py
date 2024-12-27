@@ -26,7 +26,8 @@ EPSILON = 0.5
 
 
 def parse_state(state_string:str):
-    logger.log(f"state_string: {state_string}")
+    if LOGGING:
+        logger.log(f"state_string: {state_string}")
     game_board = []
     row = []
     for char in state_string: 
@@ -39,8 +40,9 @@ def parse_state(state_string:str):
     lines_cleared = game_board[0][0]
     
     game_board = game_board[1:]     # remove lines cleared parameter
-    logger.log(f"game board: {game_board}")
-    logger.log(f"lines cleared: {lines_cleared}")
+    if LOGGING:
+        logger.log(f"game board: {game_board}")
+        logger.log(f"lines cleared: {lines_cleared}")
     state = State(game_board, lines_cleared)
     
     return state
@@ -73,12 +75,29 @@ def generate_random_control() -> str:
     return control
 
 
-def init() -> Metadata: 
-    fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
-    fd_states = os.open(FIFO_STATES, os.O_RDONLY)
-    metadata = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
-    logger.log(metadata.debug())
-    return metadata
+def init() -> Metadata:
+    # Create FIFOs if they don't exist
+    try:
+        if not os.path.exists(FIFO_CONTROLS):
+            os.mkfifo(FIFO_CONTROLS)
+            logger.log(f"Created FIFO_CONTROLS at {FIFO_CONTROLS}")
+        if not os.path.exists(FIFO_STATES):
+            os.mkfifo(FIFO_STATES)
+            logger.log(f"Created FIFO_STATES at {FIFO_STATES}")
+    except OSError as e:
+        logger.log(f"Error creating FIFOs: {e}")
+        raise
+
+    # Open FIFOs
+    try:
+        fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
+        fd_states = os.open(FIFO_STATES, os.O_RDONLY)
+        metadata = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
+        logger.log(metadata.debug())
+        return metadata
+    except OSError as e:
+        logger.log(f"Error opening FIFOs: {e}")
+        raise
 
 
 def clean_up(metadata: Metadata) -> None:
@@ -89,6 +108,12 @@ def clean_up(metadata: Metadata) -> None:
 
 
 def step(communicator, agent: Agent) -> int:
+    if LOGGING:
+        return step_verbose(communicator, agent)
+    else:
+        return step_minimal(communicator, agent)
+
+def step_verbose(communicator, agent: Agent) -> int:
     received_game_state = communicator.receive_from_pipe()
     logger.log(f"received_game_state: {received_game_state}")
     status = parse_ending_message(received_game_state)
@@ -112,6 +137,29 @@ def step(communicator, agent: Agent) -> int:
     reward = calculate_reward(next_state)
     logger.log(f"reward: {reward}\n")
     agent.train(state, action, next_state, reward)
+    return 0
+
+def step_minimal(communicator, agent: Agent) -> int:
+    # First state
+    received_game_state = communicator.receive_from_pipe()
+    status = parse_ending_message(received_game_state)
+    if status: return status
+    
+    state = parse_state(received_game_state)
+    time.sleep(SLEEPTIME)
+    action = agent.epsilon_greedy_policy(state)
+    perform_action(action, communicator)
+    
+    # Next state
+    received_game_state = communicator.receive_from_pipe()
+    status = parse_ending_message(received_game_state)
+    if status: return status
+    
+    next_state = parse_state(received_game_state)
+    communicator.send_placeholder_action()
+    reward = calculate_reward(next_state)
+    agent.train(state, action, next_state, reward)
+    return 0
 
 
 def parse_ending_message(game_state: str) -> int:
@@ -125,7 +173,8 @@ def parse_ending_message(game_state: str) -> int:
 
 def calculate_reward(state: State):
     lines_cleared, height, holes, bumpiness= state.get_values()
-    logger.log(f"lines_cleared: {lines_cleared}, height: {height}, holes: {holes}, bumpiness: {bumpiness}")
+    if LOGGING:
+        logger.log(f"current state: {state}")
     weight_lines_cleared = 3.0
     weight_height = -1.5
     weight_holes = -1.0
@@ -143,7 +192,9 @@ def calculate_reward(state: State):
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
-    logger.log("entering play_one_round")
+    if LOGGING:
+        logger.log("entering play_one_round")
+        
     return_value = 0
     while True:
         val = step(communicator, agent=agent)
@@ -151,14 +202,17 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
             return_value = 1
             break
         elif val == 2: 
-            logger.log("one round is finished")
+            if LOGGING:
+                logger.log("one round is finished")
+                
             return_value = 2
             break
     game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     logger.log(game)
-    logger.log(f"return_value in play one round: {return_value}")
+    if LOGGING:
+        logger.log(f"return_value in play one round: {return_value}")
     return return_value
 
 
@@ -173,8 +227,9 @@ def construct_action_space(n):
         direction = "right" if i < 0 else "left"
         for j in range(0, 4):
             action_space.append(f"{i}{direction}-rotate{j}")
-    logger.log(f"action space: {action_space}")
-    logger.log(ACTIONS)
+    if LOGGING:
+        logger.log(f"action space: {action_space}")
+        logger.log(ACTIONS)
     return action_space
 
 

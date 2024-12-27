@@ -5,6 +5,7 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 from metadata import State
+from config import LOGGING
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
@@ -64,20 +65,25 @@ class Agent:
         state_array = state.convert_to_array()
         if random.random() <= self.epsilon:
             return_val = np.random.choice(self.actions)
-            logger.log(f"randomly chosen return val {return_val}")
-            logger.log(f"current state{state}")
+            if LOGGING:
+                logger.log(f"randomly chosen return val {return_val}")
+                logger.log(f"current state{state}")
             self.counter_epsilon += 1
             if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
-                logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
+                
+                if LOGGING:
+                    logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
                 self.counter_epsilon = 0
                 if self.epsilon >= MIN_EPSILON:
                     self.epsilon -= 0.0025
             return return_val
         else:
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            logger.log(f"q_values: {q_values}")
             return_val = np.argmax(q_values)
-            logger.log(f"return val IN Q TABLE {return_val}")
+            
+            if LOGGING:
+                logger.log(f"q_values: {q_values}")
+                logger.log(f"return val IN Q TABLE {return_val}")
             return return_val
 
 
@@ -92,7 +98,7 @@ class Agent:
     def _init_model(self):
         n_output = len(self.actions)
         logger.log(f"n_output: {n_output}")
-        n_input = np.prod(self.board_shape) + 4
+        n_input = 8
         input_shape = (n_input,)
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
