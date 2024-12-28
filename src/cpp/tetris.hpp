@@ -22,7 +22,7 @@
 
 
 #define GRAVITY_TICKS 10
-#define SLEEP_TIME 10
+#define SLEEP_TIME 1
 #define BOARD_WIDTH  30
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0

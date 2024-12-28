@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 from typing import List
 import config
+import time
 
 COUNTER_THRESH = 20
 
@@ -175,6 +176,26 @@ class State:
 
         return lines_cleared, height, holes, bumpiness
     
+    def set_values(
+        self, 
+        lines_cleared: int, 
+        height: int, 
+        holes: int, 
+        bumpiness: int, 
+        wells: int, 
+        row_transitions: int, 
+        column_transitions: int, 
+        landing_height: int, 
+    ): 
+        self.lines_cleared = lines_cleared
+        self.height = height
+        self.holes = holes
+        self.bumpiness = bumpiness
+        self.wells = wells
+        self.row_transitions = row_transitions
+        self.column_transitions = column_transitions
+        self.landing_height = landing_height
+    
 
 
 class Game:
@@ -184,6 +205,20 @@ class Game:
         self.counter       = 0
         self.epsilon       = 0
         self.lines_cleared_current_epoch = 0
+        self.start_time    = None
+        self.end_game      = None
+        
+    def start_time_measurement(self):
+        self.start_time = time.time()
+        
+    def end_time_measurement(self) -> float:
+        self.end_time = time.time()
+        elapsed_time = self.end_time - self.start_time
+        
+        self.start_time = 0
+        self.end_time   = 0
+        
+        return elapsed_time
 
     def increase_epoch(self):
         self.epoch += 1

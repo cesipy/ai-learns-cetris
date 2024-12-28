@@ -10,6 +10,7 @@ from config import *
 from simpleLogger import SimpleLogger
 from metadata import Metadata, State, Game
 from q_agent import Agent
+from communication import Communicator
 
 os.chdir(SRC_DIR)
 
@@ -22,7 +23,7 @@ ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, ri
                                  # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
 game = Game()
 LOAD_MODEL = False          # load model?
-EPSILON = 0.5
+
 
 
 def parse_state(state_string:str):
@@ -76,7 +77,7 @@ def generate_random_control() -> str:
 
 
 def init() -> Metadata:
-    # Create FIFOs if they don't exist
+    # create FIFOs if they don't exist
     try:
         if not os.path.exists(FIFO_CONTROLS):
             os.mkfifo(FIFO_CONTROLS)
@@ -88,7 +89,6 @@ def init() -> Metadata:
         logger.log(f"Error creating FIFOs: {e}")
         raise
 
-    # Open FIFOs
     try:
         fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
         fd_states = os.open(FIFO_STATES, os.O_RDONLY)
@@ -113,9 +113,9 @@ def step(communicator, agent: Agent) -> int:
     else:
         return step_minimal(communicator, agent)
 
-def step_verbose(communicator, agent: Agent) -> int:
+def step_verbose(communicator: Communicator, agent: Agent) -> int:
     received_game_state = communicator.receive_from_pipe()
-    logger.log(f"received_game_state: {received_game_state}")
+    logger.log(f"received_game_state1: {received_game_state}")
     status = parse_ending_message(received_game_state)
     logger.log(f"status after parse ending message: {status}")
     if status: return status
@@ -171,27 +171,47 @@ def parse_ending_message(game_state: str) -> int:
     else:
         return 0
 
-def calculate_reward(state: State):
-    lines_cleared, height, holes, bumpiness= state.get_values()
-    if LOGGING:
-        logger.log(f"current state: {state}")
-    weight_lines_cleared = 3.0
-    weight_height = -1.5
-    weight_holes = -1.0
-    weight_bumpiness = -5.
+def calculate_reward(next_state: State):
+    lines_cleared, height, holes, bumpiness = next_state.get_values()
+    
+    # rewards for lines cleared -> more lines => better
+    lines_reward = {
+        0: 0,
+        1: 100,
+        2: 300,
+        3: 500,
+        4: 800
+    }
+    line_clear_reward = lines_reward.get(lines_cleared, 0)
+    
+    # penalties on holes, bumpiness and height
+    hole_penalty = -20 * holes                      
+    height_penalty = max(0, -10 * (height - 10))    # only penalty for too high, normal height is ok.
+    bumpiness_penalty = -2 * bumpiness
+    
+    # Column height distribution
+    col_heights = next_state.column_heights
+    middle_cols_avg = sum(col_heights[3:7]) / 4                             # Average height of middle columns
+    side_cols_avg = (sum(col_heights[:3]) + sum(col_heights[7:])) / 6       # Average height of side columns
+    balance_bonus = 20 if middle_cols_avg < side_cols_avg else 0            # Reward for keeping middle lower
+    
+
+    #death_penalty = -500 if height >= 20 else 0
+    
     reward = (
-        weight_lines_cleared * lines_cleared +
-        weight_height * height + 
-        weight_holes * holes + 
-        weight_bumpiness * bumpiness 
+        line_clear_reward +
+        hole_penalty +
+        height_penalty +
+        bumpiness_penalty +
+        balance_bonus 
+       # + death_penalty
     )
-    if lines_cleared > game.lines_cleared_current_epoch:
-        logger.log("increase lines_cleared_current_epoch")
-        game.set_lines_cleared_current_epoch(lines_cleared)
+    
     return reward
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
+    game.start_time_measurement()
     if LOGGING:
         logger.log("entering play_one_round")
         
@@ -210,7 +230,11 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
+    
+    elapsed_time = game.end_time_measurement()
+    
     logger.log(game)
+    logger.log(f"elapsed time: {elapsed_time:.3f}\n")
     if LOGGING:
         logger.log(f"return_value in play one round: {return_value}")
     return return_value
@@ -247,6 +271,7 @@ def main():
         agent = Agent(
             n_neurons=200,
             epsilon=EPSILON,
+            epsilon_decay=EPSILON_DECAY,
             q_table={},
             actions=ACTIONS, 
             action_space_string=action_space, 
