@@ -5,12 +5,12 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 from metadata import State
-from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE
+from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.2
+MIN_EPSILON = 0.05
 
 class Agent:
     def __init__(
@@ -63,7 +63,7 @@ class Agent:
         #     verbose=0
         # )
         
-        if len(self.memory) >= BATCH_SIZE:
+        if len(self.memory) >= BATCH_SIZE and self.counter % COUNTER == 0 :
             #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
             minibatch = random.sample(self.memory,BATCH_SIZE)
             states, actions, rewards, next_states = zip(*minibatch)
@@ -92,7 +92,7 @@ class Agent:
                 verbose=0)
         
         self.counter += 1
-        if self.counter == EPSILON_COUNTER_EPOCH:
+        if self.counter == COUNTER:
             self.counter = 0
             self._save_model()
 

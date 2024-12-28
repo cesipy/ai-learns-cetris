@@ -6,6 +6,10 @@ import time
 
 COUNTER_THRESH = 20
 
+from simpleLogger import SimpleLogger
+
+logger = SimpleLogger()
+
 class Metadata:
     def __init__(self, logger, fifo_states_name, fifo_controls_name, fd_states:int, fd_controls:int):
         self.logger = logger
@@ -207,6 +211,9 @@ class Game:
         self.lines_cleared_current_epoch = 0
         self.start_time    = None
         self.end_game      = None
+        self.lines_cleared_array = []
+        self.mean_rewards        = []           # store mean rewards per epoch
+        self.current_rewards     = []           # store rewards for current epoch 
         
     def start_time_measurement(self):
         self.start_time = time.time()
@@ -244,8 +251,13 @@ class Game:
 
 
     def update_after_epoch(self):
+        # updates for plots
+        self.lines_cleared_array.append(self.lines_cleared_current_epoch)
+        self.mean_rewards.append(np.mean(self.current_rewards))
+
         self.total_lines_cleared += self.lines_cleared_current_epoch
         self.lines_cleared_current_epoch = 0
+        self.current_rewards = []
 
 
     def load_model(self):
@@ -271,6 +283,23 @@ class Game:
     current lines cleared={self.lines_cleared_current_epoch}
     current epsilon      ={self.epsilon}
     total lines cleared  ={self.total_lines_cleared}
+    -------------------------------------------------------------------------
+
+    -------------------------------------------------------------------------
+
+    """
+        return string
+    
+    def print_with_stats(self, current_lines_cleared: int, elapsed_time:float) -> str: 
+        string:str = f"""
+    -------------------------------------------------------------------------
+
+    -------------------------------------------------------------------------
+    current epoch        ={self.epoch}
+    current lines cleared={current_lines_cleared}
+    current epsilon      ={self.epsilon}
+    total lines cleared  ={self.total_lines_cleared}
+    elapsed time         ={elapsed_time:.3f}
     -------------------------------------------------------------------------
 
     -------------------------------------------------------------------------

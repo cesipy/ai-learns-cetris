@@ -7,6 +7,8 @@ import re
 import config
 from config import *
 
+from typing import List
+
 from simpleLogger import SimpleLogger
 from metadata import Metadata, State, Game
 from q_agent import Agent
@@ -137,7 +139,10 @@ def step_verbose(communicator: Communicator, agent: Agent) -> int:
     next_state = parse_state(received_game_state)
     logger.log(f"parsed next state: {next_state}")
     communicator.send_placeholder_action()
+    
     reward = calculate_reward(next_state)
+    game.current_rewards.append(reward)         # add reward for mean reward calculation
+    
     logger.log(f"reward: {reward}\n")
     agent.train(state, action, next_state, reward)
     return 0
@@ -161,6 +166,8 @@ def step_minimal(communicator, agent: Agent) -> int:
     next_state = parse_state(received_game_state)
     communicator.send_placeholder_action()
     reward = calculate_reward(next_state)
+    game.current_rewards.append(reward)         # add reward for mean reward calculation
+    
     agent.train(state, action, next_state, reward)
     return 0
 
@@ -174,6 +181,7 @@ def parse_ending_message(game_state: str) -> int:
     else:
         return 0
 
+# this is advanced reward function. maybe simpler is better?
 def calculate_reward(next_state: State):
     lines_cleared, height, holes, bumpiness = next_state.get_values()
     
@@ -230,14 +238,14 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
                 
             return_value = 2
             break
+    current_lines_cleared = game.lines_cleared_current_epoch
     game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
     game.increase_epoch()
     
     elapsed_time = game.end_time_measurement()
     
-    logger.log(game)
-    logger.log(f"elapsed time: {elapsed_time:.3f}\n")
+    logger.log(game.print_with_stats(current_lines_cleared=current_lines_cleared, elapsed_time=elapsed_time))
     if LOGGING:
         logger.log(f"return_value in play one round: {return_value}")
     return return_value
@@ -259,7 +267,70 @@ def construct_action_space(n):
         logger.log(ACTIONS)
     return action_space
 
+# def plot_lines_cleared(lines_cleared_array: List[int]):
+#     #TODO: maybe do this in with moving average
+#     import plotly.graph_objects as go
+    
+#     fig = go.Figure()
+#     fig.add_trace(go.Scatter(x=list(range(len(lines_cleared_array))), 
+#                             y=lines_cleared_array))
+#     fig.update_layout(title="Lines Cleared per Epoch",
+#                      xaxis_title="Epoch",
+#                      yaxis_title="Lines Cleared")
+    
+#     fig.write_html(os.path.join(RES_DIR, "lines_cleared.html"))
 
+def plot_lines_cleared(lines_cleared_array: List[int], mean_rewards: List[float]):
+    """
+    Plot both lines cleared and mean rewards per epoch
+    """
+    import plotly.graph_objects as go
+    #TODO: maybe do this in with moving average
+    
+    fig = go.Figure()
+    
+    # add lines cleared trace
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(len(lines_cleared_array))),
+            y=lines_cleared_array,
+            name="Lines Cleared",
+            line=dict(color='blue')
+        )
+    )
+    
+    # Add mean rewards trace with secondary y-axis
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(len(mean_rewards))),
+            y=mean_rewards,
+            name="Mean Reward",
+            line=dict(color='red'),
+            yaxis="y2"
+        )
+    )
+    
+    # for mean reward
+    fig.update_layout(
+        title="Training Progress per Epoch",
+        xaxis_title="Epoch",
+        yaxis_title="Lines Cleared",
+        yaxis2=dict(
+            title="Mean Reward",
+            overlaying="y",
+            side="right"
+        ),
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        )
+    )
+    
+    fig.write_html(os.path.join(RES_DIR, "training_progress.html"))  
+    
+     
 def main():
     num_actions = len(ACTIONS)
     board_shape = (28,14)
@@ -290,6 +361,12 @@ def main():
         current_iteration = ITERATIONS
         while True:
             game_state = play_one_round(communicator, agent)
+            
+            # save visualisations
+            if current_iteration % PLOT_COUNTER == 0:
+                plot_lines_cleared(game.lines_cleared_array, game.mean_rewards)
+                
+            
             if game_state == 1: 
                 break
             elif game_state == 2:
