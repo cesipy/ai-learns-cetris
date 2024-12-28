@@ -46,6 +46,9 @@ def parse_state(state_string:str):
         logger.log(f"lines cleared: {lines_cleared}")
     state = State(game_board, lines_cleared)
     
+    if game.lines_cleared_current_epoch < lines_cleared:
+        game.lines_cleared_current_epoch = lines_cleared
+    
     return state
 
 
@@ -177,10 +180,10 @@ def calculate_reward(next_state: State):
     # rewards for lines cleared -> more lines => better
     lines_reward = {
         0: 0,
-        1: 100,
-        2: 300,
-        3: 500,
-        4: 800
+        1: 1000,
+        2: 3000,
+        3: 5000,
+        4: 8000
     }
     line_clear_reward = lines_reward.get(lines_cleared, 0)
     

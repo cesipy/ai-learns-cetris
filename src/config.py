@@ -13,12 +13,13 @@ FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
 
 #TODO: complete this
 # what should be logged
-LOGGING = False
+LOGGING = True
 
 EPSILON_DECAY = 0.9995
 EPSILON = 0.99
 
 LEARNING_RATE = 0.0001
+BATCH_SIZE    = 64
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
