@@ -29,6 +29,7 @@ LOAD_MODEL = False          # load model?
 
 
 def parse_state(state_string:str):
+    logger.log(f"state string: {state_string}")
     if LOGGING:
         logger.log(f"state_string: {state_string}")
     game_board = []
@@ -39,14 +40,21 @@ def parse_state(state_string:str):
             row = []
         else:
             row.append(int(char))
+            
+    logger.log(game_board)
     
-    lines_cleared = game_board[0][0]
+    # lines_cleared = game_board[0][0]
     
-    game_board = game_board[1:]     # remove lines cleared parameter
+    piece_type    = game_board[0][0]
+    lines_cleared = game_board[1][0]
+    game_board = game_board[2:]     # remove lines cleared parameter
+    
+    logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}")
+    
     if LOGGING:
         logger.log(f"game board: {game_board}")
         logger.log(f"lines cleared: {lines_cleared}")
-    state = State(game_board, lines_cleared)
+    state = State(game_board, lines_cleared, piece_type)
     
     if game.lines_cleared_current_epoch < lines_cleared:
         game.lines_cleared_current_epoch = lines_cleared
@@ -182,40 +190,55 @@ def parse_ending_message(game_state: str) -> int:
         return 0
 
 # this is advanced reward function. maybe simpler is better?
-def calculate_reward(next_state: State):
-    lines_cleared, height, holes, bumpiness = next_state.get_values()
+# def calculate_reward(next_state: State):
+#     lines_cleared, height, holes, bumpiness = next_state.get_values()
     
-    # rewards for lines cleared -> more lines => better
-    lines_reward = {
-        0: 0,
-        1: 1000,
-        2: 3000,
-        3: 5000,
-        4: 8000
-    }
-    line_clear_reward = lines_reward.get(lines_cleared, 0)
+#     # rewards for lines cleared -> more lines => better
+#     lines_reward = {
+#         0: 0,
+#         1: 1000,
+#         2: 3000,
+#         3: 5000,
+#         4: 8000
+#     }
+#     line_clear_reward = lines_reward.get(lines_cleared, 0)
     
-    # penalties on holes, bumpiness and height
-    hole_penalty = -20 * holes                      
-    height_penalty = max(0, -10 * (height - 10))    # only penalty for too high, normal height is ok.
-    bumpiness_penalty = -2 * bumpiness
+#     # penalties on holes, bumpiness and height
+#     hole_penalty = -20 * holes                      
+#     height_penalty = max(0, -10 * (height - 10))    # only penalty for too high, normal height is ok.
+#     bumpiness_penalty = -2 * bumpiness
     
-    # Column height distribution
-    col_heights = next_state.column_heights
-    middle_cols_avg = sum(col_heights[3:7]) / 4                             # Average height of middle columns
-    side_cols_avg = (sum(col_heights[:3]) + sum(col_heights[7:])) / 6       # Average height of side columns
-    balance_bonus = 20 if middle_cols_avg < side_cols_avg else 0            # Reward for keeping middle lower
+#     # Column height distribution
+#     col_heights = next_state.column_heights
+#     middle_cols_avg = sum(col_heights[3:7]) / 4                             # Average height of middle columns
+#     side_cols_avg = (sum(col_heights[:3]) + sum(col_heights[7:])) / 6       # Average height of side columns
+#     balance_bonus = 20 if middle_cols_avg < side_cols_avg else 0            # Reward for keeping middle lower
     
 
-    #death_penalty = -500 if height >= 20 else 0
+#     #death_penalty = -500 if height >= 20 else 0
+    
+#     reward = (
+#         line_clear_reward +
+#         hole_penalty +
+#         height_penalty +
+#         bumpiness_penalty +
+#         balance_bonus 
+#        # + death_penalty
+#     )
+    
+#     return reward
+
+def calculate_reward(next_state: State): 
+    
+    lines_cleared, height, holes, bumpiness = next_state.get_values()
     
     reward = (
-        line_clear_reward +
-        hole_penalty +
-        height_penalty +
-        bumpiness_penalty +
-        balance_bonus 
-       # + death_penalty
+        #0.766*lines_cleared +
+        10.0*lines_cleared +
+        -0.51*height + 
+        #-2.00*height +
+        -0.35*holes + 
+        -0.18*bumpiness
     )
     
     return reward
@@ -244,8 +267,13 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
     game.increase_epoch()
     
     elapsed_time = game.end_time_measurement()
+    current_avg_reward = game.mean_rewards[-1]
     
-    logger.log(game.print_with_stats(current_lines_cleared=current_lines_cleared, elapsed_time=elapsed_time))
+    logger.log(game.print_with_stats(
+        current_lines_cleared=current_lines_cleared, 
+        elapsed_time=elapsed_time, 
+        avg_reward=current_avg_reward,
+        ))
     if LOGGING:
         logger.log(f"return_value in play one round: {return_value}")
     return return_value
@@ -287,6 +315,19 @@ def plot_lines_cleared(lines_cleared_array: List[int], mean_rewards: List[float]
     import plotly.graph_objects as go
     #TODO: maybe do this in with moving average
     
+    # MAs
+    def moving_average(arr, window=3):
+        import pandas as pd
+        series = pd.Series(arr)
+        return series.rolling(window=window, min_periods=1, center=True).mean()
+    
+    #lines_cleared_array = np.cumsum(lines_cleared_array)
+    lines_cleared_array = moving_average(lines_cleared_array, window=MOVING_AVG_WINDOW_SIZE)
+    new_mean_rewards        = moving_average(mean_rewards, window=MOVING_AVG_WINDOW_SIZE)
+    logger.log(f"difference of lengths: {len(new_mean_rewards)} vs {len(mean_rewards)}")
+    # logger.log(f"MA lines cleared: {lines_cleared_array}")
+    # logger.log(f"MA mean rewards: {mean_rewards}")
+    
     fig = go.Figure()
     
     # add lines cleared trace
@@ -302,8 +343,8 @@ def plot_lines_cleared(lines_cleared_array: List[int], mean_rewards: List[float]
     # Add mean rewards trace with secondary y-axis
     fig.add_trace(
         go.Scatter(
-            x=list(range(len(mean_rewards))),
-            y=mean_rewards,
+            x=list(range(len(new_mean_rewards))),
+            y=new_mean_rewards,
             name="Mean Reward",
             line=dict(color='red'),
             yaxis="y2"

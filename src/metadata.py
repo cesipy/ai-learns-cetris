@@ -28,14 +28,17 @@ class State:
     def __init__(
         self, 
         game_board: List [List [int]], 
-        lines_cleared: int
+        lines_cleared: int,
+        piece_type:int,
     ):
         self.game_board = np.array(game_board, dtype=np.float32)
         self.game_board_copy = self._copy_game_board()
-        self.height     = self._calculate_height()
+        #self.height     = self._calculate_height()
+        self.height     = self._calculate_aggregate_height()
         self.holes      = self._calculate_holes()
         self.bumpiness  = self._calculate_bumpiness()
         self.lines_cleared = lines_cleared
+        self.piece_type = piece_type
         
         #advanced 
         self.column_heights = self._calculate_column_heights()
@@ -45,12 +48,24 @@ class State:
         self.landing_height = self._calculate_landing_height()
         
         
+    # def get_piece_type(self):
+    #     all_2s = []
+    #     for row in range(len(self.game_board)):
+    #         for col in range(len(self.game_board[0])):
+    #             if self.game_board[row][col] == 2:
+    #                 all_2s.append((row, col))
+
+        
+        
     def _copy_game_board(self):
         game_board_copy = []
         for row in self.game_board:
             new_row = [0 if cell == 2 else cell for cell in row]
             game_board_copy.append(new_row)
         return np.array(game_board_copy, dtype=np.float32)
+    
+    def _calculate_aggregate_height(self):
+        return sum(self._calculate_column_heights())
 
     def _calculate_height(self):
         for i, row in enumerate(self.game_board_copy):
@@ -164,10 +179,10 @@ class State:
             self.height, 
             self.holes, 
             self.bumpiness, 
-            self.wells,
-            self.row_transitions,
-            self.column_transitions,
-            self.landing_height
+            # self.wells,
+            # self.row_transitions,
+            # self.column_transitions,
+            # self.landing_height
             
         ])
     
@@ -290,7 +305,12 @@ class Game:
     """
         return string
     
-    def print_with_stats(self, current_lines_cleared: int, elapsed_time:float) -> str: 
+    def print_with_stats(
+        self, 
+        current_lines_cleared: int, 
+        elapsed_time:float, 
+        avg_reward: float,
+        ) -> str: 
         string:str = f"""
     -------------------------------------------------------------------------
 
@@ -300,6 +320,7 @@ class Game:
     current epsilon      ={self.epsilon}
     total lines cleared  ={self.total_lines_cleared}
     elapsed time         ={elapsed_time:.3f}
+    current avg reward   ={avg_reward:.3f}
     -------------------------------------------------------------------------
 
     -------------------------------------------------------------------------

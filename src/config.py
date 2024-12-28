@@ -15,12 +15,14 @@ FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.9995
+EPSILON_DECAY = 0.995
 EPSILON = 0.99
 
 LEARNING_RATE = 0.0001
-BATCH_SIZE    = 32
-COUNTER       = 32      #when to perform batch training
+BATCH_SIZE    = 64
+COUNTER       = 500      #when to perform batch training
+EPOCHS        = 2       # how often to iterate over samples
+NUM_BATCHES   = 4       # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -56,3 +58,5 @@ PLACEHOLDER_GAME_BOARD = np.array([
 
 
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
+
+MOVING_AVG_WINDOW_SIZE = 100

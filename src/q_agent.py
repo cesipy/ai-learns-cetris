@@ -5,12 +5,12 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 from metadata import State
-from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER
+from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER, EPOCHS, NUM_BATCHES
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.05
+MIN_EPSILON = 0.003
 
 class Agent:
     def __init__(
@@ -28,7 +28,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=1000)
+        self.memory              = deque(maxlen=500)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -64,32 +64,34 @@ class Agent:
         # )
         
         if len(self.memory) >= BATCH_SIZE and self.counter % COUNTER == 0 :
-            #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-            minibatch = random.sample(self.memory,BATCH_SIZE)
-            states, actions, rewards, next_states = zip(*minibatch)
             
-            states = np.array(states)
-            next_states = np.array(next_states)
-            actions = np.array(actions)
-            rewards = np.array(rewards)
+            for _ in range(NUM_BATCHES):
+                #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+                minibatch = random.sample(self.memory,BATCH_SIZE)
+                states, actions, rewards, next_states = zip(*minibatch)
                 
-            # Predict Q-values for current and next states
-            current_qs = self.model.predict(states, verbose=0)
-            next_qs = self.model.predict(next_states, verbose=0)
-            
-            targets = rewards + self.discount_factor * np.max(next_qs, axis=1)
-            
-            # Update targets for actions taken
-            for i in range(BATCH_SIZE):
-                current_qs[i][actions[i]] = targets[i]
-            
-            # Train on batch
-            self.model.fit(
-                states, 
-                current_qs,
-                batch_size=BATCH_SIZE, 
-                epochs=1, 
-                verbose=0)
+                states = np.array(states)
+                next_states = np.array(next_states)
+                actions = np.array(actions)
+                rewards = np.array(rewards)
+                    
+                # Predict Q-values for current and next states
+                current_qs = self.model.predict(states, verbose=0)
+                next_qs = self.model.predict(next_states, verbose=0)
+                
+                targets = rewards + self.discount_factor * np.max(next_qs, axis=1)
+                
+                # Update targets for actions taken
+                for i in range(BATCH_SIZE):
+                    current_qs[i][actions[i]] = targets[i]
+                
+                # Train on batch
+                self.model.fit(
+                    states, 
+                    current_qs,
+                    batch_size=BATCH_SIZE, 
+                    epochs=EPOCHS, 
+                    verbose=0)
         
         self.counter += 1
         if self.counter == COUNTER:
@@ -304,7 +306,7 @@ class Agent:
     def _init_model(self):
         n_output = len(self.actions)
         logger.log(f"n_output: {n_output}")
-        n_input = 8
+        n_input = 4
         input_shape = (n_input,)
         model = keras.models.Sequential()
         model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
@@ -314,7 +316,7 @@ class Agent:
         self._log_model_summary(model, logger)
         model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-            loss='mse'
+            loss='huber'
         )
         return model
 
