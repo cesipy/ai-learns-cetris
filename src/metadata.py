@@ -179,11 +179,11 @@ class State:
             self.height, 
             self.holes, 
             self.bumpiness, 
-            # self.wells,
-            # self.row_transitions,
-            # self.column_transitions,
-            # self.landing_height
-            
+            self.piece_type,
+            self.wells,
+            self.row_transitions,
+            self.column_transitions,
+            self.landing_height
         ])
     
     

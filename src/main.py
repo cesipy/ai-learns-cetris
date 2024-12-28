@@ -29,7 +29,7 @@ LOAD_MODEL = False          # load model?
 
 
 def parse_state(state_string:str):
-    logger.log(f"state string: {state_string}")
+    #logger.log(f"state string: {state_string}")
     if LOGGING:
         logger.log(f"state_string: {state_string}")
     game_board = []
@@ -41,15 +41,14 @@ def parse_state(state_string:str):
         else:
             row.append(int(char))
             
-    logger.log(game_board)
-    
     # lines_cleared = game_board[0][0]
     
-    piece_type    = game_board[0][0]
-    lines_cleared = game_board[1][0]
+    piece_type    = game_board[1][0]
+    lines_cleared = game_board[0][0]
+    
     game_board = game_board[2:]     # remove lines cleared parameter
     
-    logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}")
+    # logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}")
     
     if LOGGING:
         logger.log(f"game board: {game_board}")
