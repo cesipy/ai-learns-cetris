@@ -13,7 +13,7 @@ FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
 
 #TODO: complete this
 # what should be logged
-LOGGING = False
+LOGGING = True
 
 EPSILON_DECAY = 0.9992
 EPSILON = 0.99

@@ -4,7 +4,7 @@ import random
 from simpleLogger import SimpleLogger
 from collections import deque
 
-from metadata import State
+from state import State
 from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER, EPOCHS, NUM_BATCHES, DISCOUNT
 
 logger = SimpleLogger()

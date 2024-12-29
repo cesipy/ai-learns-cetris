@@ -10,13 +10,16 @@ from config import *
 from typing import List
 
 from simpleLogger import SimpleLogger
-from metadata import Metadata, State, Game
+from metadata import Metadata
+from state import State
+from game import Game
 from q_agent import Agent
 from communication import Communicator
+from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.00001        # default value should be (350/5000)
+SLEEPTIME = 1#0.00001        # default value should be (350/5000)
 
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -28,7 +31,7 @@ LOAD_MODEL = False          # load model?
 
 
 
-def parse_state(state_string:str):
+def parse_state(state_string:str, piece_count):
     #logger.log(f"state string: {state_string}")
     if LOGGING:
         logger.log(f"state_string: {state_string}")
@@ -53,7 +56,11 @@ def parse_state(state_string:str):
     if LOGGING:
         logger.log(f"game board: {game_board}")
         logger.log(f"lines cleared: {lines_cleared}")
-    state = State(game_board, lines_cleared, piece_type)
+    state = State(
+        game_board=game_board, 
+        lines_cleared=lines_cleared, 
+        piece_type=piece_type, 
+        piece_count=piece_count)
     
     if game.lines_cleared_current_epoch < lines_cleared:
         game.lines_cleared_current_epoch = lines_cleared
@@ -120,6 +127,7 @@ def clean_up(metadata: Metadata) -> None:
 
 
 def step(communicator, agent: Agent) -> int:
+    
     if LOGGING:
         return step_verbose(communicator, agent)
     else:
@@ -132,18 +140,22 @@ def step_verbose(communicator: Communicator, agent: Agent) -> int:
     logger.log(f"status after parse ending message: {status}")
     if status: return status
     
-    state = parse_state(received_game_state)
+    state = parse_state(received_game_state, game.current_piece_count)
     logger.log(f"parsed state: {state}")
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
+    
+    # new state
     received_game_state = communicator.receive_from_pipe()
     logger.log(f"received_game_state2: {received_game_state}")
     status = parse_ending_message(received_game_state)
     logger.log(f"status after parse ending message2: {status}")
     if status: return status
     
-    next_state = parse_state(received_game_state)
+    game.current_piece_count +=1        # piece count increases only here
+    
+    next_state = parse_state(received_game_state, game.current_piece_count)
     logger.log(f"parsed next state: {next_state}")
     communicator.send_placeholder_action()
     
@@ -160,7 +172,7 @@ def step_minimal(communicator, agent: Agent) -> int:
     status = parse_ending_message(received_game_state)
     if status: return status
     
-    state = parse_state(received_game_state)
+    state = parse_state(received_game_state, game.current_piece_count)
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
@@ -170,7 +182,9 @@ def step_minimal(communicator, agent: Agent) -> int:
     status = parse_ending_message(received_game_state)
     if status: return status
     
-    next_state = parse_state(received_game_state)
+    game.current_piece_count +=1        # piece count increases only here
+    
+    next_state = parse_state(received_game_state, game.current_piece_count)
     communicator.send_placeholder_action()
     reward = calculate_reward(next_state)
     game.current_rewards.append(reward)         # add reward for mean reward calculation
@@ -187,82 +201,6 @@ def parse_ending_message(game_state: str) -> int:
         return 2
     else:
         return 0
-
-# this is advanced reward function. maybe simpler is better?
-# def calculate_reward(next_state: State):
-#     lines_cleared, height, holes, bumpiness = next_state.get_values()
-    
-#     # rewards for lines cleared -> more lines => better
-#     lines_reward = {
-#         0: 0,
-#         1: 1000,
-#         2: 3000,
-#         3: 5000,
-#         4: 8000
-#     }
-#     line_clear_reward = lines_reward.get(lines_cleared, 0)
-    
-#     # penalties on holes, bumpiness and height
-#     hole_penalty = -20 * holes                      
-#     height_penalty = max(0, -10 * (height - 10))    # only penalty for too high, normal height is ok.
-#     bumpiness_penalty = -2 * bumpiness
-    
-#     # Column height distribution
-#     col_heights = next_state.column_heights
-#     middle_cols_avg = sum(col_heights[3:7]) / 4                             # Average height of middle columns
-#     side_cols_avg = (sum(col_heights[:3]) + sum(col_heights[7:])) / 6       # Average height of side columns
-#     balance_bonus = 20 if middle_cols_avg < side_cols_avg else 0            # Reward for keeping middle lower
-    
-
-#     #death_penalty = -500 if height >= 20 else 0
-    
-#     reward = (
-#         line_clear_reward +
-#         hole_penalty +
-#         height_penalty +
-#         bumpiness_penalty +
-#         balance_bonus 
-#        # + death_penalty
-#     )
-    
-#     return reward
-
-def calculate_reward(next_state: State): 
-    
-    lines_cleared, height, holes, bumpiness = next_state.get_values()
-    
-    # reward = (
-    #     0.766*lines_cleared +
-    #     -0.51*height + 
-    #     -0.35*holes + 
-    #     -0.18*bumpiness
-    # )
-    
-    # Exponential reward for lines cleared
-    lines_reward = {
-        1: 100,    # Single
-        2: 300,   # Double
-        3: 600,   # Triple
-        4: 1200   # Tetris
-    }.get(lines_cleared, 0)
-    
-    #piece_count_reward = min(20 * game.current_piece_count, 500)
-    height_penalty = -0.510 * height #* (1 + game.current_piece_count / 100)
-    
-    tidiness_bonus = 0
-    if height < 10 and holes == 0:
-        tidiness_bonus = 10
-    
-    reward = (
-        4*lines_reward +
-        height_penalty +
-        1*game.current_piece_count +
-        #piece_count_reward +
-        -0.760 * holes  +      # Quadratic holes penalty
-        -0.184 * bumpiness
-    )
-    
-    return reward
 
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
@@ -283,7 +221,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
             return_value = 2
             break
         
-        game.current_piece_count += 1
+        #game.current_piece_count += 1
     
     current_lines_cleared = game.lines_cleared_current_epoch
     game.update_after_epoch()
