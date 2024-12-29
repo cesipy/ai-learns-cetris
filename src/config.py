@@ -58,6 +58,8 @@ PLACEHOLDER_GAME_BOARD = np.array([
 ])
 
 
+ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
+
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
 
 MOVING_AVG_WINDOW_SIZE = 100

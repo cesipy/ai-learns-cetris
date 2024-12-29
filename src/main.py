@@ -24,8 +24,7 @@ SLEEPTIME = 1#0.00001        # default value should be (350/5000)
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
-ACTIONS = list(range(-16, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
-                                 # TODO:  make dependend on POSSIBLE_NUMBER_STEPS
+                                
 game = Game()
 LOAD_MODEL = False          # load model?
 
@@ -243,6 +242,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
+    logger.log(f"action in perform_action: {action}")
     communicator.send_to_pipe(action)
 
 
