@@ -5,7 +5,7 @@ from simpleLogger import SimpleLogger
 from collections import deque
 
 from metadata import State
-from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER, EPOCHS, NUM_BATCHES
+from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER, EPOCHS, NUM_BATCHES, DISCOUNT
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
@@ -28,11 +28,11 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=500)
+        self.memory              = deque(maxlen=10000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
-        self.discount_factor     = 0.9
+        self.discount_factor     = DISCOUNT
         self.action_space_string = action_space_string
         self.counter             = 0
         self.counter_weight_log  = 0
@@ -305,15 +305,15 @@ class Agent:
 
     def _init_model(self):
         n_output = len(self.actions)
-        logger.log(f"n_output: {n_output}")
-        n_input = 9
+        n_input = 5  # Use more input features
         input_shape = (n_input,)
-        model = keras.models.Sequential()
-        model.add(keras.layers.Dense(units=n_input, activation="relu", input_shape=input_shape))
-        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
-        model.add(keras.layers.Dense(units=self.n_neurons, activation="relu"))
-        model.add(keras.layers.Dense(units=n_output, activation="linear"))
-        self._log_model_summary(model, logger)
+        model = keras.models.Sequential([
+            keras.layers.Dense(128, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),
+            keras.layers.BatchNormalization(),
+            keras.layers.Dense(256, activation="relu", kernel_initializer='he_uniform'),
+            keras.layers.Dense(256, activation="relu", kernel_initializer='he_uniform'),
+            keras.layers.Dense(n_output, activation="linear", kernel_initializer='glorot_uniform')
+        ])
         model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
             loss='huber'

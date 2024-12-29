@@ -180,10 +180,10 @@ class State:
             self.holes, 
             self.bumpiness, 
             self.piece_type,
-            self.wells,
-            self.row_transitions,
-            self.column_transitions,
-            self.landing_height
+            # self.wells,
+            # self.row_transitions,
+            # self.column_transitions,
+            # self.landing_height
         ])
     
     
@@ -229,6 +229,7 @@ class Game:
         self.lines_cleared_array = []
         self.mean_rewards        = []           # store mean rewards per epoch
         self.current_rewards     = []           # store rewards for current epoch 
+        self.current_piece_count = 0
         
     def start_time_measurement(self):
         self.start_time = time.time()
@@ -273,6 +274,7 @@ class Game:
         self.total_lines_cleared += self.lines_cleared_current_epoch
         self.lines_cleared_current_epoch = 0
         self.current_rewards = []
+        self.current_piece_count = 0
 
 
     def load_model(self):

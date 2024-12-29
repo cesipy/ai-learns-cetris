@@ -231,13 +231,35 @@ def calculate_reward(next_state: State):
     
     lines_cleared, height, holes, bumpiness = next_state.get_values()
     
+    # reward = (
+    #     0.766*lines_cleared +
+    #     -0.51*height + 
+    #     -0.35*holes + 
+    #     -0.18*bumpiness
+    # )
+    
+    # Exponential reward for lines cleared
+    lines_reward = {
+        1: 100,    # Single
+        2: 300,   # Double
+        3: 600,   # Triple
+        4: 1200   # Tetris
+    }.get(lines_cleared, 0)
+    
+    #piece_count_reward = min(20 * game.current_piece_count, 500)
+    height_penalty = -0.510 * height #* (1 + game.current_piece_count / 100)
+    
+    tidiness_bonus = 0
+    if height < 10 and holes == 0:
+        tidiness_bonus = 10
+    
     reward = (
-        #0.766*lines_cleared +
-        10.0*lines_cleared +
-        -0.51*height + 
-        #-2.00*height +
-        -0.35*holes + 
-        -0.18*bumpiness
+        4*lines_reward +
+        height_penalty +
+        1*game.current_piece_count +
+        #piece_count_reward +
+        -0.760 * holes  +      # Quadratic holes penalty
+        -0.184 * bumpiness
     )
     
     return reward
@@ -260,6 +282,9 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
                 
             return_value = 2
             break
+        
+        game.current_piece_count += 1
+    
     current_lines_cleared = game.lines_cleared_current_epoch
     game.update_after_epoch()
     game.set_epsilon(agent.get_epsilon())
@@ -292,6 +317,9 @@ def construct_action_space(n):
     if LOGGING:
         logger.log(f"action space: {action_space}")
         logger.log(ACTIONS)
+    
+    logger.log(f"action space: {action_space}")
+    logger.log(ACTIONS)
     return action_space
 
 # def plot_lines_cleared(lines_cleared_array: List[int]):
