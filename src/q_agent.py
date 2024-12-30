@@ -9,8 +9,10 @@ import random
 from simpleLogger import SimpleLogger
 from collections import deque
 
+from tetris_expert import TetrisExpert
+
 from state import State
-from config import LOGGING, LEARNING_RATE, PLACEHOLDER_GAME_BOARD, BATCH_SIZE, COUNTER, EPOCHS, NUM_BATCHES, DISCOUNT
+from config import *
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
@@ -33,7 +35,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=500)
+        self.memory              = deque(maxlen=10000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -42,9 +44,12 @@ class Agent:
         self.counter             = 0
         self.counter_weight_log  = 0
         self.counter_epsilon     = 0
+        self.cunter_tetris_expert = 0
+        self.starting_tetris_expert_modulo = COUNTER_TETRIS_EXPERT      # when to do the expert for faster reward discovery
         self.num_actions         = num_actions
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
+        self.tetris_expert       = TetrisExpert(self.actions)
 
         if load_model:
             self.model = self._load_model()
@@ -109,7 +114,21 @@ class Agent:
                               state: State):
         state_array = state.convert_to_array()
         if random.random() <= self.epsilon:
-            return_val = np.random.choice(self.actions)
+            
+            if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
+                #logger.log(f"tetris expert with current  modulo rounded {int(round(self.starting_tetris_expert_modulo))}")
+                self.cunter_tetris_expert = 0
+                return_val = self.tetris_expert.get_best_move(state=state)
+                if return_val is None:
+                    return_val = np.random.choice(self.actions)
+                
+                self.starting_tetris_expert_modulo +=0.0
+                #logger.log(f"current expert modulo: {self.starting_tetris_expert_modulo}")
+            else:
+                return_val = np.random.choice(self.actions)
+            self.cunter_tetris_expert += 1
+            
+            
             if LOGGING:
                 logger.log(f"randomly chosen return val {return_val}")
                 logger.log(f"current state{state}")
@@ -122,18 +141,18 @@ class Agent:
                 if self.epsilon >= MIN_EPSILON:
                     self.epsilon *= self.epsilon_decay
                     
-            logger.log(f"randomly chosen: {return_val}")
+    
             return return_val
         else:
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            logger.log(f"q_values length: {len(q_values)}")
+            #logger.log(f"q_values length: {len(q_values)}")
             valid_q_values = q_values[:(len(self.actions))]
             return_val = np.argmax(valid_q_values) -32    # offset for the line above
             
             if LOGGING:
                 logger.log(f"q_values: {q_values}")
                 logger.log(f"return val IN Q TABLE {return_val}")
-            logger.log(f"q_val: {return_val}")
+            #logger.log(f"q_val: {return_val}")
             return return_val
 
 

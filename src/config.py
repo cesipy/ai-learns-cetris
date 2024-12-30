@@ -25,7 +25,7 @@ FIFO_CONTROLS = "fifo_controls"
 
 #TODO: complete this
 # what should be logged
-LOGGING = True
+LOGGING = False
 
 EPSILON_DECAY = 0.996
 EPSILON = 0.99
@@ -34,8 +34,8 @@ DISCOUNT = 0.95
 LEARNING_RATE = 0.001
 BATCH_SIZE    = 32
 COUNTER       = 64     #when to perform batch training
-EPOCHS        = 2       # how often to iterate over samples
-NUM_BATCHES   = 5      # when counter is reached, how many random batches are chosen from memory
+EPOCHS        = 4       # how often to iterate over samples
+NUM_BATCHES   = 20      # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -60,13 +60,13 @@ PLACEHOLDER_GAME_BOARD = np.array([
     [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
     [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
     [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 0.],
+    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
     [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
     [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0.],
     [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 1., 0.],
     [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 1., 0.],
-    [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 1., 0.]
+    [1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 1., 1., 1.]
 ])
 
 
@@ -75,3 +75,6 @@ ACTIONS = list(range(-32, 20))   # represents left and rotate, left, nothing, ri
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
 
 MOVING_AVG_WINDOW_SIZE = 100
+
+
+COUNTER_TETRIS_EXPERT = 1

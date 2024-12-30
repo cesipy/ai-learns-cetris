@@ -43,21 +43,26 @@ def calculate_reward(next_state: State):
     
     lines_cleared, height, holes, bumpiness = next_state.get_values()
     
+    
+    
+    # # Exponential reward for lines cleared
+    lines_reward = {
+        1: 100,    # Single
+        2: 300,   # Double
+        3: 600,   # Triple
+        4: 1200   # Tetris
+    }.get(lines_cleared, 0)
+    
+    if lines_cleared >=4:
+        lines_reward = 1200 + 400*lines_cleared
+    
     reward = (
-        0.766*lines_cleared +
-        -0.51*height + 
+        0.766*lines_reward +
+        -0.91*height + 
         -0.35*holes + 
         -0.18*bumpiness + 
         0.200*next_state.piece_count
     )
-    
-    # # Exponential reward for lines cleared
-    # lines_reward = {
-    #     1: 100,    # Single
-    #     2: 300,   # Double
-    #     3: 600,   # Triple
-    #     4: 1200   # Tetris
-    # }.get(lines_cleared, 0)
     
     # #piece_count_reward = min(20 * game.current_piece_count, 500)
     # height_penalty = -0.910 * height #* (1 + game.current_piece_count / 100)

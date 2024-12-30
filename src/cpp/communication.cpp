@@ -110,6 +110,16 @@ void update_state(Game* g)
     offset += snprintf(buffer+offset, remaining, "%d,", g->piece_type);
     remaining = sizeof(buffer) - offset;
 
+    // send middle point of current piece.
+    // both are not pointers
+    offset += snprintf(buffer+offset, remaining, "%d,", g->middle_coordinate.row);
+    remaining = sizeof(buffer) - offset;
+
+    offset += snprintf(buffer+offset, remaining, "%d,", g->middle_coordinate.col);
+    remaining = sizeof(buffer) - offset;
+
+    
+
     if (remaining <= 0) {
         Logger("Buffer overflow in update_state");
         return;

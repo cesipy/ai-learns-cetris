@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import numpy as np
 
 
@@ -10,6 +10,7 @@ class State:
         lines_cleared: int,
         piece_type:int,
         piece_count:int,
+        middle_point: Tuple[int, int]
     ):
         self.game_board = np.array(game_board, dtype=np.float32)
         self.game_board_copy = self._copy_game_board()
@@ -20,6 +21,7 @@ class State:
         self.lines_cleared = lines_cleared
         self.piece_type = piece_type
         self.piece_count= piece_count
+        self.middle_point = middle_point
         
         #advanced 
         self.column_heights = self._calculate_column_heights()

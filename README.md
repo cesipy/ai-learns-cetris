@@ -23,3 +23,6 @@
 
 - [ ] problem with placeholder action: state s1 received -> get action a1; s2 is direct result (has already new piece inserted!); s3 (=s2 + 1 tick) -> a2, s4, ...
     - remove the extra tick, has to be modified on c++ side. 
+
+
+- [ ] in tetris expert: if several actions ahave same reward, always first one is chosen -> make random to remove this bias

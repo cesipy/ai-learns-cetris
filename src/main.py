@@ -50,10 +50,12 @@ def parse_state(state_string:str, piece_count):
     
     piece_type    = game_board[1][0]
     lines_cleared = game_board[0][0]
+    middle_p_x    = game_board[2][0]
+    middle_p_y    = game_board[3][0]
     
-    game_board = game_board[2:]     # remove lines cleared parameter
+    game_board = game_board[4:]     # remove lines cleared parameter
     
-    # logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}")
+    #logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}, middle_point: {middle_p_x,middle_p_y}")
     
     if LOGGING:
         logger.log(f"game board: {game_board}")
@@ -62,7 +64,8 @@ def parse_state(state_string:str, piece_count):
         game_board=game_board, 
         lines_cleared=lines_cleared, 
         piece_type=piece_type, 
-        piece_count=piece_count)
+        piece_count=piece_count, 
+        middle_point=(middle_p_x, middle_p_y))
     
     if game.lines_cleared_current_epoch < lines_cleared:
         game.lines_cleared_current_epoch = lines_cleared
@@ -71,7 +74,7 @@ def parse_state(state_string:str, piece_count):
 
 
 def parse_control(control) -> str:
-    logger.log(f"control before parsing: {control}")
+    #logger.log(f"control before parsing: {control}")
     action_mapping = {
         # Right movements (negative indices)
         -32: (-8,0),  # -8right-rotate0
@@ -130,13 +133,13 @@ def parse_control(control) -> str:
     }
 
     action = action_mapping[control]
-    logger.log(f"control in parse_control: {control}, action string: {action}")
+    #logger.log(f"control in parse_control: {control}, action string: {action}")
     
     new_rel_position =action[0]
     rotation         =action[1]
     
     control = f"{new_rel_position},{rotation}"
-    logger.log(f"control after parsing in parse_control: {control}")
+    #logger.log(f"control after parsing in parse_control: {control}")
     return control
 
 
@@ -461,4 +464,8 @@ def main():
         logger.log(f"parent process(tetris) exited with code: {status}")
         exit(0)
 
-main()
+try: 
+    main()
+except Exception as e: 
+    logger.log(f"main function, exception occurred: {e}")
+    raise
