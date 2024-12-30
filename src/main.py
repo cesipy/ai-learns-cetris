@@ -1,5 +1,8 @@
-import subprocess as sub
+
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+import subprocess as sub
 import time
 import numpy as np
 import communication
@@ -20,7 +23,7 @@ from reward import calculate_reward
 os.chdir(SRC_DIR)
 
 SLEEPTIME = 0.00001        # default value should be (350/5000)
-
+INTER_ROUND_SLEEP_TIME = 0.5
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
@@ -300,6 +303,8 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
         ))
     if LOGGING:
         logger.log(f"return_value in play one round: {return_value}")
+
+    time.sleep(INTER_ROUND_SLEEP_TIME)
     return return_value
 
 
@@ -422,6 +427,7 @@ def main():
             num_actions=num_actions, 
             board_shape=board_shape
         )
+        logger.log("agent initialized")
         handshake = communicator.receive_from_pipe()
         logger.log(f"handshake: {handshake}")
         communicator.send_handshake(str(ITERATIONS))

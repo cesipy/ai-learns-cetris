@@ -1,4 +1,9 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+
 import keras
+
 import numpy as np
 import random
 from simpleLogger import SimpleLogger

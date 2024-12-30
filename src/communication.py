@@ -1,6 +1,8 @@
 from simpleLogger import SimpleLogger
 import os
 
+logger = SimpleLogger()
+
 class Communicator:
     def __init__(self, metadata ):
         self.logger             = metadata.logger
@@ -25,9 +27,11 @@ class Communicator:
             
             return data.decode('utf-8')  # Assuming data is in UTF-8 encoding
         except FileNotFoundError:
+            logger.log(f"Error: {self.fifo_states_name} does not exist.")
             print(f"Error: {self.fifo_states_name} does not exist.")
             return ""
         except Exception as e:
+            logger.log(f"Error while reading from {self.fifo_states_name}: {e}")
             print(f"Error while reading from {self.fifo_states_name}: {e}")
             return ""
 
