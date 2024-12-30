@@ -314,7 +314,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    logger.log(f"action in perform_action: {action}")
+    #logger.log(f"action in perform_action: {action}")
     communicator.send_to_pipe(action)
 
 
@@ -431,10 +431,10 @@ def main():
             num_actions=num_actions, 
             board_shape=board_shape
         )
-        logger.log("agent initialized")
+        #logger.log("agent initialized")
         time.sleep(1)
         handshake = communicator.receive_from_pipe()
-        logger.log(f"handshake: {handshake}")
+        #logger.log(f"handshake: {handshake}")
         communicator.send_handshake(str(ITERATIONS))
         logger.log("sent handshake back")
         game_state = 0

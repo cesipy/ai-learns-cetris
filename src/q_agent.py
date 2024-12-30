@@ -126,7 +126,7 @@ class Agent:
             return return_val
         else:
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            
+            logger.log(f"q_values length: {len(q_values)}")
             valid_q_values = q_values[:(len(self.actions))]
             return_val = np.argmax(valid_q_values) -32    # offset for the line above
             
