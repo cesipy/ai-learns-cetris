@@ -22,8 +22,8 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.00001        # default value should be (350/5000)
-INTER_ROUND_SLEEP_TIME = 0.5
+SLEEPTIME = 1#0.00001        # default value should be (350/5000)
+INTER_ROUND_SLEEP_TIME = 1
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
@@ -161,21 +161,12 @@ def generate_random_control() -> str:
 
 
 def init() -> Metadata:
-    # create FIFOs if they don't exist
-    try:
-        if not os.path.exists(FIFO_CONTROLS):
-            os.mkfifo(FIFO_CONTROLS)
-            logger.log(f"Created FIFO_CONTROLS at {FIFO_CONTROLS}")
-        if not os.path.exists(FIFO_STATES):
-            os.mkfifo(FIFO_STATES)
-            logger.log(f"Created FIFO_STATES at {FIFO_STATES}")
-    except OSError as e:
-        logger.log(f"Error creating FIFOs: {e}")
-        raise
-
     try:
         fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
+        
+        time.sleep(1)
         fd_states = os.open(FIFO_STATES, os.O_RDONLY)
+
         metadata = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
         logger.log(metadata.debug())
         return metadata
@@ -410,7 +401,7 @@ def main():
     board_shape = (28,14)
     pid = os.fork()
     if pid == 0:
-        time.sleep(1)
+        time.sleep(2)
         meta = init()
         if LOAD_MODEL:
             game.load_model()
@@ -428,6 +419,7 @@ def main():
             board_shape=board_shape
         )
         logger.log("agent initialized")
+        time.sleep(1)
         handshake = communicator.receive_from_pipe()
         logger.log(f"handshake: {handshake}")
         communicator.send_handshake(str(ITERATIONS))

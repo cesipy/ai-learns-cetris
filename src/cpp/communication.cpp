@@ -201,7 +201,7 @@ const int setup_named_pipe(const char* name, mode_t permission, int mode)
     if (mkfifo(name, permission) != 0)
     {
         // add error handling
-        fprintf(stderr, "error @ mkfifo");
+        fprintf(stderr, "error @ mkfifo: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -210,6 +210,8 @@ const int setup_named_pipe(const char* name, mode_t permission, int mode)
     if (fd < 0)
     {
         fprintf(stderr, "error @ opening fifo");
+        Logger("error @ opening fifo");
+       
         exit(EXIT_FAILURE);
     }
 
@@ -238,6 +240,7 @@ void receive_message(Game* g)
     else
     {
         perror("read");
+        Logger("error @ read");
     }
 }
 
@@ -321,9 +324,21 @@ void end_of_game_notify(Communication* communication)
 
 int handshake(Communication* communication)
 {
+    usleep(100000);  // 100ms delay
     std::string handshake_message = "handshake";
-    write(communication->fd_states, handshake_message.c_str(), strlen(handshake_message.c_str()));
+    // Before write:
+    Logger("Writing to fifo: " + handshake_message);
+    ssize_t bytes_written = write(communication->fd_states, handshake_message.c_str(), strlen(handshake_message.c_str()));
+    Logger("Bytes written: " + std::to_string(bytes_written));
+    if (bytes_written < 0) {
+        perror("write");
+        Logger("error @ write");
+        exit(EXIT_FAILURE);
+    }
     Logger("sent handshake message");
+
+    fsync(communication->fd_states);  // Force flush
+    Logger("After write, bytes_written = " + std::to_string(bytes_written));
 
     // read iterations from pipe
     int fd = communication->fd_controls;
@@ -347,6 +362,7 @@ int handshake(Communication* communication)
     else
     {
         perror("read");
+        Logger("error @ read");
         exit(EXIT_FAILURE);
     }
 }

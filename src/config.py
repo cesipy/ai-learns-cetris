@@ -9,13 +9,14 @@ LOG_DIR  = os.path.join(BASE_DIR, "logs")
 RES_DIR  = os.path.join(BASE_DIR, "res")
 
 TETRIS_COMMAND = os.path.join(SRC_DIR, "cpp", "tetris")
-FIFO_CONTROLS = os.path.join(SRC_DIR, "fifo_controls")
-FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
-
+# FIFO_CONTROLS = os.path.join(SRC_DIR, "fifo_controls")
+# FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
+FIFO_STATES = "fifo_states"
+FIFO_CONTROLS = "fifo_controls"
 
 #TODO: complete this
 # what should be logged
-LOGGING = False
+LOGGING = True
 
 EPSILON_DECAY = 0.996
 EPSILON = 0.99
