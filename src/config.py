@@ -1,6 +1,17 @@
 import os
 import numpy as np
 
+import warnings
+import numpy as np
+
+# Suppress specific NumPy warnings
+#warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy.core")
+# Or more specifically:
+warnings.filterwarnings("ignore", message="Mean of empty slice")
+warnings.filterwarnings("ignore", message="invalid value encountered in scalar divide")
+
+# problem with tf.keras on WSL ubuntu, have to choose gpu
+# TODO: not used in all files? currently im setting this env in multiple files
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -9,8 +20,6 @@ LOG_DIR  = os.path.join(BASE_DIR, "logs")
 RES_DIR  = os.path.join(BASE_DIR, "res")
 
 TETRIS_COMMAND = os.path.join(SRC_DIR, "cpp", "tetris")
-# FIFO_CONTROLS = os.path.join(SRC_DIR, "fifo_controls")
-# FIFO_STATES    = os.path.join(SRC_DIR, "fifo_states")
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 

@@ -22,7 +22,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 1#0.00001        # default value should be (350/5000)
+SLEEPTIME = 0.00001        # default value should be (350/5000)
 INTER_ROUND_SLEEP_TIME = 1
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -164,7 +164,16 @@ def init() -> Metadata:
     try:
         fd_controls = os.open(FIFO_CONTROLS, os.O_WRONLY)
         
+        # named pipes are created in c++. 
+        # they are created with mkfifo and then have to be opend by bothends. 
+        # therefore we need to wait here some time for c code to mk the pipe
+        # c: mkfifo(fd_controls)
+        # python: open(fd_controls)
+        # ------- (sleeping, that c has time)
+        # c mkfifo(fd_states)
+        # python: open(fd_states)
         time.sleep(1)
+        
         fd_states = os.open(FIFO_STATES, os.O_RDONLY)
 
         metadata = Metadata(logger, FIFO_STATES, FIFO_CONTROLS, fd_states, fd_controls)
@@ -176,10 +185,14 @@ def init() -> Metadata:
 
 
 def clean_up(metadata: Metadata) -> None:
-    os.close(metadata.fd_controls)
-    os.close(metadata.fd_states)
-    os.unlink(FIFO_CONTROLS)
-    logger.log("successfully closed pipes!")
+    try: 
+        os.close(metadata.fd_controls)
+        os.close(metadata.fd_states)
+        os.unlink(FIFO_CONTROLS)
+        logger.log("successfully closed pipes!")
+    except Exception as e: 
+        logger.log(f"problem cleaning up: {e}")
+        
 
 
 def step(communicator, agent: Agent) -> int:
