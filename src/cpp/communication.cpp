@@ -251,21 +251,29 @@ void process_control(Game* g)
 
             int new_relative_position = g->control->new_position;
 
+            // positive value -> move right
             while (new_relative_position > 0)
             {
-                move_piece(left, g);
+                move_piece(right, g);
                 new_relative_position--;
             }
 
+            // negative valuen -> move left
             while ( new_relative_position < 0)
             {
-                move_piece(right, g);
+                move_piece(left, g);
                 new_relative_position++;
             }
 
-            if (g->control->should_rotate)
+
+            //rotation
+            if (g->control->rotation_amount)
             {
-                rotate_piece(DIRECTION, g);
+                //handle multiple rotations
+                for(int i=0;i<g->control->rotation_amount; i++)
+                {
+                    rotate_piece(DIRECTION, g);
+                }
             }
 
             // after each received control 'press down key'
@@ -280,23 +288,24 @@ void parse_message(char* message, Control* control_message)
     // parse control message. string is split after ","
     char* new_relative_position = strtok(message, ",");
 
-    char* should_rotate         = strtok(NULL, ", ");
+    char* rotation_amount        = strtok(NULL, ", ");
 
     Logger("rel_pos: ");
     Logger(new_relative_position);
 
-    Logger("should_rotate");
-    Logger(should_rotate);
+    Logger("rotation amount:");
+    Logger(rotation_amount);
 
-    if (!should_rotate)
+    if (!rotation_amount)
     {
         fprintf(stderr, "incorrect strucuture of control struct. ");
         exit(EXIT_FAILURE);
     }
-    control_message->should_rotate = (strcmp(should_rotate, "0")) ? true : false;
+    //control_message->should_rotate = (strcmp(should_rotate, "0")) ? true : false;
 
     control_message->new_control_available = true;
     control_message->new_position          = std::stoi(message);
+    control_message->rotation_amount       = std::stoi(rotation_amount);
 
     return;
 }

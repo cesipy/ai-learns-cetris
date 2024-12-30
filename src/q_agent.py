@@ -28,7 +28,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=10000)
+        self.memory              = deque(maxlen=500)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -46,6 +46,7 @@ class Agent:
         else:
             self.model = self._init_model()
             
+        logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
 
 
@@ -115,14 +116,19 @@ class Agent:
                 self.counter_epsilon = 0
                 if self.epsilon >= MIN_EPSILON:
                     self.epsilon *= self.epsilon_decay
+                    
+            logger.log(f"randomly chosen: {return_val}")
             return return_val
         else:
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            return_val = np.argmax(q_values)
+            
+            valid_q_values = q_values[:(len(self.actions))]
+            return_val = np.argmax(valid_q_values) -32    # offset for the line above
             
             if LOGGING:
                 logger.log(f"q_values: {q_values}")
                 logger.log(f"return val IN Q TABLE {return_val}")
+            logger.log(f"q_val: {return_val}")
             return return_val
 
 
@@ -304,7 +310,7 @@ class Agent:
 
 
     def _init_model(self):
-        n_output = len(self.actions)
+        n_output = 52
         n_input = 5  # Use more input features
         input_shape = (n_input,)
         model = keras.models.Sequential([

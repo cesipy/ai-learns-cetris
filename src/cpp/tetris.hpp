@@ -27,7 +27,7 @@
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
 #define CELL 1
-#define AMOUNT_OF_PIECES 7
+#define AMOUNT_OF_PIECES 1
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
@@ -67,8 +67,9 @@ typedef struct {
 typedef struct {
     bool new_control_available;       // indicate new control received from pipe
     int new_position;                 // relative to current position (can be negative or positive
-    bool should_rotate;               // should piece rotate
+    //bool should_rotate;               // should piece rotate
     // needs further implementation
+    int rotation_amount;                // should rotate by how much? (0= 0, 1= 90, 2= 180, 3= 270)
 
 }Control;
 
