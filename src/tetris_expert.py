@@ -23,6 +23,10 @@ class TetrisExpert:
         """returns relative position, rotation"""
         action_mapping = {
             # Right movements (negative indices)
+            -36: (-9,0),  # -9right-rotate0
+            -35: (-9,1),  # -9right-rotate1
+            -34: (-9,2),  # -9right-rotate2
+            -33: (-9,3),  # -9right-rotate3
             -32: (-8,0),  # -8right-rotate0
             -31: (-8,1),  # -8right-rotate1
             -30: (-8,2),  # -8right-rotate2
@@ -75,7 +79,11 @@ class TetrisExpert:
             16:  (4,0),   # 4left-rotate0
             17:  (4,1),   # 4left-rotate1
             18:  (4,2),   # 4left-rotate2
-            19:  (4,3)    # 4left-rotate3
+            19:  (4,3),   # 4left-rotate3
+            20:  (5,0),   # 5left-rotate0
+            21:  (5,1),   # 5left-rotate1
+            22:  (5,2),   # 5left-rotate2
+            23:  (5,3),   # 5left-rotate3
         }
         return action_mapping[action]
         

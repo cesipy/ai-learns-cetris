@@ -29,11 +29,11 @@ LOGGING = False
 
 EPSILON_DECAY = 0.996
 EPSILON = 0.99
-DISCOUNT = 0.95
+DISCOUNT = 0.99
 
 LEARNING_RATE = 0.001
-BATCH_SIZE    = 32
-COUNTER       = 64     #when to perform batch training
+BATCH_SIZE    = 512
+COUNTER       = 512     #when to perform batch training
 EPOCHS        = 4       # how often to iterate over samples
 NUM_BATCHES   = 20      # when counter is reached, how many random batches are chosen from memory
 
@@ -70,11 +70,11 @@ PLACEHOLDER_GAME_BOARD = np.array([
 ])
 
 
-ACTIONS = list(range(-32, 20))   # represents left and rotate, left, nothing, right, right and rotate; 
+ACTIONS = list(range(-36, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
 
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
 
 MOVING_AVG_WINDOW_SIZE = 100
 
 
-COUNTER_TETRIS_EXPERT = 1
+COUNTER_TETRIS_EXPERT = 2

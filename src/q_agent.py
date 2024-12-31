@@ -35,7 +35,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=10000)
+        self.memory              = deque(maxlen=30000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -147,7 +147,7 @@ class Agent:
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
             #logger.log(f"q_values length: {len(q_values)}")
             valid_q_values = q_values[:(len(self.actions))]
-            return_val = np.argmax(valid_q_values) -32    # offset for the line above
+            return_val = np.argmax(valid_q_values) -36    # offset for the line above
             
             if LOGGING:
                 logger.log(f"q_values: {q_values}")
@@ -338,10 +338,8 @@ class Agent:
         n_input = 5  # Use more input features
         input_shape = (n_input,)
         model = keras.models.Sequential([
-            keras.layers.Dense(128, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),
-            keras.layers.BatchNormalization(),
-            keras.layers.Dense(256, activation="relu", kernel_initializer='he_uniform'),
-            keras.layers.Dense(256, activation="relu", kernel_initializer='he_uniform'),
+            keras.layers.Dense(64, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),
+            keras.layers.Dense(64, activation="relu", kernel_initializer='he_uniform'),
             keras.layers.Dense(n_output, activation="linear", kernel_initializer='glorot_uniform')
         ])
         model.compile(
