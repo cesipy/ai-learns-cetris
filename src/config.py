@@ -25,7 +25,7 @@ FIFO_CONTROLS = "fifo_controls"
 
 #TODO: complete this
 # what should be logged
-LOGGING = True
+LOGGING = False
 
 EPSILON_DECAY = 0.996
 EPSILON = 0.99
@@ -70,11 +70,10 @@ PLACEHOLDER_GAME_BOARD = np.array([
 ])
 
 
-ACTIONS = list(range(-40, 28))   # represents left and rotate, left, nothing, right, right and rotate; 
+ACTIONS = list(range(-32, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
 
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
+MOVING_AVG_WINDOW_SIZE = 100        # for plots, what is moving avg?
 
-MOVING_AVG_WINDOW_SIZE = 100
 
-
-COUNTER_TETRIS_EXPERT = 1
+COUNTER_TETRIS_EXPERT = 2

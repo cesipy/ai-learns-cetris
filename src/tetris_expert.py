@@ -129,7 +129,7 @@ class TetrisExpert:
         
         max_action, max_reward = ret
         next_state = self._simulate_action(state=state, action=max_action)
-        logger.log(f"final simulation for max_action {max_action}:\n{next_state.game_board}")
+        #logger.log(f"final simulation for max_action {max_action}:\n{next_state.game_board}")
         #logger.log(f"\n-----\nall rewards: {rewards}")
         #logger.log(f"after tetris export, this is the best action: action: {max_action}, reward: {max_reward}---\n\n")
         
