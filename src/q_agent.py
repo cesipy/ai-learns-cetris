@@ -132,28 +132,31 @@ class Agent:
             if LOGGING:
                 logger.log(f"randomly chosen return val {return_val}")
                 logger.log(f"current state{state}")
-            self.counter_epsilon += 1
-            if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
-                
-                if LOGGING:
-                    logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
-                self.counter_epsilon = 0
-                if self.epsilon >= MIN_EPSILON:
-                    self.epsilon *= self.epsilon_decay
-                    
-    
-            return return_val
         else:
+            
+            
+            # Exploitation - Fix the Q-value indexing
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            #logger.log(f"q_values length: {len(q_values)}")
-            valid_q_values = q_values[:(len(self.actions))]
-            return_val = np.argmax(valid_q_values) -36    # offset for the line above
+            
+            # Create a mapping of Q-values to actual actions
+            action_q_values = {}
+            for i, action in enumerate(self.actions):
+                action_q_values[action] = q_values[i]
+                
+            # Get action with highest Q-value
+            return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
+
+        self.counter_epsilon += 1
+        if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
             
             if LOGGING:
-                logger.log(f"q_values: {q_values}")
-                logger.log(f"return val IN Q TABLE {return_val}")
-            #logger.log(f"q_val: {return_val}")
-            return return_val
+                logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
+            self.counter_epsilon = 0
+            if self.epsilon >= MIN_EPSILON:
+                self.epsilon *= self.epsilon_decay
+                
+
+        return return_val
 
 
     def predict(self, state):
@@ -334,7 +337,7 @@ class Agent:
 
 
     def _init_model(self):
-        n_output = 52
+        n_output = len(self.actions)
         n_input = 5  # Use more input features
         input_shape = (n_input,)
         model = keras.models.Sequential([

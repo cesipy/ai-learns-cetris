@@ -210,6 +210,7 @@ void move_piece(direction dir, Game* g) {
 
     if (!can_move)
     {
+        Logger("cannot move");
         return;
     }
 
@@ -566,12 +567,17 @@ bool can_piece_move(direction dir, Game* g)
                     new_i = i + 1;
                 }
                 bool valid_block = is_valid_block(new_i, new_j, g);
-
                 bool empty_block = is_empty_block(new_i, new_j ,g);
+
+                
 
                 // check if the new position is valid and not colliding with other pieces
                 if (!is_valid_block(new_i, new_j, g) || !is_empty_block(new_i, new_j, g))
                 {
+                    Logger("Checking move not valid: current=(" + std::to_string(i) + "," + std::to_string(j) + 
+                      ") new=(" + std::to_string(new_i) + "," + std::to_string(new_j) + ")");
+                    Logger("is_valid_block: " + std::to_string(valid_block));
+                    Logger("is_empty_block: " + std::to_string(empty_block));
                     return false; // collision detected
                 }
             }

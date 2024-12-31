@@ -264,6 +264,17 @@ void process_control(Game* g)
 
             int new_relative_position = g->control->new_position;
 
+            //Logger("new relative position " + std::to_string(new_relative_position));
+
+            //rotation
+            if (g->control->rotation_amount)
+            {
+                //handle multiple rotations
+                for(int i=0;i<g->control->rotation_amount; i++)
+                {
+                    rotate_piece(DIRECTION, g);
+                }
+            }
             // positive value -> move right
             while (new_relative_position > 0)
             {
@@ -279,15 +290,6 @@ void process_control(Game* g)
             }
 
 
-            //rotation
-            if (g->control->rotation_amount)
-            {
-                //handle multiple rotations
-                for(int i=0;i<g->control->rotation_amount; i++)
-                {
-                    rotate_piece(DIRECTION, g);
-                }
-            }
 
             // after each received control 'press down key'
             skip_tick_gravity(g);

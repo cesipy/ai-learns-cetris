@@ -22,7 +22,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.00001        # default value should be (350/5000)
+SLEEPTIME = 1#0.00001        # default value should be (350/5000)
 INTER_ROUND_SLEEP_TIME = 1
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -325,7 +325,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    #logger.log(f"action in perform_action: {action}")
+    logger.log(f"action in perform_action, before sending: {action}")
     communicator.send_to_pipe(action)
 
 

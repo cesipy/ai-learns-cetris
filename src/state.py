@@ -17,6 +17,7 @@ class State:
         #self.height     = self._calculate_height()
         self.height     = self._calculate_aggregate_height()
         self.holes      = self._calculate_holes()
+        self.max_height = self._calculate_height()
         self.bumpiness  = self._calculate_bumpiness()
         self.lines_cleared = lines_cleared
         self.piece_type = piece_type

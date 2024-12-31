@@ -1,5 +1,5 @@
 from config import *
-from reward import calculate_reward
+from reward import calculate_reward, calculate_reward_tetris_expert
 from state import State
 from simpleLogger import SimpleLogger
 
@@ -23,6 +23,10 @@ class TetrisExpert:
         """returns relative position, rotation"""
         action_mapping = {
             # Right movements (negative indices)
+            -40: (-10,0),  # -10right-rotate0
+            -39: (-10,1),  # -10right-rotate1
+            -38: (-10,2),  # -10right-rotate2
+            -37: (-10,3),  # -10right-rotate3
             -36: (-9,0),  # -9right-rotate0
             -35: (-9,1),  # -9right-rotate1
             -34: (-9,2),  # -9right-rotate2
@@ -84,6 +88,10 @@ class TetrisExpert:
             21:  (5,1),   # 5left-rotate1
             22:  (5,2),   # 5left-rotate2
             23:  (5,3),   # 5left-rotate3
+            24:  (6,0),   # 6left-rotate0
+            25:  (6,1),   # 6left-rotate1
+            26:  (6,2),   # 6left-rotate2
+            27:  (6,3),   # 6left-rotate3
         }
         return action_mapping[action]
         
@@ -107,10 +115,11 @@ class TetrisExpert:
                 continue
             #currently not available
             
-            reward = calculate_reward(next_state=next_state)
-            if LOGGING:
-                logger.log(f"action: {action}, reward: {reward}")
+            reward = calculate_reward_tetris_expert(next_state=next_state)
+            # if LOGGING:
+            #     logger.log(f"action: {action}, reward: {reward}, bumpiness: {next_state.bumpiness}")
             rewards.append((action, reward))
+            #logger.log(f"action: {action}, reward: {reward}, bumpiness: {next_state.bumpiness}")
         
         #logger.log(rewards)
         # consists of action:int, reward:float
@@ -119,6 +128,8 @@ class TetrisExpert:
             return None
         
         max_action, max_reward = ret
+        next_state = self._simulate_action(state=state, action=max_action)
+        logger.log(f"final simulation for max_action {max_action}:\n{next_state.game_board}")
         #logger.log(f"\n-----\nall rewards: {rewards}")
         #logger.log(f"after tetris export, this is the best action: action: {max_action}, reward: {max_reward}---\n\n")
         
@@ -155,8 +166,10 @@ class TetrisExpert:
             return None
         
         new_lines_cleared = self._get_new_lines_cleared(board=final_board)
-        if LOGGING:
-            logger.log(f"final board for action {action}: \n{final_board}")
+        #if LOGGING:
+            #logger.log(f"final board for action {action}: \n{final_board}")
+            
+        #print(f"final board for action {action}: \n{final_board}")
         
         new_state = State(
             game_board=final_board,
@@ -252,6 +265,7 @@ class TetrisExpert:
         def rotate_point(x, y):
             """Rotate a point 90 degrees clockwise around origin"""
             return y, -x 
+            #return -y, x
         
         # Perform rotation based on the rotation count
         rotated_relative_positions = relative_positions
@@ -310,8 +324,8 @@ class TetrisExpert:
                 new_board[i + 1][j] = 2
                 
             current_board = new_board
-            if LOGGING:
-                logger.log(f"gravity board: \n{current_board}")
+            #if LOGGING:
+                #logger.log(f"gravity board: \n{current_board}")
 
 
             
@@ -330,10 +344,27 @@ class TetrisExpert:
         current_max_reward = float("-inf")
         current_max_elem = rewards[0]  # Initialize with first element
         
+        multiple_max_rewards = []
+        
         for reward_tuple in rewards:
             if reward_tuple[1] > current_max_reward:
                 current_max_reward = reward_tuple[1]
                 current_max_elem = reward_tuple
+                # remove the multiple, are not valid anymore
+                multiple_max_rewards = []
+                
+            if reward_tuple[1] == current_max_reward:
+                multiple_max_rewards.append(reward_tuple)
+                
+        if len(multiple_max_rewards)>=1:
+            if current_max_elem[1] > multiple_max_rewards[0][1]:
+                return current_max_elem
+            
+            else:
+                random_idx = np.random.randint(0, len(multiple_max_rewards))
+                return multiple_max_rewards[random_idx] 
+                    
+                
         
         return current_max_elem
         
