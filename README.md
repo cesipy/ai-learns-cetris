@@ -25,4 +25,5 @@
     - remove the extra tick, has to be modified on c++ side. 
 
 
-- [ ] in tetris expert: if several actions ahave same reward, always first one is chosen -> make random to remove this bias
+- [x] in tetris expert: if several actions ahave same reward, always first one is chosen -> make random to remove this bias
+- [x] lines cleared from pipe is only 1 digit - what happens at more?

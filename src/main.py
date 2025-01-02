@@ -276,7 +276,7 @@ def step_minimal(communicator: Communicator, agent: Agent) -> int:
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
-    print()
+
     
     current_lines_cleared = state.lines_cleared
     
@@ -290,14 +290,12 @@ def step_minimal(communicator: Communicator, agent: Agent) -> int:
     next_state = parse_state(received_game_state, game.current_piece_count)
     logger.log(f"next_state::\n{next_state.game_board}")
     communicator.send_placeholder_action()
-
-    logger.log(f" diff: {next_state.lines_cleared - current_lines_cleared}, curr:{state.lines_cleared}, next_state: {next_state.lines_cleared}")    
+  
     if next_state.lines_cleared - current_lines_cleared > 0:
         next_state.immedeate_lines_cleared = next_state.lines_cleared - current_lines_cleared
-        logger.log(f"line is cleared! immedeate_lines_cleared: {next_state.immedeate_lines_cleared}")
+
     else: 
         next_state.immedeate_lines_cleared = 0
-        logger.log(f"current immedeate_lines_cleraed: {next_state.immedeate_lines_cleared}")
     
     reward = calculate_reward(next_state)
     game.current_rewards.append(reward)         # add reward for mean reward calculation

@@ -27,11 +27,11 @@
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
 #define CELL 1
-#define AMOUNT_OF_PIECES 7
+#define AMOUNT_OF_PIECES 2
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
-#define DETERMINISTIC 1
+#define DETERMINISTIC 0
 
 #define ADD_BLOCK(w,x) waddch((w),' '|A_REVERSE|COLOR_PAIR(x));     \
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))

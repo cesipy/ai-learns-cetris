@@ -87,6 +87,8 @@ int main_loop(Game* g)
             }
         }
     }
+
+    //manage_full_lines(g); // TODO: just testing, maybe this destroys something here
     communicate(g);
     return NORMAL_QUIT;
 }

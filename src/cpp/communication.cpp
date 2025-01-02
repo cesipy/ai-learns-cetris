@@ -104,7 +104,8 @@ void update_state(Game* g)
     int remaining = sizeof(buffer);
 
     // add lines_cleared to buffer, at first position
-    offset += snprintf(buffer + offset, remaining, "%d,", g->state->lines_cleared);
+    //offset += snprintf(buffer + offset, remaining, "%d,", g->state->lines_cleared);
+    offset += snprintf(buffer + offset, remaining, "%d,", g->score);        // dont know if this works, lets test!!
     remaining = sizeof(buffer) - offset;
 
     offset += snprintf(buffer+offset, remaining, "%d,", g->piece_type);
@@ -309,11 +310,6 @@ void parse_message(char* message, Control* control_message)
 
     char* rotation_amount        = strtok(NULL, ", ");
 
-    Logger("rel_pos: ");
-    Logger(new_relative_position);
-
-    Logger("rotation amount:");
-    Logger(rotation_amount);
 
     if (!rotation_amount)
     {
