@@ -243,7 +243,11 @@ class TetrisExpert:
         Returns:
             np.ndarray: Board with rotated piece
         """
+        
+        
         board = np.copy(state.game_board)
+        if state.piece_type == 0:   # is O, should not be rotated
+            return board
         
         mid_row, mid_col = state.middle_point
         
