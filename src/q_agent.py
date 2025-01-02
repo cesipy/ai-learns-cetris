@@ -16,8 +16,7 @@ from config import *
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
-EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.003
+
 
 class Agent:
     def __init__(
@@ -35,7 +34,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=30000)
+        self.memory              = deque(maxlen=1000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -74,7 +73,7 @@ class Agent:
         #     verbose=0
         # )
         
-        if len(self.memory) >= BATCH_SIZE and self.counter % COUNTER == 0 :
+        if len(self.memory) >=1000 and self.counter % COUNTER == 0 :
             
             for _ in range(NUM_BATCHES):
                 #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
@@ -89,20 +88,22 @@ class Agent:
                 # Predict Q-values for current and next states
                 current_qs = self.model.predict(states, verbose=0)
                 next_qs = self.model.predict(next_states, verbose=0)
+                max_next_qs = np.max(next_qs, axis=1)
+                targets = rewards + (self.discount_factor * max_next_qs)
                 
-                targets = rewards + self.discount_factor * np.max(next_qs, axis=1)
-                
-                # Update targets for actions taken
+                # Update only the Q values for the actions taken
+                target_qs = current_qs.copy()
                 for i in range(BATCH_SIZE):
-                    current_qs[i][actions[i]] = targets[i]
+                    target_qs[i][actions[i]] = targets[i]
                 
                 # Train on batch
                 self.model.fit(
-                    states, 
-                    current_qs,
-                    batch_size=BATCH_SIZE, 
-                    epochs=EPOCHS, 
-                    verbose=0)
+                    states,
+                    target_qs,
+                    batch_size=BATCH_SIZE,
+                    epochs=EPOCHS,
+                    verbose=0
+                )
         
         self.counter += 1
         if self.counter == COUNTER:
@@ -133,17 +134,12 @@ class Agent:
                 logger.log(f"randomly chosen return val {return_val}")
                 logger.log(f"current state{state}")
         else:
-            
-            
-            # Exploitation - Fix the Q-value indexing
             q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-            
-            # Create a mapping of Q-values to actual actions
+
             action_q_values = {}
             for i, action in enumerate(self.actions):
                 action_q_values[action] = q_values[i]
                 
-            # Get action with highest Q-value
             return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
 
         self.counter_epsilon += 1
@@ -166,179 +162,11 @@ class Agent:
         logger.log(f"in prediction: {q_table}")
         return q_table
     
-    
-    def train_on_basic_scenarios(self):
-        """Pre-train on ideal scenarios with meaningful transitions"""
-        basic_scenarios = [
-            # Perfect Tetris clear scenario
-            (
-                # Current state: well set up for Tetris
-                {
-                    'lines_cleared': 0,
-                    'holes': 0,
-                    'height': 15,
-                    'bumpiness': 4,
-                    'wells': 1,
-                    'column_heights': [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 11, 15, 15, 15],
-                    'row_transitions': 4,
-                    'column_transitions': 4,
-                    'landing_height': 15
-                },
-                # Next state: after Tetris clear
-                {
-                    'lines_cleared': 4,
-                    'holes': 0,
-                    'height': 11,
-                    'bumpiness': 0,
-                    'wells': 0,
-                    'column_heights': [11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11],
-                    'row_transitions': 0,
-                    'column_transitions': 0,
-                    'landing_height': 11
-                },
-                800  # High reward for Tetris
-            ),
-            
-            # Single line clear
-            (
-                {
-                    'lines_cleared': 0,
-                    'holes': 1,
-                    'height': 8,
-                    'bumpiness': 2,
-                    'wells': 0,
-                    'column_heights': [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
-                    'row_transitions': 2,
-                    'column_transitions': 2,
-                    'landing_height': 8
-                },
-                {
-                    'lines_cleared': 1,
-                    'holes': 0,
-                    'height': 7,
-                    'bumpiness': 1,
-                    'wells': 0,
-                    'column_heights': [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7],
-                    'row_transitions': 1,
-                    'column_transitions': 1,
-                    'landing_height': 7
-                },
-                100  # Good reward for line clear
-            ),
-            
-            # Creating well for future Tetris
-            (
-                {
-                    'lines_cleared': 0,
-                    'holes': 0,
-                    'height': 10,
-                    'bumpiness': 8,
-                    'wells': 0,
-                    'column_heights': [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
-                    'row_transitions': 0,
-                    'column_transitions': 0,
-                    'landing_height': 10
-                },
-                {
-                    'lines_cleared': 0,
-                    'holes': 0,
-                    'height': 12,
-                    'bumpiness': 4,
-                    'wells': 1,
-                    'column_heights': [12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 8, 12, 12, 12],
-                    'row_transitions': 4,
-                    'column_transitions': 4,
-                    'landing_height': 12
-                },
-                50  # Moderate reward for setting up Tetris opportunity
-            ),
-            
-            # Bad scenario - holes and high bumpiness
-            (
-                {
-                    'lines_cleared': 0,
-                    'holes': 5,
-                    'height': 15,
-                    'bumpiness': 10,
-                    'wells': 2,
-                    'column_heights': [15, 12, 15, 10, 15, 11, 15, 13, 15, 14, 15, 12, 15, 13],
-                    'row_transitions': 20,
-                    'column_transitions': 15,
-                    'landing_height': 15
-                },
-                {
-                    'lines_cleared': 0,
-                    'holes': 8,
-                    'height': 17,
-                    'bumpiness': 12,
-                    'wells': 3,
-                    'column_heights': [17, 13, 17, 11, 17, 12, 17, 14, 17, 15, 17, 13, 17, 14],
-                    'row_transitions': 24,
-                    'column_transitions': 18,
-                    'landing_height': 17
-                },
-                -50  # Penalty for creating holes and increasing bumpiness
-            ),
-            
-            # Very bad scenario - near death
-            (
-                {
-                    'lines_cleared': 0,
-                    'holes': 10,
-                    'height': 20,
-                    'bumpiness': 15,
-                    'wells': 4,
-                    'column_heights': [20, 18, 20, 16, 20, 17, 20, 19, 20, 18, 20, 17, 20, 19],
-                    'row_transitions': 30,
-                    'column_transitions': 25,
-                    'landing_height': 20
-                },
-                {
-                    'lines_cleared': 0,
-                    'holes': 12,
-                    'height': 23,
-                    'bumpiness': 18,
-                    'wells': 5,
-                    'column_heights': [23, 20, 23, 18, 23, 19, 23, 21, 23, 20, 23, 19, 23, 21],
-                    'row_transitions': 35,
-                    'column_transitions': 30,
-                    'landing_height': 23
-                },
-                -100  # Large penalty for dangerous height
-            )
-        ]
-
-        def set_state_values(state, values):
-            state.board = PLACEHOLDER_GAME_BOARD
-            
-            """Helper to set all state values"""
-            state.lines_cleared = values['lines_cleared']
-            state.holes = values['holes']
-            state.height = values['height']
-            state.bumpiness = values['bumpiness']
-            state.wells = values['wells']
-            state.column_heights = values['column_heights']
-            state.row_transitions = values['row_transitions']
-            state.column_transitions = values['column_transitions']
-            state.landing_height = values['landing_height']
-        
-        for _ in range(10):  # Pre-training iterations
-            for current_values, next_values, reward in basic_scenarios:
-                # Create states with proper transitions
-                current_state = State(PLACEHOLDER_GAME_BOARD, 0)
-                next_state = State(PLACEHOLDER_GAME_BOARD, 0)
-                
-                # Set all values for both states
-                set_state_values(current_state, current_values)
-                set_state_values(next_state, next_values)
-                
-                # Train on these scenarios
-                self.train(current_state, 0, next_state, reward)
 
 
     def _init_model(self):
         n_output = len(self.actions)
-        n_input = 5  # Use more input features
+        n_input = 9
         input_shape = (n_input,)
         model = keras.models.Sequential([
             keras.layers.Dense(64, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),

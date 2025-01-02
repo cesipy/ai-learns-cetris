@@ -201,7 +201,7 @@ void communicate(Game* g)
     
     //TODO: problem is here, when another episode starts, the message gets not received and is stuck waiting.
 
-    Logger("received message");
+    
 
 }
 
@@ -238,6 +238,10 @@ void receive_message(Game* g)
 
     // read data from the named pipe
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+
+    std::stringstream ss;
+    ss << "received message " << buffer;
+    Logger(ss.str());
 
     if (bytesRead > 0)
     {

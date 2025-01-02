@@ -10,7 +10,7 @@ class State:
         lines_cleared: int,
         piece_type:int,
         piece_count:int,
-        middle_point: Tuple[int, int]
+        middle_point: Tuple[int, int], 
     ):
         self.game_board = np.array(game_board, dtype=np.float32)
         self.game_board_copy = self._copy_game_board()
@@ -23,6 +23,7 @@ class State:
         self.piece_type = piece_type
         self.piece_count= piece_count
         self.middle_point = middle_point
+        self.immedeate_lines_cleared = None
         
         #advanced 
         self.column_heights = self._calculate_column_heights()
@@ -38,7 +39,17 @@ class State:
     #         for col in range(len(self.game_board[0])):
     #             if self.game_board[row][col] == 2:
     #                 all_2s.append((row, col))
-
+    
+    
+    
+    def is_state_game_over(self)-> bool:
+        for cell in self.game_board_copy[0]:
+            if cell == 1:
+                return False
+        
+        return True
+        
+        
         
         
     def _copy_game_board(self):
@@ -165,10 +176,10 @@ class State:
             self.holes, 
             self.bumpiness, 
             self.piece_type,
-            # self.wells,
-            # self.row_transitions,
-            # self.column_transitions,
-            # self.landing_height
+            self.wells,
+            self.row_transitions,
+            self.column_transitions,
+            self.landing_height
         ])
     
     

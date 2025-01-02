@@ -85,13 +85,14 @@ from state import State
 
 # super simple reward
 def calculate_reward(next_state: State):
-    score = (next_state.piece_count *1 + 
-            (next_state.lines_cleared **2) * 14 #14 is width
+    reward = (
+        (100 * next_state.immedeate_lines_cleared) + 
+        (-1.5 * next_state.holes) + 
+        (-0.1 * next_state.height) + 
+        (-2 * next_state.bumpiness) + 
+        (0.1 * next_state.piece_count)
     )
-    
-    #score -= 0.05*next_state.bumpiness
-    return score
-
+    return reward
 
 # super simple reward for only expert
 def calculate_reward_tetris_expert(next_state: State):
@@ -132,13 +133,20 @@ def calculate_reward_tetris_expert(next_state: State):
     # if height < 10 and holes == 0:
     #     tidiness_bonus = 10
     
-    # reward = (
-    #     lines_cleared +
-    #     height_penalty +
-    #     1*next_state.piece_count +
-    #     #piece_c p0ount_reward +
-    #     -0.760 * holes  +      # Quadratic holes penalty
-    #     -0.184 * bumpiness
+    reward = (
+        lines_reward +
+        #-0.54  * height +
+        -0.6   * next_state.max_height +
+        -0.20 * holes        # Quadratic holes penalty
+        # -0.184 * bumpiness
+    )
+    
+    # score = (next_state.piece_count *1 + 
+    #         (next_state.lines_cleared **2) * 14 #14 is width
     # )
+    
+    # score -= 0.05*next_state.bumpiness
+    # score -= 0.1*next_state.max_height
+    # return score
     
     return reward

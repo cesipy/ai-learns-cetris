@@ -22,7 +22,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 1#0.00001        # default value should be (350/5000)
+SLEEPTIME = 0.00001        # default value should be (350/5000)
 INTER_ROUND_SLEEP_TIME = 1
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -39,27 +39,41 @@ def parse_state(state_string:str, piece_count):
         logger.log(f"state_string: {state_string}")
     game_board = []
     row = []
-    for char in state_string: 
+    number_buffer = ""  # to collect digits for multi-digit numbers
+    
+    first_numbers = []
+    comma_count = 0
+    i = 0
+    while comma_count < 4:  # first few meta numbers
+        if state_string[i] == ',':
+            first_numbers.append(int(number_buffer))
+            number_buffer = ""
+            comma_count += 1
+        else:
+            number_buffer += state_string[i]
+        i += 1
+    
+    # process the game board
+    for char in state_string[i:]:
         if char == ",":
             game_board.append(row)
             row = []
         else:
             row.append(int(char))
             
-    # lines_cleared = game_board[0][0]
+    lines_cleared = first_numbers[0]  # Now this will be the full number
+    piece_type = first_numbers[1]
+    middle_p_x = first_numbers[2]
+    middle_p_y = first_numbers[3]
     
-    piece_type    = game_board[1][0]
-    lines_cleared = game_board[0][0]
-    middle_p_x    = game_board[2][0]
-    middle_p_y    = game_board[3][0]
+    game_board = game_board[:]     # already have metadata handled
     
-    game_board = game_board[4:]     # remove lines cleared parameter
-    
-    #logger.log(f"piece type: {piece_type}, lines_cleared: {lines_cleared}, game_board: {game_board}, middle_point: {middle_p_x,middle_p_y}")
+    logger.log(f"in parse_state:lines_cleared: {lines_cleared}")
     
     if LOGGING:
         logger.log(f"game board: {game_board}")
         logger.log(f"lines cleared: {lines_cleared}")
+    
     state = State(
         game_board=game_board, 
         lines_cleared=lines_cleared, 
@@ -77,10 +91,7 @@ def parse_control(control) -> str:
     #logger.log(f"control before parsing: {control}")
     action_mapping = {
             # Right movements (negative indices)
-            -36: (-9,0),  # -9right-rotate0
-            -35: (-9,1),  # -9right-rotate1
-            -34: (-9,2),  # -9right-rotate2
-            -33: (-9,3),  # -9right-rotate3
+
             -32: (-8,0),  # -8right-rotate0
             -31: (-8,1),  # -8right-rotate1
             -30: (-8,2),  # -8right-rotate2
@@ -226,6 +237,9 @@ def step_verbose(communicator: Communicator, agent: Agent) -> int:
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
     
+    current_lines_cleared = state.lines_cleared
+    
+    
     # new state
     received_game_state = communicator.receive_from_pipe()
     logger.log(f"received_game_state2: {received_game_state}")
@@ -239,6 +253,11 @@ def step_verbose(communicator: Communicator, agent: Agent) -> int:
     logger.log(f"parsed next state: {next_state}")
     communicator.send_placeholder_action()
     
+    if next_state.lines_cleared - current_lines_cleared > 0:
+        next_state.immedeate_lines_cleared = next_state.lines_cleared - current_lines_cleared
+    else: 
+        next_state.immedeate_lines_cleared = 0
+    
     reward = calculate_reward(next_state)
     game.current_rewards.append(reward)         # add reward for mean reward calculation
     
@@ -246,16 +265,20 @@ def step_verbose(communicator: Communicator, agent: Agent) -> int:
     agent.train(state, action, next_state, reward)
     return 0
 
-def step_minimal(communicator, agent: Agent) -> int:
+def step_minimal(communicator: Communicator, agent: Agent) -> int:
     # First state
     received_game_state = communicator.receive_from_pipe()
     status = parse_ending_message(received_game_state)
     if status: return status
     
     state = parse_state(received_game_state, game.current_piece_count)
+    logger.log(f"state::\n{state.game_board}")
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
+    print()
+    
+    current_lines_cleared = state.lines_cleared
     
     # Next state
     received_game_state = communicator.receive_from_pipe()
@@ -265,11 +288,22 @@ def step_minimal(communicator, agent: Agent) -> int:
     game.current_piece_count +=1        # piece count increases only here
     
     next_state = parse_state(received_game_state, game.current_piece_count)
+    logger.log(f"next_state::\n{next_state.game_board}")
     communicator.send_placeholder_action()
+
+    logger.log(f" diff: {next_state.lines_cleared - current_lines_cleared}, curr:{state.lines_cleared}, next_state: {next_state.lines_cleared}")    
+    if next_state.lines_cleared - current_lines_cleared > 0:
+        next_state.immedeate_lines_cleared = next_state.lines_cleared - current_lines_cleared
+        logger.log(f"line is cleared! immedeate_lines_cleared: {next_state.immedeate_lines_cleared}")
+    else: 
+        next_state.immedeate_lines_cleared = 0
+        logger.log(f"current immedeate_lines_cleraed: {next_state.immedeate_lines_cleared}")
+    
     reward = calculate_reward(next_state)
     game.current_rewards.append(reward)         # add reward for mean reward calculation
     
     agent.train(state, action, next_state, reward)
+    logger.log("-----------------------\n")
     return 0
 
 
@@ -325,7 +359,7 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    logger.log(f"action in perform_action, before sending: {action}")
+    #logger.log(f"action in perform_action, before sending: {action}")
     communicator.send_to_pipe(action)
 
 
