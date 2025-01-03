@@ -23,26 +23,26 @@ class TetrisExpert:
         """returns relative position, rotation"""
         action_mapping = {
             # Right movements (negative indices)
-            -40: (-10,0),  # -10right-rotate0
-            -39: (-10,1),  # -10right-rotate1
-            -38: (-10,2),  # -10right-rotate2
-            -37: (-10,3),  # -10right-rotate3
-            -36: (-9,0),  # -9right-rotate0
-            -35: (-9,1),  # -9right-rotate1
-            -34: (-9,2),  # -9right-rotate2
-            -33: (-9,3),  # -9right-rotate3
-            -32: (-8,0),  # -8right-rotate0
-            -31: (-8,1),  # -8right-rotate1
-            -30: (-8,2),  # -8right-rotate2
-            -29: (-8,3),  # -8right-rotate3
-            -28: (-7,0),  # -7right-rotate0
-            -27: (-7,1),  # -7right-rotate1
-            -26: (-7,2),  # -7right-rotate2
-            -25: (-7,3),  # -7right-rotate3
-            -24: (-6,0),  # -6right-rotate0
-            -23: (-6,1),  # -6right-rotate1
-            -22: (-6,2),  # -6right-rotate2
-            -21: (-6,3),  # -6right-rotate3
+            # -40: (-10,0),  # -10right-rotate0
+            # -39: (-10,1),  # -10right-rotate1
+            # -38: (-10,2),  # -10right-rotate2
+            # -37: (-10,3),  # -10right-rotate3
+            # -36: (-9,0),  # -9right-rotate0
+            # -35: (-9,1),  # -9right-rotate1
+            # -34: (-9,2),  # -9right-rotate2
+            # -33: (-9,3),  # -9right-rotate3
+            # -32: (-8,0),  # -8right-rotate0
+            # -31: (-8,1),  # -8right-rotate1
+            # -30: (-8,2),  # -8right-rotate2
+            # -29: (-8,3),  # -8right-rotate3
+            # -28: (-7,0),  # -7right-rotate0
+            # -27: (-7,1),  # -7right-rotate1
+            # -26: (-7,2),  # -7right-rotate2
+            # -25: (-7,3),  # -7right-rotate3
+            # -24: (-6,0),  # -6right-rotate0
+            # -23: (-6,1),  # -6right-rotate1
+            # -22: (-6,2),  # -6right-rotate2
+            # -21: (-6,3),  # -6right-rotate3
             -20: (-5,0),  # -5right-rotate0
             -19: (-5,1),  # -5right-rotate1
             -18: (-5,2),  # -5right-rotate2
@@ -88,10 +88,10 @@ class TetrisExpert:
             21:  (5,1),   # 5left-rotate1
             22:  (5,2),   # 5left-rotate2
             23:  (5,3),   # 5left-rotate3
-            24:  (6,0),   # 6left-rotate0
-            25:  (6,1),   # 6left-rotate1
-            26:  (6,2),   # 6left-rotate2
-            27:  (6,3),   # 6left-rotate3
+            # 24:  (6,0),   # 6left-rotate0
+            # 25:  (6,1),   # 6left-rotate1
+            # 26:  (6,2),   # 6left-rotate2
+            # 27:  (6,3),   # 6left-rotate3
         }
         return action_mapping[action]
         
@@ -129,7 +129,7 @@ class TetrisExpert:
         
         max_action, max_reward = ret
         next_state = self._simulate_action(state=state, action=max_action)
-        logger.log(f"final simulation for max_action {max_action}:\n{next_state.game_board}")
+        #logger.log(f"final simulation for max_action {max_action}:\n{next_state.game_board}")
         #logger.log(f"\n-----\nall rewards: {rewards}")
         #logger.log(f"after tetris export, this is the best action: action: {max_action}, reward: {max_reward}---\n\n")
         

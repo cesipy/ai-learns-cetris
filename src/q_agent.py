@@ -34,7 +34,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=1000)
+        self.memory              = deque(maxlen=20000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None

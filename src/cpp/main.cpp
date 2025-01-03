@@ -9,7 +9,7 @@ int main (int argc, char* argv[])
     Logger("starting tetris code");
     initscr();
     noecho();
-    resize_term(BOARD_HEIGHT,  BOARD_WIDTH);
+    resize_term(BOARD_HEIGHT,  BOARD_WIDTH-4);
     timeout(0);
     curs_set(0);
     keypad(stdscr, TRUE);       // allow  arrow keys

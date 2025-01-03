@@ -68,7 +68,7 @@ def parse_state(state_string:str, piece_count):
     
     game_board = game_board[:]     # already have metadata handled
     
-    logger.log(f"in parse_state:lines_cleared: {lines_cleared}")
+    #logger.log(f"in parse_state:lines_cleared: {lines_cleared}")
     
     if LOGGING:
         logger.log(f"game board: {game_board}")
@@ -92,18 +92,18 @@ def parse_control(control) -> str:
     action_mapping = {
             # Right movements (negative indices)
 
-            -32: (-8,0),  # -8right-rotate0
-            -31: (-8,1),  # -8right-rotate1
-            -30: (-8,2),  # -8right-rotate2
-            -29: (-8,3),  # -8right-rotate3
-            -28: (-7,0),  # -7right-rotate0
-            -27: (-7,1),  # -7right-rotate1
-            -26: (-7,2),  # -7right-rotate2
-            -25: (-7,3),  # -7right-rotate3
-            -24: (-6,0),  # -6right-rotate0
-            -23: (-6,1),  # -6right-rotate1
-            -22: (-6,2),  # -6right-rotate2
-            -21: (-6,3),  # -6right-rotate3
+            # -32: (-8,0),  # -8right-rotate0
+            # -31: (-8,1),  # -8right-rotate1
+            # -30: (-8,2),  # -8right-rotate2
+            # -29: (-8,3),  # -8right-rotate3
+            # -28: (-7,0),  # -7right-rotate0
+            # -27: (-7,1),  # -7right-rotate1
+            # -26: (-7,2),  # -7right-rotate2
+            # -25: (-7,3),  # -7right-rotate3
+            # -24: (-6,0),  # -6right-rotate0
+            # -23: (-6,1),  # -6right-rotate1
+            # -22: (-6,2),  # -6right-rotate2
+            # -21: (-6,3),  # -6right-rotate3
             -20: (-5,0),  # -5right-rotate0
             -19: (-5,1),  # -5right-rotate1
             -18: (-5,2),  # -5right-rotate2
@@ -272,7 +272,7 @@ def step_minimal(communicator: Communicator, agent: Agent) -> int:
     if status: return status
     
     state = parse_state(received_game_state, game.current_piece_count)
-    logger.log(f"state::\n{state.game_board}")
+    #logger.log(f"state::\n{state.game_board}")
     time.sleep(SLEEPTIME)
     action = agent.epsilon_greedy_policy(state)
     perform_action(action, communicator)
@@ -288,7 +288,7 @@ def step_minimal(communicator: Communicator, agent: Agent) -> int:
     game.current_piece_count +=1        # piece count increases only here
     
     next_state = parse_state(received_game_state, game.current_piece_count)
-    logger.log(f"next_state::\n{next_state.game_board}")
+    #logger.log(f"next_state::\n{next_state.game_board}")
     communicator.send_placeholder_action()
   
     if next_state.lines_cleared - current_lines_cleared > 0:
@@ -301,7 +301,7 @@ def step_minimal(communicator: Communicator, agent: Agent) -> int:
     game.current_rewards.append(reward)         # add reward for mean reward calculation
     
     agent.train(state, action, next_state, reward)
-    logger.log("-----------------------\n")
+    #logger.log("-----------------------\n")
     return 0
 
 

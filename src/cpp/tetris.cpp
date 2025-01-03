@@ -88,7 +88,7 @@ void example_fill_board(Game* g)
 
 void insert_falling_piece(type type, Game* g)
 {
-    int mid = 8;
+    int mid = 4;
     short color = generate_random_number(0, 7);
     Position pos;
 
@@ -394,7 +394,7 @@ void rotate_piece(direction dir, Game* g)
     // copy from temp board to real g board
     for(int i=0; i < g->rows; i++)
     {
-        for(int j=0; j < g->rows; j++)
+        for(int j=0; j < g->cols; j++)
         {
             // delete all old blocks, only rotated blocks (marked with .is_new) will be copied.
             bool condition = temp_board[i][j].falling_piece && !temp_board[i][j].is_new;

@@ -45,9 +45,9 @@ class State:
     def is_state_game_over(self)-> bool:
         for cell in self.game_board_copy[0]:
             if cell == 1:
-                return False
+                return True
         
-        return True
+        return False
         
         
         
