@@ -1,0 +1,11 @@
+services: 
+  experiment_1: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # These settings enable terminal interaction
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm     # Sets the terminal type
