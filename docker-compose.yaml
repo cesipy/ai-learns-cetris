@@ -1,11 +1,42 @@
 services: 
+# reward: only random, new reward
+# expert_counter = 100
   experiment_1: 
     build: 
       context: .
       dockerfile: Dockerfile
     image: ai-learns-tetris
-    # These settings enable terminal interaction
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
     tty: true          # Allocates a pseudo-TTY
     stdin_open: true   # Keeps stdin open
     environment:
-      - TERM=xterm     # Sets the terminal type
+      - TERM=xterm 
+
+# reward: only score + punishment for game end
+# expert_counter = 10
+  experiment_2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm     
+
+# reward: score + max_height, etc; + punishment for game end
+# expert_counter = 10
+  experiment_3: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm     

@@ -2,22 +2,45 @@ from state import State
 
 
 # super simple reward
+# def calculate_reward(next_state: State):
+
+#     reward = 0
+    
+#     #add basic reward for surviving: 
+#     reward += 0.2 * next_state.piece_count
+    
+#     if next_state.immedeate_lines_cleared > 0:
+#         reward += (next_state.immedeate_lines_cleared ** 2) * 100
+        
+#     # Heavy punishment for game over (when game terminates)  
+#     if next_state.is_state_game_over():
+#         reward -= 600
+        
+#     return reward
+
+
 def calculate_reward(next_state: State):
 
     reward = 0
     
-    #add basic reward for surviving: 
-    reward += 0.2 * next_state.piece_count
     
     if next_state.immedeate_lines_cleared > 0:
         reward += (next_state.immedeate_lines_cleared ** 2) * 100
         
+        
+    reward -= (
+        -0.91*next_state.height + 
+        -0.35*next_state.holes + 
+        -0.18*next_state.bumpiness + 
+        0.200*next_state.piece_count
+    )
+
+        
     # Heavy punishment for game over (when game terminates)  
     if next_state.is_state_game_over():
-        reward -= 600
+        reward -=1000
         
     return reward
-
 
 # super simple reward for only expert
 def calculate_reward_tetris_expert(next_state: State):

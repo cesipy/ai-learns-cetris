@@ -1,4 +1,4 @@
-# AI learns cetris - Reinforement Machine Learning
+re# AI learns cetris - Reinforement Machine Learning
 
 
 ## TODOs
@@ -27,3 +27,19 @@
 
 - [x] in tetris expert: if several actions ahave same reward, always first one is chosen -> make random to remove this bias
 - [x] lines cleared from pipe is only 1 digit - what happens at more?
+
+
+# run with docker
+With docker it is possible to run several different configs for training. Each one uses just one core. 
+different containers are available in `docker-compose.yaml`. 
+To run one container, simply type: 
+
+```bash
+# run all experiments
+docker-compose up
+
+# run specific experiments
+docker-compose up experiment_1
+docker-compose up experiment_2
+
+```
