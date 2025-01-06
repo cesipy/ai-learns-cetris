@@ -242,21 +242,37 @@ void receive_message(Game* g)
 
     std::stringstream ss;
     ss << "received message " << buffer;
+    ss << ", byted read: "<< std::to_string(bytesRead);
     Logger(ss.str());
 
     if (bytesRead > 0)
     {
         // null-terminate the received data to make it a string
         buffer[bytesRead] = '\0';
-
-        parse_message(buffer, g->control);
     }
-    else if (bytesRead == 0) { return; }
+    else if (bytesRead == 0) { 
+        Logger("nothing read, just doing default 1,1");
+        
+        const char* default_message = "0,0";
+        strcpy(buffer, default_message);
+
+        buffer[3] = '\0';
+
+        for (int i = 0; i < 10 && i < bytesRead; i++) {
+            // Log ASCII values of first few bytes
+            Logger("Byte " + std::to_string(i) + " value: " + std::to_string((unsigned char)buffer[i]));
+        }
+
+        // dont return, as this crashed the flow of the communication pipe
+        //return; 
+        }
     else
     {
         perror("read");
         Logger("error @ read");
+        return;
     }
+    parse_message(buffer, g->control);
 }
 
 
@@ -305,23 +321,47 @@ void process_control(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
+    Logger("Received raw message: " + std::string(message));
+
     // parse control message. string is split after ","
     char* new_relative_position = strtok(message, ",");
+    char* rotation_amount = strtok(NULL, ", ");
 
-    char* rotation_amount        = strtok(NULL, ", ");
-
-
-    if (!rotation_amount)
+    // Check if both parts of the message exist
+    if (!new_relative_position || !rotation_amount)
     {
-        fprintf(stderr, "incorrect strucuture of control struct. ");
+        Logger("Error parsing message - missing values. new_relative_position: " + 
+              std::string(new_relative_position ? new_relative_position : "NULL") +
+              ", rotation_amount: " + 
+              std::string(rotation_amount ? rotation_amount : "NULL"));
+        fprintf(stderr, "Error: incorrect structure of control struct - missing values\n");
         exit(EXIT_FAILURE);
     }
-    //control_message->should_rotate = (strcmp(should_rotate, "0")) ? true : false;
+
+    Logger("Parsed message parts - new_relative_position: " + std::string(new_relative_position) + 
+           ", rotation_amount: " + std::string(rotation_amount));
+
+    try {
+        // Convert strings to integers with error checking
+        control_message->new_position = std::stoi(new_relative_position);
+        control_message->rotation_amount = std::stoi(rotation_amount);
+        
+        Logger("Successfully converted to integers - new_position: " + 
+              std::to_string(control_message->new_position) + 
+              ", rotation_amount: " + std::to_string(control_message->rotation_amount));
+    }
+    catch (const std::invalid_argument& e) {
+        Logger("Invalid number format in message - " + std::string(e.what()));
+        fprintf(stderr, "Error: Invalid number format in control message\n");
+        exit(EXIT_FAILURE);
+    }
+    catch (const std::out_of_range& e) {
+        Logger("Number out of range in message - " + std::string(e.what()));
+        fprintf(stderr, "Error: Number out of range in control message\n");
+        exit(EXIT_FAILURE);
+    }
 
     control_message->new_control_available = true;
-    control_message->new_position          = std::stoi(message);
-    control_message->rotation_amount       = std::stoi(rotation_amount);
-
     return;
 }
 
@@ -331,6 +371,16 @@ void end_of_game_notify(Communication* communication)
     std::string end_message = "game_end";
     write(communication->fd_states, end_message.c_str(), strlen(end_message.c_str()));
     Logger("end of episode");
+
+    // Wait for acknowledgment before starting new episode
+    char buffer[100];
+    ssize_t bytesRead = read(communication->fd_controls, buffer, sizeof(buffer));  // Wait for "ready" signal
+    buffer[bytesRead] = '\0';
+
+    std::stringstream ss;
+    ss << "received ready signal, after 'game_end'. buffer: " << buffer;
+
+    Logger(ss.str());
 }
 
 

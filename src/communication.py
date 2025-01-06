@@ -2,6 +2,8 @@ from simpleLogger import SimpleLogger
 import os
 import time
 
+from config import *
+
 logger = SimpleLogger()
 
 class  Communicator:
@@ -15,7 +17,7 @@ class  Communicator:
 
     def receive_from_pipe(self):
         import select
-        rlist, _, _ = select.select([self.fd_states], [], [], 5.0)  # 5 sec timeout
+        rlist, _, _ = select.select([self.fd_states], [], [], COMMUNICATION_TIME_OUT) 
         if not rlist:
             raise TimeoutError("Read timeout")
         data = os.read(self.fd_states, 1024)
