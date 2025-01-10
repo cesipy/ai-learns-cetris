@@ -1,6 +1,8 @@
 import datetime
+import config
 
-FILE_NAME = "../logs/py_log_"
+
+FILE_NAME = config.LOG_DIR + "/py_log_"
 
 class SimpleLogger:
     def __init__(self ):

@@ -1,7 +1,12 @@
 from simpleLogger import SimpleLogger
 import os
+import time
 
-class Communicator:
+from config import *
+
+logger = SimpleLogger()
+
+class  Communicator:
     def __init__(self, metadata ):
         self.logger             = metadata.logger
         self.fifo_states_name   = metadata.fifo_states_name
@@ -9,27 +14,39 @@ class Communicator:
         self.fd_states          = metadata.fd_states
         self.fd_controls        = metadata.fd_controls
 
-    def receive_from_pipe(self) -> str:
-        """
-        receive data (=states) from named pipe.
-        named pipe name is `fifo_state`
-        the file descriptor for the named pipe is 
-        defined in `metadata.fd_states`.
-        """
-        try:
-            # read data from the FIFO
-            data = os.read(self.fd_states, 1024)  # Adjust the buffer size as needed
 
-            # log data
-            #self.logger.log("data read from fifo_states: " + data.decode('utf-8'))
+    def receive_from_pipe(self):
+        import select
+        rlist, _, _ = select.select([self.fd_states], [], [], COMMUNICATION_TIME_OUT) 
+        if not rlist:
+            raise TimeoutError("Read timeout")
+        data = os.read(self.fd_states, 1024)
+        return data.decode('utf-8')
+    # def receive_from_pipe(self) -> str:
+    #     """
+    #     receive data (=states) from named pipe.
+    #     named pipe name is `fifo_state`
+    #     the file descriptor for the named pipe is 
+    #     defined in `metadata.fd_states`.
+    #     """
+    #     try:
+    #         #time.sleep(1)
+    #         #logger.log("reading from fifo_states")
+    #         # read data from the FIFO
+    #         data = os.read(self.fd_states, 1024)  
+
+    #         # log data
+    #         #self.logger.log("data read from fifo_states: " + data.decode('utf-8'))
             
-            return data.decode('utf-8')  # Assuming data is in UTF-8 encoding
-        except FileNotFoundError:
-            print(f"Error: {self.fifo_states_name} does not exist.")
-            return ""
-        except Exception as e:
-            print(f"Error while reading from {self.fifo_states_name}: {e}")
-            return ""
+    #         return data.decode('utf-8')  # Assuming data is in UTF-8 encoding
+    #     except FileNotFoundError:
+    #         logger.log(f"Error: {self.fifo_states_name} does not exist.")
+    #         print(f"Error: {self.fifo_states_name} does not exist.")
+    #         return ""
+    #     except Exception as e:
+    #         logger.log(f"Error while reading from {self.fifo_states_name}: {e}")
+    #         print(f"Error while reading from {self.fifo_states_name}: {e}")
+    #         return ""
 
 
     def send_to_pipe(self, control) -> None:

@@ -88,7 +88,7 @@ void example_fill_board(Game* g)
 
 void insert_falling_piece(type type, Game* g)
 {
-    int mid = 8;
+    int mid = 4;
     short color = generate_random_number(0, 7);
     Position pos;
 
@@ -201,6 +201,7 @@ void insert_falling_piece(type type, Game* g)
     }
 
     g->middle_coordinate = pos;
+    g->piece_counter++;
 }
 
 
@@ -209,6 +210,7 @@ void move_piece(direction dir, Game* g) {
 
     if (!can_move)
     {
+        Logger("cannot move");
         return;
     }
 
@@ -392,7 +394,7 @@ void rotate_piece(direction dir, Game* g)
     // copy from temp board to real g board
     for(int i=0; i < g->rows; i++)
     {
-        for(int j=0; j < g->rows; j++)
+        for(int j=0; j < g->cols; j++)
         {
             // delete all old blocks, only rotated blocks (marked with .is_new) will be copied.
             bool condition = temp_board[i][j].falling_piece && !temp_board[i][j].is_new;
@@ -565,12 +567,17 @@ bool can_piece_move(direction dir, Game* g)
                     new_i = i + 1;
                 }
                 bool valid_block = is_valid_block(new_i, new_j, g);
-
                 bool empty_block = is_empty_block(new_i, new_j ,g);
+
+                
 
                 // check if the new position is valid and not colliding with other pieces
                 if (!is_valid_block(new_i, new_j, g) || !is_empty_block(new_i, new_j, g))
                 {
+                    //Logger("Checking move not valid: current=(" + std::to_string(i) + "," + std::to_string(j) + 
+                    // ") new=(" + std::to_string(new_i) + "," + std::to_string(new_j) + ")");
+                    //Logger("is_valid_block: " + std::to_string(valid_block));
+                    //Logger("is_empty_block: " + std::to_string(empty_block));
                     return false; // collision detected
                 }
             }

@@ -5,6 +5,7 @@
 #include <random>
 #include <unistd.h>
 #include <sstream>
+#include <string.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -16,18 +17,21 @@
 #include <fstream>
 #include <ctime>
 #include <string>
+#include <chrono>
+#include <thread>
 
 
-#define GRAVITY_TICKS 350
-#define SLEEP_TIME 100
-#define BOARD_WIDTH  30
+#define GRAVITY_TICKS 10
+#define SLEEP_TIME 1
+#define BOARD_WIDTH  26
 #define BOARD_HEIGHT 30
 #define EMPTY_CELL 0
 #define CELL 1
-#define AMOUNT_OF_PIECES 3
+#define AMOUNT_OF_PIECES 2
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
+#define DETERMINISTIC 1
 
 #define ADD_BLOCK(w,x) waddch((w),' '|A_REVERSE|COLOR_PAIR(x));     \
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))
@@ -56,14 +60,16 @@ typedef struct {
     int holes;              // to be minimized
     int bumpiness;          // to be minimized
     type piece_type;        // type of falling piece
+    char game_state[1024];
 }State;
 
 
 typedef struct {
     bool new_control_available;       // indicate new control received from pipe
     int new_position;                 // relative to current position (can be negative or positive
-    bool should_rotate;               // should piece rotate
+    //bool should_rotate;               // should piece rotate
     // needs further implementation
+    int rotation_amount;                // should rotate by how much? (0= 0, 1= 90, 2= 180, 3= 270)
 
 }Control;
 
@@ -123,6 +129,7 @@ typedef struct {
     Control* control;
     State* state;
     Communication* communication;
+    int piece_counter;
 }Game;
 
 
