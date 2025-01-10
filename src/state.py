@@ -32,6 +32,9 @@ class State:
         self.column_transitions = self._calculate_column_transitions()
         self.landing_height = self._calculate_landing_height()
         
+        self.max_height_diff = self.get_max_height_diff()
+        self.height_diff = self.get_max_height_diff()
+        
         
     # def get_piece_type(self):
     #     all_2s = []
@@ -50,6 +53,13 @@ class State:
         return False
         
         
+    def get_height_variance(self):
+        heights = np.array(self.column_heights)
+        return np.var(heights)  # High variance = uneven stacking
+
+    def get_max_height_diff(self):
+        heights = self.column_heights
+        return max(heights) - min(heights) if heights else 0
         
         
     def _copy_game_board(self):
@@ -163,6 +173,7 @@ class State:
     row_transitions {self.row_transitions}
     column_transitions {self.column_transitions}
     landing_height {self.landing_height}
+    
                         """
         return message
     
@@ -176,10 +187,10 @@ class State:
             self.holes, 
             self.bumpiness, 
             self.piece_type,
-            self.wells,
-            self.row_transitions,
-            self.column_transitions,
-            self.landing_height
+            #self.wells,
+            #self.row_transitions,
+            #self.column_transitions,
+            #self.landing_height
         ])
     
     

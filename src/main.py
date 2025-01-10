@@ -23,7 +23,7 @@ from reward import calculate_reward
 os.chdir(SRC_DIR)
 
 SLEEPTIME = 0.00001        # default value should be (350/5000)
-INTER_ROUND_SLEEP_TIME = 1
+INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
 POSSIBLE_NUMBER_STEPS = 4
@@ -317,6 +317,7 @@ def parse_ending_message(game_state: str) -> int:
 
 def play_one_round(communicator: communication.Communicator, agent: Agent) -> int:
     game.start_time_measurement()
+    logger.log("started new round")
     if LOGGING:
         logger.log("entering play_one_round")
         
@@ -352,12 +353,13 @@ def play_one_round(communicator: communication.Communicator, agent: Agent) -> in
         logger.log(f"return_value in play one round: {return_value}")
 
     time.sleep(INTER_ROUND_SLEEP_TIME)
+    communicator.send_to_pipe("ready")
     return return_value
 
 
 def perform_action(control, communicator: communication.Communicator):
     action: str = parse_control(control)
-    #logger.log(f"action in perform_action, before sending: {action}")
+    #logger.log(f"action string in perform_action, before sending: {action}")
     communicator.send_to_pipe(action)
 
 

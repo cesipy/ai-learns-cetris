@@ -39,7 +39,7 @@ To run one container, simply type:
 docker-compose up
 
 # run specific experiments
-docker-compose up experiment_1
-docker-compose up experiment_2
+docker-compose up --build experiment_1
+docker-compose up --build experiment_2
 
 ```

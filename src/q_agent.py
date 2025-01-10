@@ -34,7 +34,7 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=20000)
+        self.memory              = deque(maxlen=70000)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -54,6 +54,9 @@ class Agent:
             self.model = self._load_model()
         else:
             self.model = self._init_model()
+            self.target_model = self._init_model()
+            self.target_update_counter = 0
+            self.target_update_frequency = 500
             
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
@@ -87,7 +90,7 @@ class Agent:
                     
                 # Predict Q-values for current and next states
                 current_qs = self.model.predict(states, verbose=0)
-                next_qs = self.model.predict(next_states, verbose=0)
+                next_qs = self.target_model.predict(next_states, verbose=0)
                 max_next_qs = np.max(next_qs, axis=1)
                 targets = rewards + (self.discount_factor * max_next_qs)
                 
@@ -104,6 +107,13 @@ class Agent:
                     epochs=EPOCHS,
                     verbose=0
                 )
+                
+                
+        # sync the target and normal models.
+        self.target_update_counter += 1
+        if self.target_update_counter >= self.target_update_frequency: 
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_update_counter = 0
         
         self.counter += 1
         if self.counter == COUNTER:
@@ -166,7 +176,7 @@ class Agent:
 
     def _init_model(self):
         n_output = len(self.actions)
-        n_input = 9
+        n_input = 5
         input_shape = (n_input,)
         model = keras.models.Sequential([
             keras.layers.Dense(64, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),

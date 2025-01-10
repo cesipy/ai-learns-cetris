@@ -27,7 +27,7 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.996
+EPSILON_DECAY = 0.999
 EPSILON = 0.99
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
@@ -37,7 +37,7 @@ LEARNING_RATE = 0.001
 BATCH_SIZE    = 256
 COUNTER       = 128     #when to perform batch training
 EPOCHS        = 1       # how often to iterate over samples
-NUM_BATCHES   = 16       # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 30       # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -75,7 +75,10 @@ PLACEHOLDER_GAME_BOARD = np.array([
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
 
 PLOT_COUNTER = 50      # after 100 epochs save the plot 
-MOVING_AVG_WINDOW_SIZE = 100        # for plots, what is moving avg?
+MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 1
+COUNTER_TETRIS_EXPERT = 10
+
+# how long to wait in receive_from_pipe.
+COMMUNICATION_TIME_OUT = 15.0

@@ -1,5 +1,6 @@
 from state import State
-
+from simpleLogger import SimpleLogger
+logger = SimpleLogger()
 
 # super simple reward
 # def calculate_reward(next_state: State):
@@ -28,17 +29,19 @@ def calculate_reward(next_state: State):
         reward += (next_state.immedeate_lines_cleared ** 2) * 100
         
         
-    reward -= (
-        -0.91*next_state.height + 
-        -0.35*next_state.holes + 
-        -0.18*next_state.bumpiness + 
-        0.200*next_state.piece_count
-    )
+    
+    reward -= 2.5 * next_state.get_height_variance()  
+    reward -= 2.0 * next_state.get_max_height_diff()  
+    reward -= 1.5 * next_state.holes  
+
 
         
     # Heavy punishment for game over (when game terminates)  
     if next_state.is_state_game_over():
-        reward -=1000
+        reward -=100
+        
+    #logger.log(f"current reward: {reward}, heights_var: {next_state.get_height_variance()}, max_height_diff: {next_state.get_max_height_diff()}, for state: {next_state}")
+
         
     return reward
 
