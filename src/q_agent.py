@@ -92,7 +92,7 @@ class Agent:
         
         self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
-        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
+        if len(self.memory) >=BATCH_SIZE and self.counter % COUNTER == 0 :
             
             for _ in range(NUM_BATCHES):
                 #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
@@ -181,12 +181,13 @@ class Agent:
             actions.append(action)
             rewards.append(reward)
         
-        states_game_board = torch.stack([torch.from_numpy(s) for s in states_game_board]).to(device)
-        piece_types = torch.stack([torch.from_numpy(p) for p in piece_types]).to(device)
-        next_states_game_board = torch.stack([torch.from_numpy(s) for s in next_states_game_board]).to(device)
-        next_piece_types = torch.stack([torch.from_numpy(p) for p in next_piece_types]).to(device)
+        states_game_board = torch.stack(states_game_board).to(device)
+        piece_types = torch.stack(piece_types).to(device)
+        next_states_game_board = torch.stack(next_states_game_board).to(device)
+        next_piece_types = torch.stack(next_piece_types).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
         rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+
         
         # logger.log(f"States shape: {states.shape}")
         # logger.log(f"Next states shape: {next_states.shape}")

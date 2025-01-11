@@ -210,7 +210,7 @@ void move_piece(direction dir, Game* g) {
 
     if (!can_move)
     {
-        Logger("cannot move");
+        //Logger("cannot move");
         return;
     }
 
