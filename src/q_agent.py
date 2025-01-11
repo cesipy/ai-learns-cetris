@@ -129,7 +129,7 @@ class Agent:
                                 for i, q_value in enumerate(q_values)}
                 return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
                 
-                logger.log(f"return_val: {return_val}")
+                #logger.log(f"return_val: {return_val}")
 
         # Epsilon decay
         self.counter_epsilon += 1

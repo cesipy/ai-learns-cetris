@@ -1,7 +1,11 @@
-re# AI learns cetris - Reinforement Machine Learning
+# AI learns cetris - Reinforement Machine Learning
 
 
 ## TODOs
+- [ ] normalize loss on batchsize
+- [ ] logger queue for mp.Process
+- [ ] script to fetch logs from docker containers
+- [ ] deactivate oinly single thread in torch in qagent
 - [ ] improve state function for tetris board - encode state to matrix with current position and all the blocks in the field. 
 - [ ] in c: see next tetris piece
 - [ ] use seeds to fix the run: especially for debugging in the begining to know if it even works
