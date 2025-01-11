@@ -1,8 +1,12 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
 
 
-import keras
+import torch
+#torch.set_num_threads(1)  # This helps prevent multiprocessing issues
+from nn_model import CNN, nn
 
 import numpy as np
 import random
@@ -17,7 +21,7 @@ from config import *
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 
-
+device = torch.device("cpu")
 class Agent:
     def __init__(
         self, 
@@ -44,19 +48,25 @@ class Agent:
         self.counter_weight_log  = 0
         self.counter_epsilon     = 0
         self.cunter_tetris_expert = 0
-        self.starting_tetris_expert_modulo = COUNTER_TETRIS_EXPERT      # when to do the expert for faster reward discovery
+        self.starting_tetris_expert_modulo = COUNTER_TETRIS_EXPERT      # when to use the expert for faster reward discovery
         self.num_actions         = num_actions
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
         self.tetris_expert       = TetrisExpert(self.actions)
 
+        self.model = CNN(num_actions=num_actions).to(device)
+        self.target_model = CNN(num_actions=num_actions).to(device)
+        self.target_update_counter = 0
+        self.target_update_frequency = 500
+            
+            
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        # Copy weights to target model
+        self.target_model.load_state_dict(self.model.state_dict())
+            
         if load_model:
             self.model = self._load_model()
-        else:
-            self.model = self._init_model()
-            self.target_model = self._init_model()
-            self.target_update_counter = 0
-            self.target_update_frequency = 500
+            
             
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
@@ -66,53 +76,27 @@ class Agent:
         state_array = state.convert_to_array()
         next_state_array = next_state.convert_to_array()
         
-        self.memory.append((state_array, action, reward, next_state_array))
+        # convert to tensors 
+        state_array = torch.from_numpy(state.convert_to_array()).float()
+        next_state_array = torch.from_numpy(next_state.convert_to_array()).float()
         
-        # # Train on this experience
-        # self.model.fit(
-        #     state_array.reshape(1, -1),
-        #     current_q_values,
-        #     epochs=1,
-        #     verbose=0
-        # )
+        # action space has negative values -> just workaround for this
+        norm_action = State.normalize_action(action)
         
-        if len(self.memory) >=1000 and self.counter % COUNTER == 0 :
+        self.memory.append((state_array, norm_action, reward, next_state_array))
+        
+        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
             for _ in range(NUM_BATCHES):
                 #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                minibatch = random.sample(self.memory,BATCH_SIZE)
-                states, actions, rewards, next_states = zip(*minibatch)
+                self.train_batch()
                 
-                states = np.array(states)
-                next_states = np.array(next_states)
-                actions = np.array(actions)
-                rewards = np.array(rewards)
-                    
-                # Predict Q-values for current and next states
-                current_qs = self.model.predict(states, verbose=0)
-                next_qs = self.target_model.predict(next_states, verbose=0)
-                max_next_qs = np.max(next_qs, axis=1)
-                targets = rewards + (self.discount_factor * max_next_qs)
-                
-                # Update only the Q values for the actions taken
-                target_qs = current_qs.copy()
-                for i in range(BATCH_SIZE):
-                    target_qs[i][actions[i]] = targets[i]
-                
-                # Train on batch
-                self.model.fit(
-                    states,
-                    target_qs,
-                    batch_size=BATCH_SIZE,
-                    epochs=EPOCHS,
-                    verbose=0
-                )
                 
                 
         # sync the target and normal models.
         self.target_update_counter += 1
         if self.target_update_counter >= self.target_update_frequency: 
-            self.target_model.set_weights(self.model.get_weights())
+            self.target_model.load_state_dict(self.model.state_dict())
             self.target_update_counter = 0
         
         self.counter += 1
@@ -121,46 +105,38 @@ class Agent:
             self._save_model()
 
 
-    def epsilon_greedy_policy(self, 
-                              state: State):
-        state_array = state.convert_to_array()
+    def epsilon_greedy_policy(self, state: State):
+        state_array = torch.from_numpy(state.convert_to_array()).float()
+        
+        # exploration
         if random.random() <= self.epsilon:
-            
             if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
-                #logger.log(f"tetris expert with current  modulo rounded {int(round(self.starting_tetris_expert_modulo))}")
                 self.cunter_tetris_expert = 0
                 return_val = self.tetris_expert.get_best_move(state=state)
                 if return_val is None:
                     return_val = np.random.choice(self.actions)
-                
-                self.starting_tetris_expert_modulo +=0.0
-                #logger.log(f"current expert modulo: {self.starting_tetris_expert_modulo}")
+                self.starting_tetris_expert_modulo += 0.0
             else:
                 return_val = np.random.choice(self.actions)
             self.cunter_tetris_expert += 1
             
-            
-            if LOGGING:
-                logger.log(f"randomly chosen return val {return_val}")
-                logger.log(f"current state{state}")
+        # exploitation
         else:
-            q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-
-            action_q_values = {}
-            for i, action in enumerate(self.actions):
-                action_q_values[action] = q_values[i]
+            with torch.no_grad():  # Don't track gradients for prediction
+                q_values = self.model(state_array.unsqueeze(0))[0]
+                # normalized actions for lookup, denorm for return
+                action_q_values = {State.denormalize_action(i): q_value.item() 
+                                for i, q_value in enumerate(q_values)}
+                return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
                 
-            return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
+                logger.log(f"return_val: {return_val}")
 
+        # Epsilon decay
         self.counter_epsilon += 1
         if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
-            
-            if LOGGING:
-                logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
-            self.counter_epsilon = 0
             if self.epsilon >= MIN_EPSILON:
                 self.epsilon *= self.epsilon_decay
-                
+            self.counter_epsilon = 0
 
         return return_val
 
@@ -174,40 +150,64 @@ class Agent:
     
 
 
-    def _init_model(self):
-        n_output = len(self.actions)
-        n_input = 5
-        input_shape = (n_input,)
-        model = keras.models.Sequential([
-            keras.layers.Dense(64, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),
-            keras.layers.Dense(64, activation="relu", kernel_initializer='he_uniform'),
-            keras.layers.Dense(n_output, activation="linear", kernel_initializer='glorot_uniform')
-        ])
-        model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-            loss='huber'
-        )
-        return model
+    
+    def train_batch(self):
+        logger.log("starting batch training")
+        # get batch from memory
+        batch = random.sample(self.memory, BATCH_SIZE)
+        
+        # handling of all the elements for tensors
+        states = []
+        next_states = []
+        actions = []
+        rewards = []
+        
+        for state, action, reward, next_state in batch:
+            states.append(state)
+            next_states.append(next_state)
+            actions.append(action)
+            rewards.append(reward)
+        
+        states = torch.stack(states).to(device)
+        next_states = torch.stack(next_states).to(device)
+        actions = torch.tensor(actions, dtype=torch.long).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+        
+        # logger.log(f"States shape: {states.shape}")
+        # logger.log(f"Next states shape: {next_states.shape}")
+        # logger.log(f"Actions shape: {actions.shape}")
+        # logger.log(f"Rewards shape: {rewards.shape}")
+        
+        current_qs = self.model(states)
+        next_qs = self.target_model(next_states)
+        
+        max_next_q = next_qs.max(1)[0]
+        target_qs = rewards + (self.discount_factor * max_next_q)
+        
+        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
 
-
+        loss = nn.MSELoss()(q_values, target_qs.detach())
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        logger.log(f"Batch training completed. Loss: {loss.item():.4f}")
+        
+        
     def _save_model(self):
-        self.model.save(f"{MODEL_NAME}.keras")
-        self.counter_weight_log += 1
-        if self.counter_weight_log == 50:
-            self.counter_weight_log = 0
-            for layer in self.model.layers:
-                logger.log(layer.get_weights())
-
+        torch.save({
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'epsilon': self.epsilon,
+        }, f"{MODEL_NAME}.pt")
 
     def _load_model(self):
-        return keras.models.load_model(f"{MODEL_NAME}.keras")
+        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.epsilon = checkpoint['epsilon']
 
 
-    def _log_model_summary(self, model: keras.Sequential, logger):
-        summary_str = []
-        model.summary(print_fn=lambda x: summary_str.append(x))
-        summary_str = "\n".join(summary_str)
-        logger.log(summary_str + "\n\n")
 
 
     def get_epsilon(self):

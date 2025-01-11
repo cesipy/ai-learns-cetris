@@ -35,7 +35,7 @@ MIN_EPSILON = 0.01
 
 LEARNING_RATE = 0.001
 BATCH_SIZE    = 256
-COUNTER       = 128     #when to perform batch training
+COUNTER       = 2000     #when to perform batch training
 EPOCHS        = 1       # how often to iterate over samples
 NUM_BATCHES   = 30       # when counter is reached, how many random batches are chosen from memory
 
