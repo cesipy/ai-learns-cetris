@@ -21,3 +21,4 @@ models/model.*
 src/test.py
 res/saved_game.pkl
 res/collected_logs
+res/*.html
