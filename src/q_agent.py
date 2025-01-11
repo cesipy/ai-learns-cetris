@@ -65,7 +65,9 @@ class Agent:
         self.target_model.load_state_dict(self.model.state_dict())
             
         if load_model:
-            self.model = self._load_model()
+            self._load_model()
+            self._load_target_model()
+            self.epsilon = 0.01     # only small expsilon here
             
             
         logger.log(f"actions in __init__: {self.actions}")
@@ -73,17 +75,22 @@ class Agent:
 
 
     def train(self, state: State, action, next_state: State, reward):
-        state_array = state.convert_to_array()
-        next_state_array = next_state.convert_to_array()
+        state_array, piece_type = state.convert_to_array()
+        next_state_array, next_piece_type = state.convert_to_array()
+        # state_array = state.convert_to_array()           # this is a tuple of (gameboard and piecetype one-hot)
+        # next_state_array = next_state.convert_to_array() # ditto
         
         # convert to tensors 
-        state_array = torch.from_numpy(state.convert_to_array()).float()
-        next_state_array = torch.from_numpy(next_state.convert_to_array()).float()
+        
+        state_array = torch.from_numpy(state_array).float()
+        piece_type = torch.from_numpy(piece_type).float()
+        next_state_array = torch.from_numpy(next_state_array).float()
+        next_piece_type = torch.from_numpy(next_piece_type).float()
         
         # action space has negative values -> just workaround for this
         norm_action = State.normalize_action(action)
         
-        self.memory.append((state_array, norm_action, reward, next_state_array))
+        self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
@@ -106,7 +113,9 @@ class Agent:
 
 
     def epsilon_greedy_policy(self, state: State):
-        state_array = torch.from_numpy(state.convert_to_array()).float()
+        state_array, piece_type = state.convert_to_array()
+        state_array = torch.from_numpy(state_array).float()
+        piece_type  = torch.from_numpy(piece_type).float()
         
         # exploration
         if random.random() <= self.epsilon:
@@ -123,7 +132,7 @@ class Agent:
         # exploitation
         else:
             with torch.no_grad():  # Don't track gradients for prediction
-                q_values = self.model(state_array.unsqueeze(0))[0]
+                q_values = self.model(state_array.unsqueeze(0), piece_type.unsqueeze(0))[0]
                 # normalized actions for lookup, denorm for return
                 action_q_values = {State.denormalize_action(i): q_value.item() 
                                 for i, q_value in enumerate(q_values)}
@@ -157,19 +166,25 @@ class Agent:
         batch = random.sample(self.memory, BATCH_SIZE)
         
         # handling of all the elements for tensors
-        states = []
-        next_states = []
+        states_game_board = []
+        piece_types = []
+        next_states_game_board = []
+        next_piece_types = []
         actions = []
         rewards = []
         
-        for state, action, reward, next_state in batch:
-            states.append(state)
-            next_states.append(next_state)
+        for (state_game_board, state_piece_type), action, reward,(next_state_game_board, next_state_piece_type) in batch:
+            states_game_board.append(state_game_board)
+            piece_types.append(state_piece_type)
+            next_states_game_board.append(next_state_game_board)
+            next_piece_types.append(next_state_piece_type)
             actions.append(action)
             rewards.append(reward)
         
-        states = torch.stack(states).to(device)
-        next_states = torch.stack(next_states).to(device)
+        states_game_board = torch.stack([torch.from_numpy(s) for s in states_game_board]).to(device)
+        piece_types = torch.stack([torch.from_numpy(p) for p in piece_types]).to(device)
+        next_states_game_board = torch.stack([torch.from_numpy(s) for s in next_states_game_board]).to(device)
+        next_piece_types = torch.stack([torch.from_numpy(p) for p in next_piece_types]).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
         rewards = torch.tensor(rewards, dtype=torch.float).to(device)
         
@@ -178,8 +193,8 @@ class Agent:
         # logger.log(f"Actions shape: {actions.shape}")
         # logger.log(f"Rewards shape: {rewards.shape}")
         
-        current_qs = self.model(states)
-        next_qs = self.target_model(next_states)
+        current_qs = self.model(states_game_board, piece_types)
+        next_qs = self.target_model(next_states_game_board, next_piece_types)
         
         max_next_q = next_qs.max(1)[0]
         target_qs = rewards + (self.discount_factor * max_next_q)
@@ -204,6 +219,12 @@ class Agent:
     def _load_model(self):
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
         self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.epsilon = checkpoint['epsilon']
+        
+    def _load_target_model(self): 
+        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        self.target_model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epsilon = checkpoint['epsilon']
 

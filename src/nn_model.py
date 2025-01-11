@@ -1,5 +1,8 @@
 from torch import nn
 from simpleLogger import SimpleLogger
+from config import *
+
+import torch
 
 logger = SimpleLogger()
 
@@ -23,27 +26,41 @@ class CNN(nn.Module):
             self.relu,
         )
         
-        cov_output_size = 64* board_height * board_width       # current board dimensions, maybe change that. 
+        cov_output_size = 64* board_height * board_width       # current board dimensions, maybe change that.
+        piece_type_size = NUMBER_OF_PIECES
         
-        self.fc1 = nn.Linear(cov_output_size, 64)
+        self.fc1 = nn.Linear(cov_output_size + piece_type_size, 64)
         self.relu2 = nn.ReLU()
         self.fc2 = nn.Linear(64, num_actions)
         
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            self.fc1,
-            self.relu2,
-            self.fc2
+        # self.fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     self.fc1,
+        #     self.relu2,
+        #     self.fc2
+
+        # )
         
-        )
-        
-    def forward(self, x): 
+    def forward(self, x, piece_type): 
         #logger.log(f"in forward shape: {x.shape}")
         if len(x.shape) == 3:
             x = x.unsqueeze(1)  # Add channel dimension if not present
             #logger.log(f"x after unsqueezing: {x.shape}")
+            
+            
         x = self.layers(x)
-        x = self.fc(x)
+        x = nn.Flatten()(x)
+        
+        if len(piece_type.shape) == 1:
+            piece_type = piece_type.unsqueeze(0)
+        logger.log(f"dimensions in forward: \nx: {x.shape}, piece_t: {piece_type}")
+        
+        combined = torch.cat([x, piece_type], dim=1)
+        logger.log(f"combined shape {combined.shape}")
+        
+        x = self.fc1(combined)
+        x = self.relu2(x)
+        x = self.fc2(x)
         return x
         
     

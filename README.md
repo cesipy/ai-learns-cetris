@@ -2,6 +2,10 @@
 
 
 ## TODOs
+- [ ] priority based memory to favour recent experience
+- [ ] reduce size of C  logs
+- [ ] initialize weights from uniform
+- [ ] include piece type in current state for cnn. i guess it doesnt know it right now
 - [ ] normalize loss on batchsize
 - [ ] logger queue for mp.Process
 - [ ] script to fetch logs from docker containers

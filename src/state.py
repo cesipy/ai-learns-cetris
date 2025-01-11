@@ -183,8 +183,14 @@ class State:
     
 
     def convert_to_array(self):
-        board_array =np.array(self.game_board, dtype=np.float32)
-        return board_array
+        board_array =np.array(self.game_board_copy, dtype=np.float32)
+        
+        # one-hot representation for current piece type
+        piece_type_array = np.zeros(7, dtype=np.float32)
+        piece_type_array[self.piece_type] = np.float32(1.0)
+        
+        
+        return board_array, piece_type_array
         
         board_reshaped = board_array.reshape(1, 28, 10)
         #logger.log(f"board_reshaped: {board_reshaped}")

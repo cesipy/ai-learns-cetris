@@ -26,7 +26,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.00001        # default value should be (350/5000)
+SLEEPTIME = 0.1#0001        # default value should be (350/5000)
 INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()
@@ -461,48 +461,53 @@ def child_function():
         
         fig.write_html(os.path.join(RES_DIR, "training_progress.html"))  
         
-     
-    num_actions = len(ACTIONS)
-    board_shape = (28,14)
-    from q_agent import Agent
-    time.sleep(2)
-    meta = init()
-    if LOAD_MODEL:
-        game.load_model()
-    action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
-    communicator = communication.Communicator(meta)
-    agent = Agent(
-        n_neurons=200,
-        epsilon=EPSILON,
-        epsilon_decay=EPSILON_DECAY,
-        q_table={},
-        actions=ACTIONS, 
-        action_space_string=action_space, 
-        load_model=LOAD_MODEL, 
-        num_actions=num_actions, 
-        board_shape=board_shape
-    )
-    #logger.log("agent initialized")
-    time.sleep(1)
-    handshake = communicator.receive_from_pipe()
-    #logger.log(f"handshake: {handshake}")
-    communicator.send_handshake(str(ITERATIONS))
-    logger.log("sent handshake back")
-    game_state = 0
-    current_iteration = ITERATIONS
-    while True:
-        game_state = play_one_round(communicator, agent)
-        
-        # save visualisations
-        if current_iteration % PLOT_COUNTER == 0:
-            plot_lines_cleared(game.lines_cleared_array, game.mean_rewards)
+    try: 
+        num_actions = len(ACTIONS)
+        board_shape = (28,14)
+        from q_agent import Agent
+        time.sleep(2)
+        meta = init()
+        # if LOAD_MODEL:
+        #     game.load_model()
+        action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
+        communicator = communication.Communicator(meta)
+        agent = Agent(
+            n_neurons=200,
+            epsilon=EPSILON,
+            epsilon_decay=EPSILON_DECAY,
+            q_table={},
+            actions=ACTIONS, 
+            action_space_string=action_space, 
+            load_model=LOAD_MODEL, 
+            num_actions=num_actions, 
+            board_shape=board_shape
+        )
+        #logger.log("agent initialized")
+        time.sleep(1)
+        handshake = communicator.receive_from_pipe()
+        #logger.log(f"handshake: {handshake}")
+        communicator.send_handshake(str(ITERATIONS))
+        logger.log("sent handshake back")
+        game_state = 0
+        current_iteration = ITERATIONS
+        while True:
+            game_state = play_one_round(communicator, agent)
             
+            # save visualisations
+            if current_iteration % PLOT_COUNTER == 0:
+                plot_lines_cleared(game.lines_cleared_array, game.mean_rewards)
+                
+            
+            if game_state == 1: 
+                break
+            elif game_state == 2:
+                current_iteration -= 1
+        game.save_model()
+        clean_up(meta)
+        meta.logger.log("successfully reached end!")
+        exit(0)
+    except Exception as e: 
+        error_trace = traceback.format_exc()
         
-        if game_state == 1: 
-            break
-        elif game_state == 2:
-            current_iteration -= 1
-    game.save_model()
-    clean_up(meta)
-    meta.logger.log("successfully reached end!")
-    exit(0)
+        logger.log(f"Error occurred: {str(e)}\n{error_trace}")
+        raise e
