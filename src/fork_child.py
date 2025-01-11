@@ -26,7 +26,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.1#0001        # default value should be (350/5000)
+SLEEPTIME = 0.000001        # default value should be (350/5000)
 INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 logger = SimpleLogger()

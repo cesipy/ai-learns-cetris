@@ -8,6 +8,7 @@ logger = SimpleLogger()
 
 board_height = 28
 board_width  = 10
+FC_HIDDEN_UNIT_SIZE = 128
 
 class CNN(nn.Module):
     def __init__(self, num_actions: int): 
@@ -29,9 +30,9 @@ class CNN(nn.Module):
         cov_output_size = 64* board_height * board_width       # current board dimensions, maybe change that.
         piece_type_size = NUMBER_OF_PIECES
         
-        self.fc1 = nn.Linear(cov_output_size + piece_type_size, 64)
+        self.fc1 = nn.Linear(cov_output_size + piece_type_size, FC_HIDDEN_UNIT_SIZE )
         self.relu2 = nn.ReLU()
-        self.fc2 = nn.Linear(64, num_actions)
+        self.fc2 = nn.Linear(FC_HIDDEN_UNIT_SIZE, num_actions)
         
         # self.fc = nn.Sequential(
         #     nn.Flatten(),
@@ -53,10 +54,10 @@ class CNN(nn.Module):
         
         if len(piece_type.shape) == 1:
             piece_type = piece_type.unsqueeze(0)
-        logger.log(f"dimensions in forward: \nx: {x.shape}, piece_t: {piece_type}")
+        #logger.log(f"dimensions in forward: \nx: {x.shape}, piece_t: {piece_type}")
         
         combined = torch.cat([x, piece_type], dim=1)
-        logger.log(f"combined shape {combined.shape}")
+        #logger.log(f"combined shape {combined.shape}")
         
         x = self.fc1(combined)
         x = self.relu2(x)
