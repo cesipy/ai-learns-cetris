@@ -17,6 +17,7 @@ from tetris_expert import TetrisExpert
 
 from state import State
 from config import *
+from memory import Memory
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
@@ -38,7 +39,9 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=70000)
+        #self.memory              = deque(maxlen=70000)
+        #replacing normal deque with priority based model
+        self.memory              = Memory(maxlen=70000, bias=True)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -90,7 +93,8 @@ class Agent:
         # action space has negative values -> just workaround for this
         norm_action = State.normalize_action(action)
         
-        self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
@@ -163,7 +167,8 @@ class Agent:
     def train_batch(self):
         logger.log("starting batch training")
         # get batch from memory
-        batch = random.sample(self.memory, BATCH_SIZE)
+        #batch = random.sample(self.memory, BATCH_SIZE)
+        batch = self.memory.sample(BATCH_SIZE)
         
         # handling of all the elements for tensors
         states_game_board = []
