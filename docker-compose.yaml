@@ -1,6 +1,6 @@
 services: 
-# cnn, expert_counter = 10, amount_pieces = 2
-# old reward
+# cnn, expert_counter = 1, amount_pieces = 7
+# new, complex reward
   experiment_1: 
     build: 
       context: .
@@ -14,8 +14,8 @@ services:
       - TERM=xterm 
 
 
-# cnn, expert_counter = 100, amount_pieces = 2
-# old reward
+# cnn, expert_counter = 2, amount_pieces = 7
+# new, complex reward
   experiment_2:
     build: 
       context: .
@@ -28,8 +28,8 @@ services:
     environment:
       - TERM=xterm     
 
-# cnn, expert_counter = 2, amount_pieces = 2
-# old reward
+# cnn, expert_counter = 3, amount_pieces = 7
+# new, complex reward
   experiment_3: 
     build: 
       context: .

@@ -8,6 +8,8 @@ import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
 from nn_model import CNN, nn
 
+import pickle
+
 import numpy as np
 import random
 from simpleLogger import SimpleLogger
@@ -41,7 +43,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=70000, bias=True)
+        self.memory              = Memory(maxlen=30000, bias=True)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -98,9 +100,12 @@ class Agent:
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
-            for _ in range(NUM_BATCHES):
-                #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                self.train_batch()
+            # save list as pickle (checkpointing)
+            self._save_memory("res/precollected-memory/memory.pkl")
+            
+            # for _ in range(NUM_BATCHES):
+            #     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+            #     self.train_batch()
                 
                 
                 
@@ -162,7 +167,12 @@ class Agent:
         return q_table
     
 
-
+    def _save_memory(self, path: str): 
+        self.memory.save_memory()
+        logger.log(f"successfully saved memory to file: {path}")
+        
+    def _load_memory(self, path:str): 
+        pass
     
     def train_batch(self):
         logger.log("starting batch training")

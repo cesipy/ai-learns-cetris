@@ -1,7 +1,8 @@
 from typing import List, Tuple
 import random 
 import numpy as np
-
+import pickle
+import torch
 
 
 from simpleLogger import SimpleLogger
@@ -51,7 +52,9 @@ class Memory():
         # if this is not correct, the whole calculation is not working
         assert(len(self.memory_list) == len(prob))
         
-        samples = np.random.choice(self.memory_list, size=k, replace=False, p=prob)
+        samples_indices = np.random.choice(len(self.memory_list), size=k, replace=False, p=prob)
+        
+        samples = [self.memory_list[index] for index in samples_indices]
         return samples
     
     
@@ -66,18 +69,18 @@ class Memory():
         copy_list = self.memory_list.copy()
         probs = []
 
-        recent_bias_fraction = 0.3
+        recent_bias_fraction = 0.7
         split_index = int( recent_bias_fraction *  
                        len(self.memory_list)     
         )
         
         denom_recent =  (
             2 *         # times two, because i want to norm sum of distribution to 1
-            recent_bias_fraction * len(self.memory_list)
+            (1 -recent_bias_fraction) * len(self.memory_list)
             )
         denom_earlier = (
             2 * 
-            (1-recent_bias_fraction) * len(self.memory_list)
+            (recent_bias_fraction) * len(self.memory_list)
         )
 
         for i in copy_list[:split_index]:
@@ -85,10 +88,70 @@ class Memory():
         for i in copy_list[split_index:]:
             probs.append(1/denom_recent)
             
-        #print(f"sum of prob: {sum(probs)}")
+        print(f"sum of prob: {sum(probs)}")
         
         return probs
+    
+    def save_memory(self, path: str) -> None:
+        """
+        Save the memory buffer to a file using pickle.
+        The method handles PyTorch tensors by converting them to numpy arrays before saving.
         
+        Args:
+            path (str): Path where the memory buffer will be saved
+        """
+    
+        serializable_memory = []
+        
+        for experience in self.memory_list:
+            (state_array, piece_type), action, reward, (next_state_array, next_piece_type) = experience
+            
+            serializable_memory.append((
+                (state_array.cpu().numpy() if torch.is_tensor(state_array) else state_array,
+                piece_type.cpu().numpy() if torch.is_tensor(piece_type) else piece_type),
+                action,
+                reward,
+                (next_state_array.cpu().numpy() if torch.is_tensor(next_state_array) else next_state_array,
+                next_piece_type.cpu().numpy() if torch.is_tensor(next_piece_type) else next_piece_type)
+            ))
+        
+        with open(path, 'wb') as f:
+            pickle.dump({
+                'memory_list': serializable_memory,
+                'maxlen': self.maxlen,
+                'bias': self.bias
+            }, f)
+
+    def load_memory(self, path: str) -> None:
+        """
+        Load the memory buffer from a file.
+        The method handles converting numpy arrays back to PyTorch tensors.
+        
+        Args:
+            path (str): Path to the saved memory buffer file
+        """
+        with open(path, 'rb') as f:
+            data = pickle.load(f)
+            
+
+        self.maxlen = data['maxlen']
+        self.bias = data['bias']
+        
+        self.memory_list = []
+        for experience in data['memory_list']:
+            (state_array, piece_type), action, reward, (next_state_array, next_piece_type) = experience
+            
+            # Convert numpy arrays to tensors
+            self.memory_list.append((
+                (torch.from_numpy(state_array).float() if isinstance(state_array, np.ndarray) else state_array,
+                torch.from_numpy(piece_type).float() if isinstance(piece_type, np.ndarray) else piece_type),
+                action,
+                reward,
+                (torch.from_numpy(next_state_array).float() if isinstance(next_state_array, np.ndarray) else next_state_array,
+                torch.from_numpy(next_piece_type).float() if isinstance(next_piece_type, np.ndarray) else next_piece_type)
+            ))
+        
+# ----------------------------------------------
         
 def plot_sampling_distribution(memory: Memory):
     import matplotlib.pyplot as plt
@@ -101,6 +164,7 @@ def plot_sampling_distribution(memory: Memory):
         samples = memory.sample_with_recent_bias(k=1000)
         all_samples.extend(samples)
     
+    all_samples = [i[1] for i in all_samples]
     ax1.hist(all_samples, bins=50, density=True, alpha=0.7, color='blue')
     ax1.set_title('Distribution of Sampled Values (100 runs)')
     ax1.set_xlabel('Value')
@@ -126,13 +190,23 @@ def main():
     memory = Memory(maxlen=maxlen, bias=True)
     
     for i in range(maxlen): 
-        memory.add(i)
+        memory.add(((i, i+12), i+1, i,(i-1, i)))
     
     prob = memory.construct_probability_distr()
     print(f"lengths: \n\tprobs:{len(prob)}, \n\tmemory: {len(memory)}")
     
     samples = memory.sample_with_recent_bias(k=100)
     print(samples)
+    
+    plot_sampling_distribution(memory=memory)
+    
+    
+    path = "memory.pkl"
+    memory.save_memory(path=path)
+    
+    del memory
+    memory = Memory(maxlen=maxlen, bias=True)
+    memory.load_memory(path=path)
     
     plot_sampling_distribution(memory=memory)
     
