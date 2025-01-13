@@ -21,28 +21,37 @@ logger = SimpleLogger()
 
 
 def calculate_reward(next_state: State):
-
     reward = 0
     
     if next_state.immedeate_lines_cleared > 0:
-        reward += (next_state.immedeate_lines_cleared ** 2) * 100
-           
-    if next_state.max_height > 10: 
-        reward -= 8.0 * next_state.max_height
-    reward -= 2.5 * next_state.get_height_variance()  
-    reward -= 1.0 * next_state.get_max_height_diff()  
-    reward -= 1.5 * next_state.holes  
+        reward += (next_state.immedeate_lines_cleared ** 2) * 150
+    
+    # Survival reward - scale with height to encourage lower stacks
+    survival_bonus = max(0, 20 - next_state.max_height) * 0.1
+    reward += survival_bonus
+    
+    if next_state.max_height > 10:
+        # Make height penalty exponential after certain threshold
+        height_penalty = ((next_state.max_height - 10) ** 1.5) * 0.5
+        reward -= height_penalty
+    
+    # Hole penalties - make them more punishing as they accumulate
+    hole_penalty = (next_state.holes ** 1.5) * 0.8
+    reward -= hole_penalty
+    
+    # Structure penalties - scaled down to not overshadow main objectives
+    reward -= 0.5 * next_state.get_height_variance()
+    reward -= 0.3 * next_state.get_max_height_diff()
+    
 
-
-        
-    # Heavy punishment for game over (when game terminates)  
+    reward -= 0.2 * next_state.bumpiness
+    
     if next_state.is_state_game_over():
-        reward -=500
-        
-    #logger.log(f"current reward: {reward}, heights_var: {next_state.get_height_variance()}, max_height_diff: {next_state.get_max_height_diff()}, for state: {next_state}")
-
+        game_over_penalty = 300 + next_state.max_height * 2
+        reward -= game_over_penalty
         
     return reward
+
 
 # super simple reward for only expert
 def calculate_reward_tetris_expert(next_state: State):

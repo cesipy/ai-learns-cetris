@@ -92,7 +92,7 @@ class Agent:
         
         self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
-        if len(self.memory) >=BATCH_SIZE and self.counter % COUNTER == 0 :
+        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
             for _ in range(NUM_BATCHES):
                 #logger.log(f"processing batch from memory, current len: {len(self.memory)}")

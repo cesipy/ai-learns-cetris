@@ -27,7 +27,7 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.9992
+EPSILON_DECAY = 0.999
 EPSILON = 0.99
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
@@ -78,9 +78,27 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 4
+COUNTER_TETRIS_EXPERT = 2
 NUMBER_OF_PIECES      = 7       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.
 COMMUNICATION_TIME_OUT = 15.0
+
+
+# from main file: 
+# default value should be (350/5000), how much to sleep between the communication with c++
+SLEEPTIME = 0.000001    
+# sleeptime between multiple epochs    
+INTER_ROUND_SLEEP_TIME = 0.2
+ITERATIONS = 100000   # temp
+POSSIBLE_NUMBER_STEPS = 4
+                                
+LOAD_MODEL = False          # load model?
+
+
+# files ideosyncratic to the neural network
+# currently this is a CNN, maybe architecture is changed in the future
+FC_HIDDEN_UNIT_SIZE = 128
+BOARD_HEIGHT = 28
+BOARD_WIDTH  = 10

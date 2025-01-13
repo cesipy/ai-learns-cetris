@@ -6,10 +6,6 @@ import torch
 
 logger = SimpleLogger()
 
-board_height = 28
-board_width  = 10
-FC_HIDDEN_UNIT_SIZE = 128
-
 class CNN(nn.Module):
     def __init__(self, num_actions: int): 
         super().__init__()
@@ -27,7 +23,7 @@ class CNN(nn.Module):
             self.relu,
         )
         
-        cov_output_size = 64* board_height * board_width       # current board dimensions, maybe change that.
+        cov_output_size = 64* BOARD_HEIGHT * BOARD_WIDTH       # current board dimensions, maybe change that.
         piece_type_size = NUMBER_OF_PIECES
         
         self.fc1 = nn.Linear(cov_output_size + piece_type_size, FC_HIDDEN_UNIT_SIZE )

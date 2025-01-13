@@ -26,13 +26,7 @@ from reward import calculate_reward
 
 os.chdir(SRC_DIR)
 
-SLEEPTIME = 0.000001        # default value should be (350/5000)
-INTER_ROUND_SLEEP_TIME = 0.2
-ITERATIONS = 100000   # temp
 logger = SimpleLogger()
-POSSIBLE_NUMBER_STEPS = 4
-                                
-LOAD_MODEL = False          # load model?
 
 def child_function():
     
