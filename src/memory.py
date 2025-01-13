@@ -2,7 +2,7 @@ from typing import List, Tuple
 import random 
 import numpy as np
 
-import matplotlib.pyplot as plt
+
 
 from simpleLogger import SimpleLogger
 
@@ -91,6 +91,7 @@ class Memory():
         
         
 def plot_sampling_distribution(memory: Memory):
+    import matplotlib.pyplot as plt
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(2, 1, )
     
