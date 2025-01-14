@@ -3,7 +3,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
 
-
 import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
 from nn_model import CNN, nn
@@ -20,9 +19,13 @@ from tetris_expert import TetrisExpert
 from state import State
 from config import *
 from memory import Memory
+os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
+MEMORY_PATH = "../res/precollected-memory/memory.pkl"
+
+IMITATION_COLLECTOR = True
 
 device = torch.device("cpu")
 class Agent:
@@ -74,10 +77,98 @@ class Agent:
             self._load_target_model()
             self.epsilon = 0.01     # only small expsilon here
             
+        if IMITATION_COLLECTOR:
+            self.memory.load_memory(MEMORY_PATH)
+            self.memory.maxlen = 100000
+            logger.log(f"loaded memory with size: {len(self.memory)}")
+        else:
+            # self.imitation_learning_memory = Memory(maxlen=30000)
+            # self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
+            #self.train_imitation_learning(300)
+            pass
+        
+            
             
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
+        
+    def train_imitation_learning(self, batches: int, epochs_per_batch: int = 10):
+        """
+        Train the model on imitation learning data with multiple epochs per batch.
+        
+        Args:
+            batches (int): Number of different batches to train on
+            epochs_per_batch (int): Number of times to train on each batch
+        """
+        total_iterations = batches * epochs_per_batch
+        
+        self.imitation_learning_memory.bias=False
+        
+        for batch in range(batches):
+            # Sample a batch once and reuse it for multiple epochs
+            current_batch = self.imitation_learning_memory.sample(BATCH_SIZE)
+            
+            for epoch in range(epochs_per_batch):
+                loss = self.train_on_batch(current_batch)
+                logger.log(f"Imitation Learning - Batch {batch+1}/{batches}, "
+                        f"Epoch {epoch+1}/{epochs_per_batch}, Loss: {loss:.4f}")
+                
+            # Update target network more frequently during imitation learning
+            if batch % (self.target_update_frequency // 10) == 0:
+                self.target_model.load_state_dict(self.model.state_dict())
 
+    def train_on_batch(self, batch):
+        """
+        Train on a specific batch of experiences.
+        
+        Args:
+            batch: A batch of experience tuples
+            
+        Returns:
+            float: The training loss for this batch
+        """
+
+        states_game_board = []
+        piece_types = []
+        next_states_game_board = []
+        next_piece_types = []
+        actions = []
+        rewards = []
+        
+        for (state_game_board, state_piece_type), action, reward, (next_state_game_board, next_state_piece_type) in batch:
+            states_game_board.append(state_game_board)
+            piece_types.append(state_piece_type)
+            next_states_game_board.append(next_state_game_board)
+            next_piece_types.append(next_state_piece_type)
+            actions.append(action)
+            rewards.append(reward)
+        
+        # convert to tensors
+        states_game_board = torch.stack(states_game_board).to(device)
+        piece_types = torch.stack(piece_types).to(device)
+        next_states_game_board = torch.stack(next_states_game_board).to(device)
+        next_piece_types = torch.stack(next_piece_types).to(device)
+        actions = torch.tensor(actions, dtype=torch.long).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+
+        current_qs = self.model(states_game_board, piece_types)
+        next_qs = self.target_model(next_states_game_board, next_piece_types)
+        
+        # Compute target Q-values
+        max_next_q = next_qs.max(1)[0]
+        target_qs = rewards + (self.discount_factor * max_next_q)
+        
+        # Compute current Q-values for taken actions
+        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
+
+        # Compute loss and update
+        loss = nn.MSELoss()(q_values, target_qs.detach())
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        
+        return loss.item()
 
     def train(self, state: State, action, next_state: State, reward):
         state_array, piece_type = state.convert_to_array()
@@ -100,13 +191,16 @@ class Agent:
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
-            # save list as pickle (checkpointing)
-            self._save_memory("res/precollected-memory/memory.pkl")
+            if IMITATION_COLLECTOR:
+                # save list as pickle (checkpointing)
+                logger.log(f"saving memory, current memory size: {len(self.memory)}")
+                self._save_memory(MEMORY_PATH)
             
-            # for _ in range(NUM_BATCHES):
-            #     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-            #     self.train_batch()
-                
+            else:
+                for _ in range(NUM_BATCHES):
+                    #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+                    self.train_batch(memory=self.memory)
+                    
                 
                 
         # sync the target and normal models.
@@ -128,7 +222,12 @@ class Agent:
         
         # exploration
         if random.random() <= self.epsilon:
-            if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
+            # this is the tetris expert for imitation learning
+            if self.counter % 100 in [
+                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21, 22, 25, 26, 27, 28,
+                30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 43, 44, 45 ,46, 47, 48, 50, 52 ,53, 54, 55, 56, 57, 58, 59, 60, 65, 66, 67, 68
+            ]:
+            #if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
                 self.cunter_tetris_expert = 0
                 return_val = self.tetris_expert.get_best_move(state=state)
                 if return_val is None:
@@ -168,17 +267,22 @@ class Agent:
     
 
     def _save_memory(self, path: str): 
-        self.memory.save_memory()
+        directory = os.path.dirname(path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+            logger.log(f"Created directory: {directory}")
+        
+        self.memory.save_memory(path=path)
         logger.log(f"successfully saved memory to file: {path}")
         
     def _load_memory(self, path:str): 
         pass
     
-    def train_batch(self):
+    def train_batch(self, memory):
         logger.log("starting batch training")
         # get batch from memory
         #batch = random.sample(self.memory, BATCH_SIZE)
-        batch = self.memory.sample(BATCH_SIZE)
+        batch = memory.sample(BATCH_SIZE)
         
         # handling of all the elements for tensors
         states_game_board = []

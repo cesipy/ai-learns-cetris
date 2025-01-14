@@ -465,6 +465,14 @@ def child_function():
         #     game.load_model()
         action_space = construct_action_space(POSSIBLE_NUMBER_STEPS)
         communicator = communication.Communicator(meta)
+        #logger.log("agent initialized")
+        time.sleep(1)
+        handshake = communicator.receive_from_pipe()
+        #logger.log(f"handshake: {handshake}")
+        communicator.send_handshake(str(ITERATIONS))
+        logger.log("sent handshake back")
+        game_state = 0
+        current_iteration = ITERATIONS
         agent = Agent(
             n_neurons=200,
             epsilon=EPSILON,
@@ -476,14 +484,6 @@ def child_function():
             num_actions=num_actions, 
             board_shape=board_shape
         )
-        #logger.log("agent initialized")
-        time.sleep(1)
-        handshake = communicator.receive_from_pipe()
-        #logger.log(f"handshake: {handshake}")
-        communicator.send_handshake(str(ITERATIONS))
-        logger.log("sent handshake back")
-        game_state = 0
-        current_iteration = ITERATIONS
         while True:
             game_state = play_one_round(communicator, agent)
             

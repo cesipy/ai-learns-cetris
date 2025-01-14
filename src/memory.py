@@ -3,7 +3,11 @@ import random
 import numpy as np
 import pickle
 import torch
+import os
 
+from config import *
+
+os.chdir(SRC_DIR)
 
 from simpleLogger import SimpleLogger
 
@@ -88,7 +92,7 @@ class Memory():
         for i in copy_list[split_index:]:
             probs.append(1/denom_recent)
             
-        print(f"sum of prob: {sum(probs)}")
+        #print(f"sum of prob: {sum(probs)}")
         
         return probs
     

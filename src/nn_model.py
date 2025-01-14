@@ -30,8 +30,13 @@ class CNN(nn.Module):
         self.relu2 = nn.ReLU()
         self.fc2 = nn.Linear(FC_HIDDEN_UNIT_SIZE, num_actions)
         
-        torch.nn.init.xavier_uniform(self.fc1.weight)
-        torch.nn.init.xavier_uniform(self.fc2.weight)
+        torch.nn.init.xavier_uniform_(self.fc1.weight)
+        torch.nn.init.xavier_uniform_(self.fc2.weight)
+        torch.nn.init.xavier_uniform_(self.conv1.weight)
+        torch.nn.init.xavier_uniform_(self.conv2.weight)
+        torch.nn.init.xavier_uniform_(self.conv3.weight)
+        
+        
         
         # self.fc = nn.Sequential(
         #     nn.Flatten(),
