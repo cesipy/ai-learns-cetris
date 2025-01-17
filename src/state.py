@@ -50,7 +50,7 @@ class State:
     
     
     def is_state_game_over(self)-> bool:
-        for cell in self.game_board_copy[0]:
+        for cell in self.game_board_copy[2]:
             if cell == 1:
                 return True
         

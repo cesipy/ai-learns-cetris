@@ -25,7 +25,9 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-IMITATION_COLLECTOR = True
+ONLY_TRAINING = False            # only training, no pretraining with expert
+IMITATION_COLLECTOR = False
+IMITATIO_LEARNING_BATCHES = 130
 
 device = torch.device("cpu")
 class Agent:
@@ -46,7 +48,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=30000, bias=True)
+        self.memory              = Memory(maxlen=70000, bias=True)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -77,18 +79,27 @@ class Agent:
             self._load_target_model()
             self.epsilon = 0.01     # only small expsilon here
             
-        if IMITATION_COLLECTOR:
-            self.memory.load_memory(MEMORY_PATH)
-            self.memory.maxlen = 100000
-            logger.log(f"loaded memory with size: {len(self.memory)}")
-        else:
-            # self.imitation_learning_memory = Memory(maxlen=30000)
-            # self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-            #self.train_imitation_learning(300)
-            pass
-        
-            
-            
+        if not ONLY_TRAINING:           # circumvents the imitation collector
+            if IMITATION_COLLECTOR:
+                if os.path.exists(MEMORY_PATH):
+                    self.memory.load_memory(MEMORY_PATH)
+                    self.memory.maxlen = 100000
+                    logger.log(f"loaded memory with size: {len(self.memory)}")
+                else: 
+                    logger.log("No existing memory found. Creating new memory for imitation learning collection.")
+                    self.memory = Memory(maxlen=100000, bias=False)  
+                    
+                    memory_dir = os.path.dirname(MEMORY_PATH)
+                    if memory_dir and not os.path.exists(memory_dir):
+                        os.makedirs(memory_dir, exist_ok=True)
+                        logger.log(f"Created directory for storing memory: {memory_dir}")
+                    
+            else:
+                self.imitation_learning_memory = Memory(maxlen=30000)
+                self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
+                self.train_imitation_learning(batches=IMITATIO_LEARNING_BATCHES, epochs_per_batch=4)
+
+
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
         
@@ -104,18 +115,49 @@ class Agent:
         
         self.imitation_learning_memory.bias=False
         
+        losses = []
         for batch in range(batches):
             # Sample a batch once and reuse it for multiple epochs
             current_batch = self.imitation_learning_memory.sample(BATCH_SIZE)
             
+            total_loss_batch = 0
             for epoch in range(epochs_per_batch):
                 loss = self.train_on_batch(current_batch)
                 logger.log(f"Imitation Learning - Batch {batch+1}/{batches}, "
                         f"Epoch {epoch+1}/{epochs_per_batch}, Loss: {loss:.4f}")
                 
+                total_loss_batch += loss
+                
             # Update target network more frequently during imitation learning
             if batch % (self.target_update_frequency // 10) == 0:
                 self.target_model.load_state_dict(self.model.state_dict())
+                
+            avg_loss_batch = total_loss_batch/ epochs_per_batch
+            losses.append(avg_loss_batch)
+        
+        # Create and save the loss plot
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 6))
+        plt.plot(losses, label='Average Loss per Batch')
+        plt.xlabel('Batch Number')
+        plt.ylabel('Average Loss')
+        plt.title('Imitation Learning Training Loss')
+        plt.grid(True)
+        plt.legend()
+        
+        # Save plot
+        plot_dir = os.path.dirname(MODEL_NAME)
+        plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
+        
+        # Create directory if it doesn't exist
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
+            
+        plt.savefig(plot_path)
+        plt.close()  # Close the plot to free memory
+        
+        logger.log(f"Loss plot saved to: {plot_path}")
+        
 
     def train_on_batch(self, batch):
         """
@@ -172,7 +214,7 @@ class Agent:
 
     def train(self, state: State, action, next_state: State, reward):
         state_array, piece_type = state.convert_to_array()
-        next_state_array, next_piece_type = state.convert_to_array()
+        next_state_array, next_piece_type = next_state.convert_to_array()
         # state_array = state.convert_to_array()           # this is a tuple of (gameboard and piecetype one-hot)
         # next_state_array = next_state.convert_to_array() # ditto
         
@@ -191,7 +233,7 @@ class Agent:
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
-            if IMITATION_COLLECTOR:
+            if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
                 # save list as pickle (checkpointing)
                 logger.log(f"saving memory, current memory size: {len(self.memory)}")
                 self._save_memory(MEMORY_PATH)
@@ -223,11 +265,11 @@ class Agent:
         # exploration
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
-            if self.counter % 100 in [
-                0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21, 22, 25, 26, 27, 28,
-                30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 43, 44, 45 ,46, 47, 48, 50, 52 ,53, 54, 55, 56, 57, 58, 59, 60, 65, 66, 67, 68
-            ]:
-            #if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
+            # if self.counter % 100 in [
+            #     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21, 22, 25, 26, 27, 28,
+            #     30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 43, 44, 45 ,46, 47, 48, 50, 52 ,53, 54, 55, 56, 57, 58, 59, 60, 65, 66, 67, 68
+            # ]:
+            if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
                 self.cunter_tetris_expert = 0
                 return_val = self.tetris_expert.get_best_move(state=state)
                 if return_val is None:
