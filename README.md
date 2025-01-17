@@ -2,7 +2,12 @@
 
 
 ## TODOs
+
 - [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes
+- [ ] epochs in imitation training, also normal training
+- [ ]  imitation training: partial random, partial completely expert
+- [ ] unify batch training methods
+- [ ] fix game-over funciton
 
 - [x] priority based memory to favour recent experience
 - [x] reduce size of C  logs
