@@ -1,6 +1,6 @@
 services: 
 # cnn, expert_counter = 1, amount_pieces = 7
-# new, complex reward
+# new, reworked reward 17.1
   experiment_1: 
     build: 
       context: .
@@ -15,7 +15,7 @@ services:
 
 
 # cnn, expert_counter = 2, amount_pieces = 7
-# new, complex reward
+# new, reworked reward 17.1
   experiment_2:
     build: 
       context: .
