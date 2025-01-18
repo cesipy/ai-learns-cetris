@@ -1,10 +1,25 @@
-re# AI learns cetris - Reinforement Machine Learning
+# AI learns cetris - Reinforement Machine Learning
 
 
 ## TODOs
+
+- [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes
+- [ ] epochs in imitation training, also normal training
+- [ ]  imitation training: partial random, partial completely expert
+- [ ] unify batch training methods
+- [ ] fix game-over funciton
+
+- [x] priority based memory to favour recent experience
+- [x] reduce size of C  logs
+- [ ] initialize weights from uniform
+- [x] include piece type in current state for cnn. i guess it doesnt know it right now
+- [ ] normalize loss on batchsize
+- [ ] logger queue for mp.Process
+- [x] script to fetch logs from docker containers
+- [x] deactivate oinly single thread in torch in qagent
 - [ ] improve state function for tetris board - encode state to matrix with current position and all the blocks in the field. 
 - [ ] in c: see next tetris piece
-- [ ] use seeds to fix the run: especially for debugging in the begining to know if it even works
+- [x] use seeds to fix the run: especially for debugging in the begining to know if it even works
 
 
 - [x] is action space correct? research and write comprehensive documentation
@@ -14,12 +29,12 @@ re# AI learns cetris - Reinforement Machine Learning
 - [ ] save outcomes to file where reward is bigger than 0
 - [x] add some visualizations
 - [x] batch processing only after n steps
-- [ ] tetrisexpert implementation
+- [x] tetrisexpert implementation
 
 
 - [ ] documentation for piece_types:int  -> what is what?
-- [ ] add current_piece_count to state so that i can separate reward function from other code. 
-- [ ] maybe dockerize application so i can run several runs in parallel
+- [x] add current_piece_count to state so that i can separate reward function from other code. 
+- [x] maybe dockerize application so i can run several runs in parallel
 
 - [ ] problem with placeholder action: state s1 received -> get action a1; s2 is direct result (has already new piece inserted!); s3 (=s2 + 1 tick) -> a2, s4, ...
     - remove the extra tick, has to be modified on c++ side. 

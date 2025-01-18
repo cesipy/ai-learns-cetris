@@ -1,6 +1,10 @@
 from typing import List, Tuple
 import numpy as np
 
+from simpleLogger import SimpleLogger
+
+
+logger = SimpleLogger()
 
 
 class State:
@@ -46,7 +50,7 @@ class State:
     
     
     def is_state_game_over(self)-> bool:
-        for cell in self.game_board_copy[0]:
+        for cell in self.game_board_copy[2]:
             if cell == 1:
                 return True
         
@@ -179,20 +183,39 @@ class State:
     
 
     def convert_to_array(self):
+        board_array =np.array(self.game_board_copy, dtype=np.float32)
+        
+        # one-hot representation for current piece type
+        piece_type_array = np.zeros(7, dtype=np.float32)
+        piece_type_array[self.piece_type] = np.float32(1.0)
+        
+        
+        return board_array, piece_type_array
+        
+        board_reshaped = board_array.reshape(1, 28, 10)
+        #logger.log(f"board_reshaped: {board_reshaped}")
+        return board_reshaped
         #flattened_array = np.array(self.game_board).flatten()  # wrong, we dont want to have the board, way too many possible configurations
         #return np.concatenate((flattened_array, [self.lines_cleared, self.height, self.holes, self.bumpiness]))
-        return np.array([
-            self.lines_cleared,         # TODO: does this even make sense?
-            self.height, 
-            self.holes, 
-            self.bumpiness, 
-            self.piece_type,
-            #self.wells,
-            #self.row_transitions,
-            #self.column_transitions,
-            #self.landing_height
-        ])
+        # return np.array([
+        #     self.lines_cleared,         # TODO: does this even make sense?
+        #     self.height, 
+        #     self.holes, 
+        #     self.bumpiness, 
+        #     self.piece_type,
+        #     #self.wells,
+        #     #self.row_transitions,
+        #     #self.column_transitions,
+        #     #self.landing_height
+        # ])
     
+    @staticmethod
+    def normalize_action(action):
+        # TODO: make this more sofisticated 
+        return action +20
+    
+    def denormalize_action(action): 
+        return action - 20
     
     def get_values(self):
         lines_cleared = self.lines_cleared

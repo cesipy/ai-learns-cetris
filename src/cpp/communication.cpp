@@ -152,7 +152,7 @@ void update_state(Game* g)
         buffer[sizeof(buffer) - 1] = '\0';
     }
 
-    Logger(buffer);
+    //Logger(buffer);
 
     calculate_lines_cleared(g);
     calculate_height(g);
@@ -163,8 +163,8 @@ void update_state(Game* g)
     strncpy(g->state->game_state, buffer, sizeof(g->state->game_state) - 1);
     g->state->game_state[sizeof(g->state->game_state) - 1] = '\0';
 
-    Logger(g->state->game_state);
-    Logger("updated game state");
+    //Logger(g->state->game_state);
+    //Logger("updated game state");
 }
 
 
@@ -196,7 +196,7 @@ void communicate(Game* g)
     write(g->communication->fd_states, state_string, strlen(state_string));
 
     // temporarily write state to logger
-    Logger(state_string);
+    //Logger(state_string);
     // save control struct
     receive_message(g);
     
@@ -243,7 +243,7 @@ void receive_message(Game* g)
     std::stringstream ss;
     ss << "received message " << buffer;
     ss << ", byted read: "<< std::to_string(bytesRead);
-    Logger(ss.str());
+    //Logger(ss.str());
 
     if (bytesRead > 0)
     {
@@ -321,7 +321,7 @@ void process_control(Game* g)
 
 void parse_message(char* message, Control* control_message)
 {
-    Logger("Received raw message: " + std::string(message));
+    //Logger("Received raw message: " + std::string(message));
 
     // parse control message. string is split after ","
     char* new_relative_position = strtok(message, ",");
@@ -338,17 +338,17 @@ void parse_message(char* message, Control* control_message)
         exit(EXIT_FAILURE);
     }
 
-    Logger("Parsed message parts - new_relative_position: " + std::string(new_relative_position) + 
-           ", rotation_amount: " + std::string(rotation_amount));
+    //Logger("Parsed message parts - new_relative_position: " + std::string(new_relative_position) + 
+     //      ", rotation_amount: " + std::string(rotation_amount));
 
     try {
         // Convert strings to integers with error checking
         control_message->new_position = std::stoi(new_relative_position);
         control_message->rotation_amount = std::stoi(rotation_amount);
         
-        Logger("Successfully converted to integers - new_position: " + 
-              std::to_string(control_message->new_position) + 
-              ", rotation_amount: " + std::to_string(control_message->rotation_amount));
+        // Logger("Successfully converted to integers - new_position: " + 
+        //       std::to_string(control_message->new_position) + 
+        //       ", rotation_amount: " + std::to_string(control_message->rotation_amount));
     }
     catch (const std::invalid_argument& e) {
         Logger("Invalid number format in message - " + std::string(e.what()));

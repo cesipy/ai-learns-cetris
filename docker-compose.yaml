@@ -1,5 +1,6 @@
 services: 
-# expert_counter = 100
+# cnn, expert_counter = 1, amount_pieces = 7
+# new, reworked reward 17.1
   experiment_1: 
     build: 
       context: .
@@ -13,8 +14,8 @@ services:
       - TERM=xterm 
 
 
-# expert_counter = 1
-# 2 amount of pieces
+# cnn, expert_counter = 2, amount_pieces = 7
+# new, reworked reward 17.1
   experiment_2:
     build: 
       context: .
@@ -27,7 +28,8 @@ services:
     environment:
       - TERM=xterm     
 
-# expert_counter = 3,  2 AMOUNT_OF_PIECES
+# cnn, expert_counter = 3, amount_pieces = 7
+# new, complex reward
   experiment_3: 
     build: 
       context: .
@@ -40,7 +42,8 @@ services:
     environment:
       - TERM=xterm     
   
-# expert_counter = 1,  7 AMOUNT_OF_PIECES
+# cnn, expert_counter = 10, amount_pieces = 2
+# more max height punishment
   experiment_4: 
     build: 
       context: .
@@ -53,9 +56,8 @@ services:
     environment:
       - TERM=xterm
 
-  # new reward function with height diff and variance.
-  # expert counter= 30
-  # deterministic and only 2 piece types
+# cnn, expert_counter = 10, amount_pieces = 2
+# super simple reward , w piececount, linescleared and game_over
   experiment_5: 
     build: 
       context: .
@@ -68,9 +70,7 @@ services:
     environment:
       - TERM=xterm     
 
-  # new reward function with height diff and variance, but less game over penalty. 
-  # expert counter= 30
-  # deterministic and only 2 piece types
+
   experiment_6: 
     build: 
       context: .
@@ -84,9 +84,6 @@ services:
       - TERM=xterm     
 
 
-  # new reward function with height diff and variance, but less game over penalty. 
-  # expert counter= 1
-  # deterministic and only 2 piece types
   experiment_7: 
     build: 
       context: .

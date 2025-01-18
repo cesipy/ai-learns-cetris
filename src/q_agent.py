@@ -1,8 +1,13 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
 
+import torch
+#torch.set_num_threads(1)  # This helps prevent multiprocessing issues
+from nn_model import CNN, nn
 
-import keras
+import pickle
 
 import numpy as np
 import random
@@ -13,11 +18,18 @@ from tetris_expert import TetrisExpert
 
 from state import State
 from config import *
+from memory import Memory
+os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
 MODEL_NAME = "../models/model"
+MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
+ONLY_TRAINING = False            # only training, no pretraining with expert
+IMITATION_COLLECTOR = False
+IMITATIO_LEARNING_BATCHES = 130
 
+device = torch.device("cpu")
 class Agent:
     def __init__(
         self, 
@@ -34,7 +46,9 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        self.memory              = deque(maxlen=70000)
+        #self.memory              = deque(maxlen=70000)
+        #replacing normal deque with priority based model
+        self.memory              = Memory(maxlen=70000, bias=True)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -44,75 +58,197 @@ class Agent:
         self.counter_weight_log  = 0
         self.counter_epsilon     = 0
         self.cunter_tetris_expert = 0
-        self.starting_tetris_expert_modulo = COUNTER_TETRIS_EXPERT      # when to do the expert for faster reward discovery
+        self.starting_tetris_expert_modulo = COUNTER_TETRIS_EXPERT      # when to use the expert for faster reward discovery
         self.num_actions         = num_actions
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
         self.tetris_expert       = TetrisExpert(self.actions)
 
-        if load_model:
-            self.model = self._load_model()
-        else:
-            self.model = self._init_model()
-            self.target_model = self._init_model()
-            self.target_update_counter = 0
-            self.target_update_frequency = 500
+        self.model = CNN(num_actions=num_actions).to(device)
+        self.target_model = CNN(num_actions=num_actions).to(device)
+        self.target_update_counter = 0
+        self.target_update_frequency = 500
             
+            
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        # Copy weights to target model
+        self.target_model.load_state_dict(self.model.state_dict())
+            
+        if load_model:
+            self._load_model()
+            self._load_target_model()
+            self.epsilon = 0.01     # only small expsilon here
+            
+        if not ONLY_TRAINING:           # circumvents the imitation collector
+            if IMITATION_COLLECTOR:
+                if os.path.exists(MEMORY_PATH):
+                    self.memory.load_memory(MEMORY_PATH)
+                    self.memory.maxlen = 100000
+                    logger.log(f"loaded memory with size: {len(self.memory)}")
+                else: 
+                    logger.log("No existing memory found. Creating new memory for imitation learning collection.")
+                    self.memory = Memory(maxlen=100000, bias=False)  
+                    
+                    memory_dir = os.path.dirname(MEMORY_PATH)
+                    if memory_dir and not os.path.exists(memory_dir):
+                        os.makedirs(memory_dir, exist_ok=True)
+                        logger.log(f"Created directory for storing memory: {memory_dir}")
+                    
+            else:
+                self.imitation_learning_memory = Memory(maxlen=30000)
+                self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
+                self.train_imitation_learning(batches=IMITATIO_LEARNING_BATCHES, epochs_per_batch=4)
+
+
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
+        
+    def train_imitation_learning(self, batches: int, epochs_per_batch: int = 10):
+        """
+        Train the model on imitation learning data with multiple epochs per batch.
+        
+        Args:
+            batches (int): Number of different batches to train on
+            epochs_per_batch (int): Number of times to train on each batch
+        """
+        total_iterations = batches * epochs_per_batch
+        
+        self.imitation_learning_memory.bias=False
+        
+        losses = []
+        for batch in range(batches):
+            # Sample a batch once and reuse it for multiple epochs
+            current_batch = self.imitation_learning_memory.sample(BATCH_SIZE)
+            
+            total_loss_batch = 0
+            for epoch in range(epochs_per_batch):
+                loss = self.train_on_batch(current_batch)
+                logger.log(f"Imitation Learning - Batch {batch+1}/{batches}, "
+                        f"Epoch {epoch+1}/{epochs_per_batch}, Loss: {loss:.4f}")
+                
+                total_loss_batch += loss
+                
+            # Update target network more frequently during imitation learning
+            if batch % (self.target_update_frequency // 10) == 0:
+                self.target_model.load_state_dict(self.model.state_dict())
+                
+            avg_loss_batch = total_loss_batch/ epochs_per_batch
+            losses.append(avg_loss_batch)
+        
+        # Create and save the loss plot
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 6))
+        plt.plot(losses, label='Average Loss per Batch')
+        plt.xlabel('Batch Number')
+        plt.ylabel('Average Loss')
+        plt.title('Imitation Learning Training Loss')
+        plt.grid(True)
+        plt.legend()
+        
+        # Save plot
+        plot_dir = os.path.dirname(MODEL_NAME)
+        plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
+        
+        # Create directory if it doesn't exist
+        if not os.path.exists(plot_dir):
+            os.makedirs(plot_dir)
+            
+        plt.savefig(plot_path)
+        plt.close()  # Close the plot to free memory
+        
+        logger.log(f"Loss plot saved to: {plot_path}")
+        
 
+    def train_on_batch(self, batch):
+        """
+        Train on a specific batch of experiences.
+        
+        Args:
+            batch: A batch of experience tuples
+            
+        Returns:
+            float: The training loss for this batch
+        """
+
+        states_game_board = []
+        piece_types = []
+        next_states_game_board = []
+        next_piece_types = []
+        actions = []
+        rewards = []
+        
+        for (state_game_board, state_piece_type), action, reward, (next_state_game_board, next_state_piece_type) in batch:
+            states_game_board.append(state_game_board)
+            piece_types.append(state_piece_type)
+            next_states_game_board.append(next_state_game_board)
+            next_piece_types.append(next_state_piece_type)
+            actions.append(action)
+            rewards.append(reward)
+        
+        # convert to tensors
+        states_game_board = torch.stack(states_game_board).to(device)
+        piece_types = torch.stack(piece_types).to(device)
+        next_states_game_board = torch.stack(next_states_game_board).to(device)
+        next_piece_types = torch.stack(next_piece_types).to(device)
+        actions = torch.tensor(actions, dtype=torch.long).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+
+        current_qs = self.model(states_game_board, piece_types)
+        next_qs = self.target_model(next_states_game_board, next_piece_types)
+        
+        # Compute target Q-values
+        max_next_q = next_qs.max(1)[0]
+        target_qs = rewards + (self.discount_factor * max_next_q)
+        
+        # Compute current Q-values for taken actions
+        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
+
+        # Compute loss and update
+        loss = nn.MSELoss()(q_values, target_qs.detach())
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        
+        return loss.item()
 
     def train(self, state: State, action, next_state: State, reward):
-        state_array = state.convert_to_array()
-        next_state_array = next_state.convert_to_array()
+        state_array, piece_type = state.convert_to_array()
+        next_state_array, next_piece_type = next_state.convert_to_array()
+        # state_array = state.convert_to_array()           # this is a tuple of (gameboard and piecetype one-hot)
+        # next_state_array = next_state.convert_to_array() # ditto
         
-        self.memory.append((state_array, action, reward, next_state_array))
+        # convert to tensors 
         
-        # # Train on this experience
-        # self.model.fit(
-        #     state_array.reshape(1, -1),
-        #     current_q_values,
-        #     epochs=1,
-        #     verbose=0
-        # )
+        state_array = torch.from_numpy(state_array).float()
+        piece_type = torch.from_numpy(piece_type).float()
+        next_state_array = torch.from_numpy(next_state_array).float()
+        next_piece_type = torch.from_numpy(next_piece_type).float()
         
-        if len(self.memory) >=1000 and self.counter % COUNTER == 0 :
+        # action space has negative values -> just workaround for this
+        norm_action = State.normalize_action(action)
+        
+        #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        
+        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
-            for _ in range(NUM_BATCHES):
-                #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                minibatch = random.sample(self.memory,BATCH_SIZE)
-                states, actions, rewards, next_states = zip(*minibatch)
-                
-                states = np.array(states)
-                next_states = np.array(next_states)
-                actions = np.array(actions)
-                rewards = np.array(rewards)
+            if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
+                # save list as pickle (checkpointing)
+                logger.log(f"saving memory, current memory size: {len(self.memory)}")
+                self._save_memory(MEMORY_PATH)
+            
+            else:
+                for _ in range(NUM_BATCHES):
+                    #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+                    self.train_batch(memory=self.memory)
                     
-                # Predict Q-values for current and next states
-                current_qs = self.model.predict(states, verbose=0)
-                next_qs = self.target_model.predict(next_states, verbose=0)
-                max_next_qs = np.max(next_qs, axis=1)
-                targets = rewards + (self.discount_factor * max_next_qs)
-                
-                # Update only the Q values for the actions taken
-                target_qs = current_qs.copy()
-                for i in range(BATCH_SIZE):
-                    target_qs[i][actions[i]] = targets[i]
-                
-                # Train on batch
-                self.model.fit(
-                    states,
-                    target_qs,
-                    batch_size=BATCH_SIZE,
-                    epochs=EPOCHS,
-                    verbose=0
-                )
                 
                 
         # sync the target and normal models.
         self.target_update_counter += 1
         if self.target_update_counter >= self.target_update_frequency: 
-            self.target_model.set_weights(self.model.get_weights())
+            self.target_model.load_state_dict(self.model.state_dict())
             self.target_update_counter = 0
         
         self.counter += 1
@@ -121,46 +257,45 @@ class Agent:
             self._save_model()
 
 
-    def epsilon_greedy_policy(self, 
-                              state: State):
-        state_array = state.convert_to_array()
+    def epsilon_greedy_policy(self, state: State):
+        state_array, piece_type = state.convert_to_array()
+        state_array = torch.from_numpy(state_array).float()
+        piece_type  = torch.from_numpy(piece_type).float()
+        
+        # exploration
         if random.random() <= self.epsilon:
-            
+            # this is the tetris expert for imitation learning
+            # if self.counter % 100 in [
+            #     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21, 22, 25, 26, 27, 28,
+            #     30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 43, 44, 45 ,46, 47, 48, 50, 52 ,53, 54, 55, 56, 57, 58, 59, 60, 65, 66, 67, 68
+            # ]:
             if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
-                #logger.log(f"tetris expert with current  modulo rounded {int(round(self.starting_tetris_expert_modulo))}")
                 self.cunter_tetris_expert = 0
                 return_val = self.tetris_expert.get_best_move(state=state)
                 if return_val is None:
                     return_val = np.random.choice(self.actions)
-                
-                self.starting_tetris_expert_modulo +=0.0
-                #logger.log(f"current expert modulo: {self.starting_tetris_expert_modulo}")
+                self.starting_tetris_expert_modulo += 0.0
             else:
                 return_val = np.random.choice(self.actions)
             self.cunter_tetris_expert += 1
             
-            
-            if LOGGING:
-                logger.log(f"randomly chosen return val {return_val}")
-                logger.log(f"current state{state}")
+        # exploitation
         else:
-            q_values = self.model.predict(state_array.reshape(1, -1), verbose=0)[0]
-
-            action_q_values = {}
-            for i, action in enumerate(self.actions):
-                action_q_values[action] = q_values[i]
+            with torch.no_grad():  # Don't track gradients for prediction
+                q_values = self.model(state_array.unsqueeze(0), piece_type.unsqueeze(0))[0]
+                # normalized actions for lookup, denorm for return
+                action_q_values = {State.denormalize_action(i): q_value.item() 
+                                for i, q_value in enumerate(q_values)}
+                return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
                 
-            return_val = max(action_q_values.items(), key=lambda x: x[1])[0]
+                #logger.log(f"return_val: {return_val}")
 
+        # Epsilon decay
         self.counter_epsilon += 1
         if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
-            
-            if LOGGING:
-                logger.log(f"current epsilon={self.epsilon}, counter={self.counter_epsilon}")
-            self.counter_epsilon = 0
             if self.epsilon >= MIN_EPSILON:
                 self.epsilon *= self.epsilon_decay
-                
+            self.counter_epsilon = 0
 
         return return_val
 
@@ -173,41 +308,89 @@ class Agent:
         return q_table
     
 
+    def _save_memory(self, path: str): 
+        directory = os.path.dirname(path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory, exist_ok=True)
+            logger.log(f"Created directory: {directory}")
+        
+        self.memory.save_memory(path=path)
+        logger.log(f"successfully saved memory to file: {path}")
+        
+    def _load_memory(self, path:str): 
+        pass
+    
+    def train_batch(self, memory):
+        logger.log("starting batch training")
+        # get batch from memory
+        #batch = random.sample(self.memory, BATCH_SIZE)
+        batch = memory.sample(BATCH_SIZE)
+        
+        # handling of all the elements for tensors
+        states_game_board = []
+        piece_types = []
+        next_states_game_board = []
+        next_piece_types = []
+        actions = []
+        rewards = []
+        
+        for (state_game_board, state_piece_type), action, reward,(next_state_game_board, next_state_piece_type) in batch:
+            states_game_board.append(state_game_board)
+            piece_types.append(state_piece_type)
+            next_states_game_board.append(next_state_game_board)
+            next_piece_types.append(next_state_piece_type)
+            actions.append(action)
+            rewards.append(reward)
+        
+        states_game_board = torch.stack(states_game_board).to(device)
+        piece_types = torch.stack(piece_types).to(device)
+        next_states_game_board = torch.stack(next_states_game_board).to(device)
+        next_piece_types = torch.stack(next_piece_types).to(device)
+        actions = torch.tensor(actions, dtype=torch.long).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
 
-    def _init_model(self):
-        n_output = len(self.actions)
-        n_input = 5
-        input_shape = (n_input,)
-        model = keras.models.Sequential([
-            keras.layers.Dense(64, activation="relu", input_shape=input_shape, kernel_initializer='he_uniform'),
-            keras.layers.Dense(64, activation="relu", kernel_initializer='he_uniform'),
-            keras.layers.Dense(n_output, activation="linear", kernel_initializer='glorot_uniform')
-        ])
-        model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
-            loss='huber'
-        )
-        return model
+        
+        # logger.log(f"States shape: {states.shape}")
+        # logger.log(f"Next states shape: {next_states.shape}")
+        # logger.log(f"Actions shape: {actions.shape}")
+        # logger.log(f"Rewards shape: {rewards.shape}")
+        
+        current_qs = self.model(states_game_board, piece_types)
+        next_qs = self.target_model(next_states_game_board, next_piece_types)
+        
+        max_next_q = next_qs.max(1)[0]
+        target_qs = rewards + (self.discount_factor * max_next_q)
+        
+        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
 
-
+        loss = nn.MSELoss()(q_values, target_qs.detach())
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        logger.log(f"Batch training completed. Loss: {loss.item():.4f}")
+        
+        
     def _save_model(self):
-        self.model.save(f"{MODEL_NAME}.keras")
-        self.counter_weight_log += 1
-        if self.counter_weight_log == 50:
-            self.counter_weight_log = 0
-            for layer in self.model.layers:
-                logger.log(layer.get_weights())
-
+        torch.save({
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'epsilon': self.epsilon,
+        }, f"{MODEL_NAME}.pt")
 
     def _load_model(self):
-        return keras.models.load_model(f"{MODEL_NAME}.keras")
+        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.epsilon = checkpoint['epsilon']
+        
+    def _load_target_model(self): 
+        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        self.target_model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.epsilon = checkpoint['epsilon']
 
 
-    def _log_model_summary(self, model: keras.Sequential, logger):
-        summary_str = []
-        model.summary(print_fn=lambda x: summary_str.append(x))
-        summary_str = "\n".join(summary_str)
-        logger.log(summary_str + "\n\n")
 
 
     def get_epsilon(self):
