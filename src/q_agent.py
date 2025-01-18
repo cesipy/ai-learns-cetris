@@ -97,43 +97,38 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batches=IMITATIO_LEARNING_BATCHES, epochs_per_batch=4)
+                self.train_imitation_learning(batch_size=512, epochs_per_batch=2)
 
 
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
         
-    def train_imitation_learning(self, batches: int, epochs_per_batch: int = 10):
-        """
-        Train the model on imitation learning data with multiple epochs per batch.
         
-        Args:
-            batches (int): Number of different batches to train on
-            epochs_per_batch (int): Number of times to train on each batch
-        """
-        total_iterations = batches * epochs_per_batch
-        
-        self.imitation_learning_memory.bias=False
-        
+    def train_imitation_learning(self, batch_size: int, epochs_per_batch: int):
+        self.imitation_learning_memory.bias = False
+        memory_as_list = self.imitation_learning_memory.memory_list.copy()
+        dataset_size = len(self.imitation_learning_memory)
         losses = []
-        for batch in range(batches):
-            # Sample a batch once and reuse it for multiple epochs
-            current_batch = self.imitation_learning_memory.sample(BATCH_SIZE)
+        
+        for epoch in range(epochs_per_batch):
             
-            total_loss_batch = 0
-            for epoch in range(epochs_per_batch):
-                loss = self.train_on_batch(current_batch)
-                logger.log(f"Imitation Learning - Batch {batch+1}/{batches}, "
-                        f"Epoch {epoch+1}/{epochs_per_batch}, Loss: {loss:.4f}")
+            random.shuffle(memory_as_list)
+            epoch_loss = 0
+            
+            for i in range(0, dataset_size, batch_size):
+                batch = memory_as_list[i:i+batch_size]
+                if len(batch) == 0: 
+                    break
+                loss = self.train_on_batch(batch)
+                epoch_loss += loss
+                logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
                 
-                total_loss_batch += loss
-                
-            # Update target network more frequently during imitation learning
-            if batch % (self.target_update_frequency // 10) == 0:
-                self.target_model.load_state_dict(self.model.state_dict())
-                
-            avg_loss_batch = total_loss_batch/ epochs_per_batch
-            losses.append(avg_loss_batch)
+            avg_loss_epoch = epoch_loss / (dataset_size // batch_size)
+            losses.append(avg_loss_epoch)
+            
+            logger.log(f"Epoch {epoch+1}/{epochs_per_batch}: loss: {avg_loss_epoch:.4f}")
+            
+            self.target_model.load_state_dict(self.model.state_dict())
         
         # Create and save the loss plot
         import matplotlib.pyplot as plt
@@ -145,7 +140,6 @@ class Agent:
         plt.grid(True)
         plt.legend()
         
-        # Save plot
         plot_dir = os.path.dirname(MODEL_NAME)
         plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
         
@@ -157,6 +151,7 @@ class Agent:
         plt.close()  # Close the plot to free memory
         
         logger.log(f"Loss plot saved to: {plot_path}")
+
         
 
     def train_on_batch(self, batch):

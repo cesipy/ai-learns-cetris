@@ -26,7 +26,7 @@ def calculate_reward(next_state: State):
     if next_state.immedeate_lines_cleared > 0:
         fraction = next_state.piece_count / 70
         if fraction > 1: 
-            logger.log("70 pieces reached!")
+            #logger.log("70 pieces reached!")
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
         else:
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
@@ -46,14 +46,14 @@ def calculate_reward(next_state: State):
     if next_state.is_state_game_over():
         game_over_penalty = 1000 
         reward -= game_over_penalty
-        logger.log(f"game over reward: {reward}")
+        #logger.log(f"game over reward: {reward}")
         
     
-    if next_state.immedeate_lines_cleared > 0:
-        logger.log(f"current winning reward: {reward}")
-    else:
-        pass
-        # logger.log(f"normal reward: {reward} for state: {next_state}")
+    # if next_state.immedeate_lines_cleared > 0:
+    #     #logger.log(f"current winning reward: {reward}")
+    # else:
+    #     pass
+    #     # logger.log(f"normal reward: {reward} for state: {next_state}")
     return reward
 
 

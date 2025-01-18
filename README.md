@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-
+tail -f ../logs/py_log_2025-01-18.txt
 
 ## TODOs
 

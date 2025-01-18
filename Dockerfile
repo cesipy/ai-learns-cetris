@@ -20,14 +20,15 @@ RUN pip install -r requirements.txt
 
 #RUN sudo apt update && sudo apt install -y 
 
+# provisioning
 COPY src src
 RUN mkdir res 
 RUN mkdir logs
 RUN mkdir models
-
-
 COPY models models
+COPY res/precollected-memory/memory.pkl res/precollected-memory/memory.pkl
 WORKDIR /app/src
 RUN chmod +x running-script.sh
+
 
 CMD ["./running-script.sh"]
