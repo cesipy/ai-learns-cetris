@@ -25,7 +25,7 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-ONLY_TRAINING = False            # only training, no pretraining with expert
+ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
@@ -203,8 +203,8 @@ class Agent:
         # Compute current Q-values for taken actions
         q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        # Compute loss and update
-        loss = nn.MSELoss()(q_values, target_qs.detach())
+        loss_func = nn.HuberLoss()
+        loss = loss_func(q_values, target_qs.detach())
         
         self.optimizer.zero_grad()
         loss.backward()
@@ -231,7 +231,7 @@ class Agent:
         #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
-        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
+        if len(self.memory) >=150 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
                 # save list as pickle (checkpointing)
@@ -363,7 +363,7 @@ class Agent:
         
         q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        loss = nn.MSELoss()(q_values, target_qs.detach())
+        loss = nn.HuberLoss()(q_values, target_qs.detach())
         
         self.optimizer.zero_grad()
         loss.backward()
