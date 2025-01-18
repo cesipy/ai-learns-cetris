@@ -1,6 +1,9 @@
 # AI learns cetris - Reinforement Machine Learning
 tail -f ../logs/py_log_2025-01-18.txt
 
+
+- e4: only training, with super simple reward
+
 ## TODOs
 
 - [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes

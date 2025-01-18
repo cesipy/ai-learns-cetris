@@ -25,7 +25,7 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-ONLY_TRAINING = False           # only training, no pretraining with expert
+ONLY_TRAINING = True           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
@@ -48,7 +48,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=70000, bias=True)
+        self.memory              = Memory(maxlen=70000, bias=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -67,7 +67,7 @@ class Agent:
         self.model = CNN(num_actions=num_actions).to(device)
         self.target_model = CNN(num_actions=num_actions).to(device)
         self.target_update_counter = 0
-        self.target_update_frequency = 500
+        self.target_update_frequency = 1000
             
             
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
@@ -97,7 +97,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=512, epochs_per_batch=2)
+                self.train_imitation_learning(batch_size=128, epochs_per_batch=15)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -109,6 +109,8 @@ class Agent:
         memory_as_list = self.imitation_learning_memory.memory_list.copy()
         dataset_size = len(self.imitation_learning_memory)
         losses = []
+
+        self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0.0001)
         
         for epoch in range(epochs_per_batch):
             
@@ -121,7 +123,7 @@ class Agent:
                     break
                 loss = self.train_on_batch(batch)
                 epoch_loss += loss
-                logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
+                #logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
                 
             avg_loss_epoch = epoch_loss / (dataset_size // batch_size)
             losses.append(avg_loss_epoch)
@@ -155,55 +157,33 @@ class Agent:
         
 
     def train_on_batch(self, batch):
-        """
-        Train on a specific batch of experiences.
-        
-        Args:
-            batch: A batch of experience tuples
-            
-        Returns:
-            float: The training loss for this batch
-        """
-
         states_game_board = []
         piece_types = []
-        next_states_game_board = []
-        next_piece_types = []
         actions = []
-        rewards = []
         
-        for (state_game_board, state_piece_type), action, reward, (next_state_game_board, next_state_piece_type) in batch:
+        for (state_game_board, state_piece_type), action, _, _ in batch:
             states_game_board.append(state_game_board)
             piece_types.append(state_piece_type)
-            next_states_game_board.append(next_state_game_board)
-            next_piece_types.append(next_state_piece_type)
             actions.append(action)
-            rewards.append(reward)
         
         # convert to tensors
         states_game_board = torch.stack(states_game_board).to(device)
         piece_types = torch.stack(piece_types).to(device)
-        next_states_game_board = torch.stack(next_states_game_board).to(device)
-        next_piece_types = torch.stack(next_piece_types).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
-        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
 
-        current_qs = self.model(states_game_board, piece_types)
-        next_qs = self.target_model(next_states_game_board, next_piece_types)
+        # Get model predictions
+        q_values = self.model(states_game_board, piece_types)
         
-        # Compute target Q-values
-        max_next_q = next_qs.max(1)[0]
-        target_qs = rewards + (self.discount_factor * max_next_q)
-        
-        # Compute current Q-values for taken actions
-        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
+        # For imitation learning, just match the expert's actions
+        q_values = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
+        # Create targets - 1 for taken action, 0 for others
+        targets = torch.ones_like(q_values)
 
-        loss_func = nn.HuberLoss()
-        loss = loss_func(q_values, target_qs.detach())
+        loss = nn.MSELoss()(q_values, targets)
         
-        self.optimizer.zero_grad()
+        self.imitation_optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self.imitation_optimizer.step()
         
         return loss.item()
 
@@ -226,7 +206,7 @@ class Agent:
         #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
-        if len(self.memory) >=150 and self.counter % COUNTER == 0 :
+        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
                 # save list as pickle (checkpointing)
@@ -362,6 +342,7 @@ class Agent:
         
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         self.optimizer.step()
         logger.log(f"Batch training completed. Loss: {loss.item():.4f}")
         
