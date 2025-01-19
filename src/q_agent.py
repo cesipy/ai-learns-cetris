@@ -25,7 +25,7 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-ONLY_TRAINING = False           # only training, no pretraining with expert
+ONLY_TRAINING = True           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
