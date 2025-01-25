@@ -23,12 +23,15 @@ from game import Game
 
 from communication import Communicator
 from reward import calculate_reward
+from utils import log_config_variables
 
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
 
 def child_function():
+    
+    logger.log(log_config_variables())
     
     #currently all of this code is a bit messy with all the sub functions
     # only copied all the code directly from the main, to adapt it to the 

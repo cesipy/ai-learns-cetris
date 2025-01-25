@@ -2,6 +2,7 @@ from typing import List, Tuple
 import numpy as np
 
 from simpleLogger import SimpleLogger
+from config import *
 
 
 logger = SimpleLogger()
@@ -186,7 +187,7 @@ class State:
         board_array =np.array(self.game_board_copy, dtype=np.float32)
         
         # one-hot representation for current piece type
-        piece_type_array = np.zeros(7, dtype=np.float32)
+        piece_type_array = np.zeros(NUMBER_OF_PIECES, dtype=np.float32)
         piece_type_array[self.piece_type] = np.float32(1.0)
         
         
