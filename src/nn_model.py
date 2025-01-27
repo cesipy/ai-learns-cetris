@@ -45,8 +45,8 @@ class CNN(nn.Module):
         
         self.fc1 = nn.Linear(cov_output_size + piece_type_size, 128 )
         self.relu2 = nn.ReLU()
-        self.fc2 = nn.Linear(128, 512)
-        self.fc3 = nn.Linear(512, num_actions)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, num_actions)
         
         
         self.fc_layers = nn.Sequential(
