@@ -7,15 +7,13 @@ import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
 from nn_model import CNN, nn
 
-import pickle
-
+from typing import Tuple
 import numpy as np
 import random
-from simpleLogger import SimpleLogger
 from collections import deque
 
+from simpleLogger import SimpleLogger
 from tetris_expert import TetrisExpert
-
 from state import State
 from config import *
 from memory import Memory
@@ -49,6 +47,7 @@ class Agent:
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
         self.memory              = Memory(maxlen=70000, bias=False)
+        self.expert_memory       = Memory(maxlen=10000, bias=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -190,7 +189,7 @@ class Agent:
         
         return loss.item()
 
-    def train(self, state: State, action, next_state: State, reward):
+    def train(self, state: State, action, next_state: State, reward, is_expert_move: bool):
         state_array, piece_type = state.convert_to_array()
         next_state_array, next_piece_type = next_state.convert_to_array()
         # state_array = state.convert_to_array()           # this is a tuple of (gameboard and piecetype one-hot)
@@ -209,6 +208,11 @@ class Agent:
         #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
         
+        # if the current state, action, reward pair is computed by the greedy expert 
+        # => store in separate expert memory. 
+        if is_expert_move: 
+            self.expert_memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
@@ -219,12 +223,10 @@ class Agent:
             else:
                 for _ in range(NUM_BATCHES):
                     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                    self.counter_interlearning_imitation += 1
-                    if self.counter_interlearning_imitation % self.counter_interlearning_imitation_target ==0 and (not ONLY_TRAINING):
-                        self.train_batch(memory=self.imitation_learning_memory)
-                    else:
-                        self.train_batch(memory=self.memory)
-                    
+                    self.train_batch(self.memory)
+                    if self.counter % 100 == 0:
+                        self.train_batch(self.expert_memory)
+                        logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
                 
                 
         # sync the target and normal models.
@@ -234,16 +236,30 @@ class Agent:
             self.target_update_counter = 0
         
         self.counter += 1
-        if self.counter == COUNTER:
-            self.counter = 0
+        if self.counter % COUNTER == 0:
             self._save_model()
 
 
-    def epsilon_greedy_policy(self, state: State):
+    def epsilon_greedy_policy(self, state: State) -> Tuple[int, bool]:
+        """
+        Method to get actions. Actions are either from current policy (exploitation),
+        random, or expert moves (computed greedily by the tetris expert). 
+        Random exploration aswell as tetris expert are set in the config files. 
+        
+        Whenever an expert move is taken, the boolean flag  `is_expert_move` is set to True.
+        
+        Args:
+            state (State): current state of the game
+            
+        Returns:
+            Tuple[int, bool]: action and a boolean flag indicating whether the action
+            was taken by the expert
+        """
         state_array, piece_type = state.convert_to_array()
         state_array = torch.from_numpy(state_array).float()
         piece_type  = torch.from_numpy(piece_type).float()
         
+        is_expert_move = False
         # exploration
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
@@ -258,6 +274,7 @@ class Agent:
                 if return_val is None:
                     return_val = np.random.choice(self.actions)
                 self.starting_tetris_expert_modulo += 0.0
+                is_expert_move = True
             else:
                 return_val = np.random.choice(self.actions)
             self.cunter_tetris_expert += 1
@@ -280,7 +297,7 @@ class Agent:
                 self.epsilon *= self.epsilon_decay
             self.counter_epsilon = 0
 
-        return return_val
+        return return_val, is_expert_move
 
 
     def predict(self, state):

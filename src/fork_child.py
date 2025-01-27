@@ -24,6 +24,7 @@ from game import Game
 from communication import Communicator
 from reward import calculate_reward
 from utils import log_config_variables
+from q_agent import Agent as Q_Agent
 
 os.chdir(SRC_DIR)
 
@@ -222,14 +223,14 @@ def child_function():
             
 
 
-    def step(communicator, agent) -> int:
+    def step(communicator, agent: Q_Agent) -> int:
         
         if LOGGING:
             return step_verbose(communicator, agent)
         else:
             return step_minimal(communicator, agent)
 
-    def step_verbose(communicator: Communicator, agent) -> int:
+    def step_verbose(communicator: Communicator, agent: Q_Agent) -> int:
         received_game_state = communicator.receive_from_pipe()
         logger.log(f"received_game_state1: {received_game_state}")
         status = parse_ending_message(received_game_state)
@@ -239,7 +240,7 @@ def child_function():
         state = parse_state(received_game_state, game.current_piece_count)
         logger.log(f"parsed state: {state}")
         time.sleep(SLEEPTIME)
-        action = agent.epsilon_greedy_policy(state)
+        action, is_expert_move = agent.epsilon_greedy_policy(state)
         perform_action(action, communicator)
         
         current_lines_cleared = state.lines_cleared
@@ -267,22 +268,20 @@ def child_function():
         game.current_rewards.append(reward)         # add reward for mean reward calculation
         
         logger.log(f"reward: {reward}\n")
-        agent.train(state, action, next_state, reward)
+        agent.train(state, action, next_state, reward, is_expert_move=is_expert_move)
         return 0
 
-    def step_minimal(communicator: Communicator, agent) -> int:
+    def step_minimal(communicator: Communicator, agent: Q_Agent) -> int:
         # First state
         received_game_state = communicator.receive_from_pipe()
         status = parse_ending_message(received_game_state)
         if status: return status
         
         state = parse_state(received_game_state, game.current_piece_count)
-        #logger.log(f"state::\n{state.game_board}")
         time.sleep(SLEEPTIME)
-        action = agent.epsilon_greedy_policy(state)
+        action, is_expert_move = agent.epsilon_greedy_policy(state)
         perform_action(action, communicator)
 
-        
         current_lines_cleared = state.lines_cleared
         
         # Next state
@@ -305,8 +304,7 @@ def child_function():
         reward = calculate_reward(next_state)
         game.current_rewards.append(reward)         # add reward for mean reward calculation
         
-        agent.train(state, action, next_state, reward)
-        #logger.log("-----------------------\n")
+        agent.train(state, action, next_state, reward, is_expert_move=is_expert_move)
         return 0
 
 
