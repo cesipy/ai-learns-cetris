@@ -36,6 +36,8 @@ class Memory():
         if self.bias: 
             return self.sample_with_recent_bias(k=k)
         
+        if len(self.memory_list) <=k: 
+            return self.memory_list
         return random.sample(self.memory_list, k=k)
     
     

@@ -27,17 +27,17 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.999
+EPSILON_DECAY = 0.995
 EPSILON = 1.0
-DISCOUNT = 0.95
+DISCOUNT = 0.97
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.0001
-BATCH_SIZE    = 256
-COUNTER       = 40      #when to perform batch training
+LEARNING_RATE = 0.0005
+BATCH_SIZE    = 32
+COUNTER       = 400      #when to perform batch training
 EPOCHS        = 1       # how often to iterate over samples
-NUM_BATCHES   = 13       # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 25       # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -78,8 +78,8 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 10
-NUMBER_OF_PIECES      = 4       # how many pieces, default is 7 different (I, O, L, J, ...) 
+COUNTER_TETRIS_EXPERT = 5
+NUMBER_OF_PIECES      = 2       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.

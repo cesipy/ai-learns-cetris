@@ -46,7 +46,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=70000, bias=False)
+        self.memory              = Memory(maxlen=10000, bias=False)
         self.expert_memory       = Memory(maxlen=10000, bias=False)
         self.actions             = actions
         self.current_action      = None
@@ -66,7 +66,7 @@ class Agent:
         self.model = CNN(num_actions=num_actions).to(device)
         self.target_model = CNN(num_actions=num_actions).to(device)
         self.target_update_counter = 0
-        self.target_update_frequency = 1000
+        self.target_update_frequency = 2000
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20
@@ -224,7 +224,7 @@ class Agent:
                 for _ in range(NUM_BATCHES):
                     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
                     self.train_batch(self.memory)
-                    if self.counter % 100 == 0:
+                    if self.counter % 1000 == 0:
                         self.train_batch(self.expert_memory)
                         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
                 
