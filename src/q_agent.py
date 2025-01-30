@@ -23,8 +23,8 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-ONLY_TRAINING = True           # only training, no pretraining with expert
-IMITATION_COLLECTOR = False
+ONLY_TRAINING = False           # only training, no pretraining with expert
+IMITATION_COLLECTOR = True
 IMITATIO_LEARNING_BATCHES = 130
 
 device = torch.device("cpu")
@@ -46,8 +46,8 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=10000, bias=False)
-        self.expert_memory       = Memory(maxlen=10000, bias=False)
+        self.memory              = Memory(maxlen=50000, bias=False)
+        self.expert_memory       = Memory(maxlen=30000, bias=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -69,7 +69,7 @@ class Agent:
         self.target_update_frequency = 2000
         
         self.counter_interlearning_imitation = 0
-        self.counter_interlearning_imitation_target = 20
+        self.counter_interlearning_imitation_target = 20 
             
             
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
@@ -99,7 +99,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=1024, epochs_per_batch=4)
+                self.train_imitation_learning(batch_size=1024, epochs_per_batch=6)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -123,7 +123,7 @@ class Agent:
                 batch = memory_as_list[i:i+batch_size]
                 if len(batch) == 0: 
                     break
-                loss = self.train_on_batch(batch)
+                loss = self.imitation_learning_step(batch)
                 epoch_loss += loss
                 #logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
                 
@@ -158,7 +158,10 @@ class Agent:
 
         
 
-    def train_on_batch(self, batch):
+    def imitation_learning_step(self, batch):
+        """
+        used to train one batch for imitation learning
+        """
         states_game_board = []
         piece_types = []
         actions = []
@@ -185,6 +188,8 @@ class Agent:
         
         self.imitation_optimizer.zero_grad()
         loss.backward()
+        
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         self.imitation_optimizer.step()
         
         return loss.item()
@@ -367,7 +372,9 @@ class Agent:
         
         self.optimizer.zero_grad()
         loss.backward()
+        
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        
         self.optimizer.step()
         logger.log(f"Batch training completed. Loss: {loss.item():.4f}")
         

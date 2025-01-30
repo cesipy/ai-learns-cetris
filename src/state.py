@@ -117,12 +117,13 @@ class State:
     def _calculate_column_heights(self):
         heights = []
         for col in range(len(self.game_board_copy[0])):
+            # Initialize height as 0 for empty columns
+            height = 0
             for row in range(len(self.game_board_copy)):
                 if self.game_board_copy[row][col] == 1:
-                    heights.append(len(self.game_board_copy) - row)
+                    height = len(self.game_board_copy) - row
                     break
-            else:
-                heights.append(0)
+            heights.append(height)
         return heights
 
     def _calculate_wells(self):

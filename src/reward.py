@@ -16,13 +16,17 @@ def calculate_reward(state: State):
         }[lines_cleared]
 
     reward += (
-        -0.5*state.height +
+        -0.95*state.height +
         -0.35*state.holes +
         -0.18*state.bumpiness 
     )
 
     
     reward += 0.2* state.piece_count
+    
+    if state.is_state_game_over():
+        reward -= 500
+    
 
     return reward
 
