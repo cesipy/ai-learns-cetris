@@ -24,7 +24,7 @@ MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
 ONLY_TRAINING = False           # only training, no pretraining with expert
-IMITATION_COLLECTOR = True
+IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
 device = torch.device("cpu")
@@ -166,6 +166,7 @@ class Agent:
         piece_types = []
         actions = []
         
+        # reward does not matter here. so i can save good memory once and then use it for different reward implementations^
         for (state_game_board, state_piece_type), action, _, _ in batch:
             states_game_board.append(state_game_board)
             piece_types.append(state_piece_type)

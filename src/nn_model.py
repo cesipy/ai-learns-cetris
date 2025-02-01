@@ -6,9 +6,9 @@ import torch
 
 logger = SimpleLogger()
 
-class CNN(nn.Module):
-    def __init__(self, num_actions: int): 
-        super().__init__()
+# class CNN(nn.Module):
+#     def __init__(self, num_actions: int): 
+#         super().__init__()
     #     self.conv1 = nn.Conv2d(1,32, 3, padding=1)
     #     self.relu = nn.ReLU()
     #     self.conv2 = nn.Conv2d(32, 32, 3, padding=1)
@@ -60,29 +60,6 @@ class CNN(nn.Module):
     #         self.fc3
     #     )
 
-        self.conv_layers = nn.Sequential(
-            nn.Conv2d(1, 32, 3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-        )
-        
-        # Calculate the flattened size
-        feature_size = 64 * BOARD_WIDTH * BOARD_HEIGHT
-        
-        self.fc_layers = nn.Sequential(
-            nn.Linear(feature_size + NUMBER_OF_PIECES, 512),
-            nn.ReLU(),
-            nn.Dropout(p=0.15),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, num_actions)
-        )
         
         # torch.nn.init.xavier_uniform_(self.fc1.weight)
         # torch.nn.init.xavier_uniform_(self.fc2.weight)
@@ -99,6 +76,36 @@ class CNN(nn.Module):
         #     self.fc2
 
         # )
+        
+class CNN(nn.Module):
+    def __init__(self, num_actions: int): 
+        super().__init__()
+        self.conv1 = nn.Conv2d(1,32, 3, padding=1)
+        self.relu = nn.ReLU()
+        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
+        
+        self.layers = nn.Sequential(
+            self.conv1,
+            self.relu,
+            self.conv2,
+            self.relu,
+            self.conv3,
+            self.relu,
+        )
+        
+        cov_output_size = 64* BOARD_HEIGHT * BOARD_WIDTH       # current board dimensions, maybe change that.
+        piece_type_size = NUMBER_OF_PIECES
+        
+        self.fc1 = nn.Linear(cov_output_size + piece_type_size, FC_HIDDEN_UNIT_SIZE )
+        self.relu2 = nn.ReLU()
+        self.fc2 = nn.Linear(FC_HIDDEN_UNIT_SIZE, num_actions)
+        
+        torch.nn.init.xavier_uniform_(self.fc1.weight)
+        torch.nn.init.xavier_uniform_(self.fc2.weight)
+        torch.nn.init.xavier_uniform_(self.conv1.weight)
+        torch.nn.init.xavier_uniform_(self.conv2.weight)
+        torch.nn.init.xavier_uniform_(self.conv3.weight)
         
     # def forward(self, x, piece_type): 
     #     #logger.log(f"in forward shape: {x.shape}")
@@ -143,17 +150,37 @@ class CNN(nn.Module):
         
     #     return x
 
-    def forward(self, x, piece_type):
-        if len(x.shape) == 3:
-            x = x.unsqueeze(1)
+    # def forward(self, x, piece_type):
+    #     if len(x.shape) == 3:
+    #         x = x.unsqueeze(1)
             
-        x = self.conv_layers(x)
-        x = x.flatten(1)  # Keep all spatial information
+    #     x = self.conv_layers(x)
+    #     x = x.flatten(1)  # Keep all spatial information
+        
+    #     if len(piece_type.shape) == 1:
+    #         piece_type = piece_type.unsqueeze(0)
+            
+    #     combined = torch.cat([x, piece_type], dim=1)
+    #     return self.fc_layers(combined)
+        
+    def forward(self, x, piece_type): 
+        #logger.log(f"in forward shape: {x.shape}")
+        if len(x.shape) == 3:
+            x = x.unsqueeze(1)  # Add channel dimension if not present
+            #logger.log(f"x after unsqueezing: {x.shape}")
+            
+            
+        x = self.layers(x)
+        x = nn.Flatten()(x)
         
         if len(piece_type.shape) == 1:
             piece_type = piece_type.unsqueeze(0)
-            
-        combined = torch.cat([x, piece_type], dim=1)
-        return self.fc_layers(combined)
+        #logger.log(f"dimensions in forward: \nx: {x.shape}, piece_t: {piece_type}")
         
-    
+        combined = torch.cat([x, piece_type], dim=1)
+        #logger.log(f"combined shape {combined.shape}")
+        
+        x = self.fc1(combined)
+        x = self.relu2(x)
+        x = self.fc2(x)
+        return x
