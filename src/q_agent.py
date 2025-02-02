@@ -46,8 +46,8 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=100000, bias=False)
-        self.expert_memory       = Memory(maxlen=30000, bias=False)
+        self.memory              = Memory(maxlen=100000, bias_recent=False, bias_reward=True)
+        self.expert_memory       = Memory(maxlen=30000, bias_recent=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -63,8 +63,8 @@ class Agent:
         self.epsilon_decay       = epsilon_decay
         self.tetris_expert       = TetrisExpert(self.actions)
 
-        self.model = CNN(num_actions=num_actions).to(device)
-        self.target_model = CNN(num_actions=num_actions).to(device)
+        self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
+        self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
         self.target_update_frequency = 2000
         
@@ -89,7 +89,7 @@ class Agent:
                     logger.log(f"loaded memory with size: {len(self.memory)}")
                 else: 
                     logger.log("No existing memory found. Creating new memory for imitation learning collection.")
-                    self.memory = Memory(maxlen=100000, bias=False)  
+                    self.memory = Memory(maxlen=100000, bias_recent=False)  
                     
                     memory_dir = os.path.dirname(MEMORY_PATH)
                     if memory_dir and not os.path.exists(memory_dir):
@@ -107,7 +107,7 @@ class Agent:
         
         
     def train_imitation_learning(self, batch_size: int, epochs_per_batch: int):
-        self.imitation_learning_memory.bias = False
+        self.imitation_learning_memory.bias_recent = False
         memory_as_list = self.imitation_learning_memory.memory_list.copy()
         dataset_size = len(self.imitation_learning_memory)
         losses = []

@@ -78,7 +78,7 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 3
+COUNTER_TETRIS_EXPERT = 6
 NUMBER_OF_PIECES      = 2       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
@@ -102,3 +102,5 @@ LOAD_MODEL = False          # load model?
 FC_HIDDEN_UNIT_SIZE = 128
 BOARD_HEIGHT = 28
 BOARD_WIDTH  = 10
+SIMPLE_CNN = True       # want to use the simple cnn => True
+                        # more sophisticated with pooling etc => False

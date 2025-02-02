@@ -14,10 +14,15 @@ from simpleLogger import SimpleLogger
 logger = SimpleLogger()
 
 class Memory():
-    def __init__(self, maxlen:int, bias:bool=False): 
+    def __init__(
+        self, maxlen:int, 
+        bias_recent:bool=False,
+        bias_reward:bool=False,
+    ): 
         self.maxlen = maxlen
         self.memory_list = []
-        self.bias = bias
+        self.bias_recent = bias_recent
+        self.bias_reward = bias_reward
         
         
         
@@ -33,12 +38,41 @@ class Memory():
         return len(self.memory_list)
     
     def sample(self, k) -> List: 
-        if self.bias: 
-            return self.sample_with_recent_bias(k=k)
-        
         if len(self.memory_list) <=k: 
             return self.memory_list
+        if self.bias_recent and self.bias_reward: 
+            logger.log("biasing both recent and reward not working, defaulting to no bias")
+            return random.sample(self.memory_list, k=k)
+        
+        elif self.bias_recent: 
+            return self.sample_with_recent_bias(k=k)
+        
+        elif self.bias_reward:
+            return self.sample_with_reward_bias(k=k)
+        
         return random.sample(self.memory_list, k=k)
+    
+    def sample_with_reward_bias(self, k:int) -> List:
+        rewards = []
+        
+        for t in self.memory_list: 
+            rewards.append(t[2])
+        
+        min_reward = min(rewards)
+        normalized_rewards = [ r - min_reward + 1e-6 for r in rewards]  # like partition function, small value
+        
+        total_rewards = sum(normalized_rewards)
+        probs         = [r/total_rewards for r in normalized_rewards]
+        
+        samples_indecies = np.random.choice(
+            len(self.memory_list),
+            size=k, 
+            replace=False, 
+            p=probs
+        )
+        
+        samples = [self.memory_list[index] for index in samples_indecies]
+        return samples
     
     
     def sample_with_recent_bias(self, k) -> List: 
@@ -65,7 +99,7 @@ class Memory():
     
     
     def construct_probability_distr(self, ): 
-        if not self.bias:
+        if not self.bias_recent:
             # return uniform 
             length = len(self.memory_list)
             unif = [1/length for i in self.memory_list]
@@ -125,7 +159,7 @@ class Memory():
             pickle.dump({
                 'memory_list': serializable_memory,
                 'maxlen': self.maxlen,
-                'bias': self.bias
+                'bias': self.bias_recent
             }, f)
 
     def load_memory(self, path: str) -> None:
@@ -141,7 +175,7 @@ class Memory():
             
 
         self.maxlen = data['maxlen']
-        self.bias = data['bias']
+        self.bias_recent = data['bias']
         
         self.memory_list = []
         for experience in data['memory_list']:
@@ -193,7 +227,7 @@ def plot_sampling_distribution(memory: Memory):
         
 def main():
     maxlen = 30000
-    memory = Memory(maxlen=maxlen, bias=True)
+    memory = Memory(maxlen=maxlen, bias_recent=True)
     
     for i in range(maxlen): 
         memory.add(((i, i+12), i+1, i,(i-1, i)))
@@ -211,7 +245,7 @@ def main():
     memory.save_memory(path=path)
     
     del memory
-    memory = Memory(maxlen=maxlen, bias=True)
+    memory = Memory(maxlen=maxlen, bias_recent=True)
     memory.load_memory(path=path)
     
     plot_sampling_distribution(memory=memory)

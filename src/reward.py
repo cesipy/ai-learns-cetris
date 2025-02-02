@@ -47,7 +47,7 @@ def calculate_reward(next_state: State):
     if next_state.immedeate_lines_cleared > 0:
         reward += (next_state.immedeate_lines_cleared ** 2) * 100
 
-    reward += -2.0 * next_state.get_height_variance()**1.8
+    reward += -1.0 * next_state.get_height_variance()**1.8
         
     # Heavy punishment for game over (when game terminates)  
     if next_state.is_state_game_over():
