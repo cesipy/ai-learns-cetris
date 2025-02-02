@@ -1,10 +1,12 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-01.txt
+tail -f ../logs/py_log_2025-02-02.txt
 
 
 - e4: only training, with super simple reward
 
 ## TODOs
+
+- [ ] modify memory to include best rewards as bias. 
 
 - [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes
 - [ ] epochs in imitation training, also normal training

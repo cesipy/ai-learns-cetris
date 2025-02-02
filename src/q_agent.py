@@ -99,7 +99,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
+                #self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -230,7 +230,7 @@ class Agent:
                 for _ in range(NUM_BATCHES):
                     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
                     self.train_batch(self.memory)
-                    if self.counter % 1000 == 0:
+                    if self.counter % 10000 == 0:
                         self.train_batch(self.expert_memory)
                         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
                 

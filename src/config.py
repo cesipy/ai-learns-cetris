@@ -37,7 +37,7 @@ LEARNING_RATE = 0.001
 BATCH_SIZE    = 256
 COUNTER       = 2000     #when to perform batch training
 EPOCHS        = 1       # how often to iterate over samples
-NUM_BATCHES   = 50      # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 30    # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -83,7 +83,7 @@ NUMBER_OF_PIECES      = 2       # how many pieces, default is 7 different (I, O,
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.
-COMMUNICATION_TIME_OUT = 15.0
+COMMUNICATION_TIME_OUT = 45.0
 
 
 # from main file: 
