@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-01-30.txt
+tail -f ../logs/py_log_2025-02-01.txt
 
 
 - e4: only training, with super simple reward

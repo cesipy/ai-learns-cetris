@@ -2,40 +2,68 @@ from state import State
 from simpleLogger import SimpleLogger
 logger = SimpleLogger()
 
-def calculate_reward(next_state: State):
-    reward = 0
+# def calculate_reward(next_state: State):
+#     reward = 0
     
+#     if next_state.immedeate_lines_cleared > 0:
+#         fraction = next_state.piece_count / 70
+#         if fraction > 1: 
+#             #logger.log("70 pieces reached!")
+#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
+#         else:
+#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
+#         #logger.log(f"line cleared reward: {line_cleared_reward}")
+#         reward += line_cleared_reward
+        
+#     survival_bonus = 0.5* next_state.piece_count 
+#     reward += survival_bonus
+    
+
+#     reward -= 0.3 * next_state.get_height_variance() ** 1.5
+#     reward -= 1.5 * next_state.max_height
+
+#     reward -= 0.2 * next_state.bumpiness
+#     reward -= 0.95 * next_state.holes
+    
+#     if next_state.is_state_game_over():
+#         game_over_penalty = 1000 
+#         reward -= game_over_penalty
+#         #logger.log(f"game over reward: {reward}")
+        
+    
+#     # if next_state.immedeate_lines_cleared > 0:
+#     #     logger.log(f"current winning reward: {reward}")
+#     # else:
+#     #     pass
+#     #     # logger.log(f"normal reward: {reward} for state: {next_state}")
+#     return reward
+
+
+def calculate_reward(next_state: State):
+    line_cleared_reward = 0
     if next_state.immedeate_lines_cleared > 0:
         fraction = next_state.piece_count / 70
         if fraction > 1: 
-            #logger.log("70 pieces reached!")
+            logger.log("70 pieces reached!")
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
         else:
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
         #logger.log(f"line cleared reward: {line_cleared_reward}")
-        reward += line_cleared_reward
         
-    survival_bonus = 0.5* next_state.piece_count 
-    reward += survival_bonus
-    
 
-    reward -= 0.3 * next_state.get_height_variance() ** 1.5
-    reward -= 1.5 * next_state.max_height
+    reward = (
+        line_cleared_reward +
+        #-0.54  * height +
+        -5   * next_state.max_height +
+        -2 * next_state.holes        # Quadratic holes penalty
+        # -0.184 * bumpiness
+    )
 
-    reward -= 0.2 * next_state.bumpiness
-    reward -= 0.95 * next_state.holes
-    
     if next_state.is_state_game_over():
         game_over_penalty = 1000 
         reward -= game_over_penalty
-        #logger.log(f"game over reward: {reward}")
-        
-    
-    # if next_state.immedeate_lines_cleared > 0:
-    #     logger.log(f"current winning reward: {reward}")
-    # else:
-    #     pass
-    #     # logger.log(f"normal reward: {reward} for state: {next_state}")
+
+    logger.log(f"current reward: {reward}")
     return reward
 # #reward from paper
 # def calculate_reward(state: State):

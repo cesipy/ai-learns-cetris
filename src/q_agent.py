@@ -46,7 +46,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=50000, bias=False)
+        self.memory              = Memory(maxlen=100000, bias=False)
         self.expert_memory       = Memory(maxlen=30000, bias=False)
         self.actions             = actions
         self.current_action      = None
@@ -99,7 +99,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=1024, epochs_per_batch=6)
+                self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
 
 
         logger.log(f"actions in __init__: {self.actions}")
