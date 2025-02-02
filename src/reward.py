@@ -44,9 +44,9 @@ def calculate_reward(next_state: State):
     #add basic reward for surviving: 
     reward += 0.3 * next_state.piece_count
     
-    if next_state.immediate_lines_cleared > 0:
+    if next_state.immedeate_lines_cleared > 0:
         line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
-        reward += line_weights.get(next_state.immediate_lines_cleared, 0)
+        reward += line_weights.get(next_state.immedeate_lines_cleared, 0)
         
         
     reward += -0.5 * next_state.get_height_variance()**1.8
