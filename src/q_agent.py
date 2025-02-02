@@ -66,7 +66,7 @@ class Agent:
         self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
-        self.target_update_frequency = 2000
+        self.target_update_frequency = 1000
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20 

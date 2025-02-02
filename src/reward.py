@@ -42,12 +42,17 @@ def calculate_reward(next_state: State):
     reward = 0
     
     #add basic reward for surviving: 
-    reward += 0.2 * next_state.piece_count
+    reward += 0.3 * next_state.piece_count
     
-    if next_state.immedeate_lines_cleared > 0:
-        reward += (next_state.immedeate_lines_cleared ** 2) * 100
-
-    reward += -1.0 * next_state.get_height_variance()**1.8
+    if next_state.immediate_lines_cleared > 0:
+        line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
+        reward += line_weights.get(next_state.immediate_lines_cleared, 0)
+        
+        
+    reward += -0.5 * next_state.get_height_variance()**1.8
+    reward -= 0.5 * next_state.max_height                    # Penalize tall stacks
+    reward -= .2 * next_state.holes                         # Strong hole penalty
+    reward -= .4 * next_state.bumpiness 
         
     # Heavy punishment for game over (when game terminates)  
     if next_state.is_state_game_over():
@@ -56,87 +61,6 @@ def calculate_reward(next_state: State):
     return reward
 
 
-# def calculate_reward(next_state: State):
-#     line_cleared_reward = 0
-#     if next_state.immedeate_lines_cleared > 0:
-#         fraction = next_state.piece_count / 70
-#         if fraction > 1: 
-#             logger.log("70 pieces reached!")
-#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
-#         else:
-#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
-#         #logger.log(f"line cleared reward: {line_cleared_reward}")
-        
-
-#     reward = (
-#         line_cleared_reward +
-#         #-0.54  * height +
-#         -5   * next_state.max_height +
-#         -2 * next_state.holes        # Quadratic holes penalty
-#         # -0.184 * bumpiness
-#     )
-
-#     if next_state.is_state_game_over():
-#         game_over_penalty = 1000 
-#         reward -= game_over_penalty
-
-#     logger.log(f"current reward: {reward}")
-#     return reward
-# #reward from paper
-# def calculate_reward(state: State):
-#     reward = 0
-
-#     lines_cleared = state.immedeate_lines_cleared
-#     if lines_cleared > 0:
-#         reward += {
-#             1: 100,    # Single
-#             2: 300,    # Double
-#             3: 700,    # Triple
-#             4: 1500,    # Tetris
-#         }[lines_cleared]
-
-#     reward += (
-#         -0.95*state.height +
-#         -0.35*state.holes +
-#         -0.18*state.bumpiness 
-#     )
-
-    
-#     reward += 0.2* state.piece_count
-    
-#     if state.is_state_game_over():
-#         reward -= 500
-    
-
-#     return reward
-
-    
-
-
-# super simple reward
-# def calculate_reward(next_state: State):
-
-#     reward = 0
-    
-#     #add basic reward for surviving: 
-#     reward += 0.2 * next_state.piece_count
-    
-#     if next_state.immedeate_lines_cleared > 0:
-#         fraction = next_state.piece_count / 70
-#         if fraction > 1: 
-#             #logger.log("70 pieces reached!")
-#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
-#         else:
-#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
-#         #logger.log(f"line cleared reward: {line_cleared_reward}")
-#         reward += line_cleared_reward
-#     reward -= (next_state.max_height/10) * 5  # Small penalty for height
-        
-#     # Heavy punishment for game over (when game terminates)  
-#     if next_state.is_state_game_over():
-#         reward -= 600
-        
-#     return reward/10
 
 
 # def calculate_reward(next_state: State):

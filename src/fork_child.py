@@ -318,7 +318,7 @@ def child_function():
             return 0
 
 
-    def play_one_round(communicator: communication.Communicator, agent) -> int:
+    def play_one_round(communicator: communication.Communicator, agent: Q_Agent) -> int:
         game.start_time_measurement()
         logger.log("started new round")
         if LOGGING:
@@ -351,6 +351,8 @@ def child_function():
             current_lines_cleared=current_lines_cleared, 
             elapsed_time=elapsed_time, 
             avg_reward=current_avg_reward,
+            memory_len=len(agent.memory), 
+            expert_memory_len=len(agent.expert_memory)
             ))
         if LOGGING:
             logger.log(f"return_value in play one round: {return_value}")
@@ -380,18 +382,6 @@ def child_function():
         logger.log(ACTIONS)
         return action_space
 
-    # def plot_lines_cleared(lines_cleared_array: List[int]):
-    #     #TODO: maybe do this in with moving average
-    #     import plotly.graph_objects as go
-        
-    #     fig = go.Figure()
-    #     fig.add_trace(go.Scatter(x=list(range(len(lines_cleared_array))), 
-    #                             y=lines_cleared_array))
-    #     fig.update_layout(title="Lines Cleared per Epoch",
-    #                      xaxis_title="Epoch",
-    #                      yaxis_title="Lines Cleared")
-        
-    #     fig.write_html(os.path.join(RES_DIR, "lines_cleared.html"))
 
     def plot_lines_cleared(lines_cleared_array: List[int], mean_rewards: List[float]):
         """
@@ -406,12 +396,9 @@ def child_function():
             series = pd.Series(arr)
             return series.rolling(window=window, min_periods=1, center=True).mean()
         
-        #lines_cleared_array = np.cumsum(lines_cleared_array)
         lines_cleared_array = moving_average(lines_cleared_array, window=MOVING_AVG_WINDOW_SIZE)
         new_mean_rewards        = moving_average(mean_rewards, window=MOVING_AVG_WINDOW_SIZE)
         logger.log(f"difference of lengths: {len(new_mean_rewards)} vs {len(mean_rewards)}")
-        # logger.log(f"MA lines cleared: {lines_cleared_array}")
-        # logger.log(f"MA mean rewards: {mean_rewards}")
         
         fig = go.Figure()
         
