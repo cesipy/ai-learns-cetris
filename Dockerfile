@@ -27,6 +27,8 @@ RUN mkdir logs
 RUN mkdir models
 COPY models models
 COPY res/precollected-memory/memory.pkl res/precollected-memory/memory.pkl
+# copy trained model to the docker container. 
+#COPY res/collected_logs/782b2eb93b11/models/model.pt models/model.pt
 WORKDIR /app/src
 RUN chmod +x running-script.sh
 

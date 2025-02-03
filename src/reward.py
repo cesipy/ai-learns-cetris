@@ -49,10 +49,10 @@ def calculate_reward(next_state: State):
         reward += line_weights.get(next_state.immedeate_lines_cleared, 0)
         
         
-    reward += -0.5 * next_state.get_height_variance()**1.8
-    reward -= 0.5 * next_state.max_height                    # Penalize tall stacks
-    reward -= .2 * next_state.holes                         # Strong hole penalty
-    reward -= .4 * next_state.bumpiness 
+    reward += -1.5 * next_state.get_height_variance()**1.8
+    reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
+    reward -= .6 * next_state.holes                         # Strong hole penalty
+    reward -= .7 * next_state.bumpiness 
         
     # Heavy punishment for game over (when game terminates)  
     if next_state.is_state_game_over():

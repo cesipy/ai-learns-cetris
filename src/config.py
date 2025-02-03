@@ -27,11 +27,11 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.998
+EPSILON_DECAY = 0.995
 EPSILON = 1.0
 DISCOUNT = 0.96
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.01
+MIN_EPSILON = 0.045
 
 LEARNING_RATE = 0.001
 BATCH_SIZE    = 256
@@ -78,7 +78,7 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 6
+COUNTER_TETRIS_EXPERT = 2
 NUMBER_OF_PIECES      = 2       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
