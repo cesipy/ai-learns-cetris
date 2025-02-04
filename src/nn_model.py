@@ -16,6 +16,8 @@ class CNN(nn.Module):
             self.relu = nn.ReLU()
             self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
             self.conv3 = nn.Conv2d(64, 64, 3, padding=1)
+
+            self.pool = nn.MaxPool2d(2)
             
             self.layers = nn.Sequential(
                 self.conv1,
@@ -24,9 +26,14 @@ class CNN(nn.Module):
                 self.relu,
                 self.conv3,
                 self.relu,
+                self.pool
             )
             
-            cov_output_size = 64* BOARD_HEIGHT * BOARD_WIDTH       # current board dimensions, maybe change that.
+            conv_output_height = BOARD_HEIGHT // 2
+            conv_output_width = BOARD_WIDTH // 2
+            cov_output_size = 64 * conv_output_height * conv_output_width 
+            column_feature_size = BOARD_WIDTH * 2      # as we have two column features: height, holes
+            #cov_output_size = 64* BOARD_HEIGHT * BOARD_WIDTH       # current board dimensions, maybe change that.
             piece_type_size = NUMBER_OF_PIECES
             
             #process the piece type (a one-hot vector of length NUMBER_OF_PIECES)
@@ -36,7 +43,7 @@ class CNN(nn.Module):
                 nn.ReLU()
             )
             
-            self.fc1 = nn.Linear(cov_output_size + 32, FC_HIDDEN_UNIT_SIZE )
+            self.fc1 = nn.Linear(cov_output_size + 32 + column_feature_size, FC_HIDDEN_UNIT_SIZE )
             self.relu2 = nn.ReLU()
             self.fc2 = nn.Linear(FC_HIDDEN_UNIT_SIZE, num_actions)
             
@@ -53,13 +60,13 @@ class CNN(nn.Module):
             
             self.first_cnn_layers = nn.Sequential(
                 self.conv1,
-                nn.BatchNorm2d(32),
+                #nn.BatchNorm2d(32),
                 self.relu,
                 self.conv2,
-                nn.BatchNorm2d(32),
+                #nn.BatchNorm2d(32),
                 self.relu,
                 self.conv3,
-                nn.BatchNorm2d(64),
+                #nn.BatchNorm2d(64),
                 self.relu,
             )
             
@@ -67,20 +74,25 @@ class CNN(nn.Module):
             
             self.post_collapse_layers = nn.Sequential(
                 nn.Conv2d(64, 128, 3, padding=1),
-                nn.BatchNorm2d(128),
+                #nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.Conv2d(128, 128, 1),  # 1x1 convolution
-                nn.BatchNorm2d(128),
+                #nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.Conv2d(128, 128, 3, padding=1),
-                nn.BatchNorm2d(128),
+                #nn.BatchNorm2d(128),
                 nn.ReLU(),
+            )
+
+            self.piece_fc = nn.Sequential(
+                nn.Linear(NUMBER_OF_PIECES, 32),
+                nn.ReLU()
             )
             
             cov_output_size = 128 * BOARD_WIDTH # *  BOARD_HEIGHT       # current board dimensions, maybe change that.
             piece_type_size = NUMBER_OF_PIECES
             
-            self.fc1 = nn.Linear(cov_output_size + piece_type_size, 128 )
+            self.fc1 = nn.Linear(cov_output_size + 32, 128 )
             self.relu2 = nn.ReLU()
             self.fc2 = nn.Linear(128, 100)
             self.fc3 = nn.Linear(100, num_actions)
@@ -115,7 +127,7 @@ class CNN(nn.Module):
             )
         
 
-    def forward(self, x, piece_type): 
+    def forward(self, x, piece_type, column_features): 
         if self.simple_cnn:
             if len(x.shape) == 3:
                 x = x.unsqueeze(1)  # ensure x has shape [batch, 1, H, W]
@@ -129,9 +141,11 @@ class CNN(nn.Module):
                 piece_type = piece_type.unsqueeze(0)
             
             pieces_features = self.piece_fc(piece_type)
+
+            column_features = torch.flatten(column_features, start_dim=1)
             
             
-            combined = torch.cat([x, pieces_features], dim=1)
+            combined = torch.cat([x, pieces_features, column_features], dim=1)
             #logger.log(f"combined shape {combined.shape}")
             
             x = self.fc1(combined)
@@ -153,8 +167,10 @@ class CNN(nn.Module):
             
             if len(piece_type.shape) == 1:
                 piece_type = piece_type.unsqueeze(0)
+
+            pieces_features = self.piece_fc(piece_type)
                 
-            combined = torch.cat([x, piece_type], dim=1)
+            combined = torch.cat([x, pieces_features], dim=1)
                 
             x = self.fc_layers(combined)
             

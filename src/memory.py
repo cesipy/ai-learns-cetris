@@ -37,9 +37,15 @@ class Memory():
     def __len__(self,) -> int:
         return len(self.memory_list)
     
+    def sample_no_bias(self, k:int): 
+        """explicit uniform sampling from memory"""
+        if len(self.memory_list) <= k:
+            return self.memory_list.copy()
+        return random.sample(self.memory_list, k=k)
+    
     def sample(self, k) -> List: 
         if len(self.memory_list) <=k: 
-            return self.memory_list
+            return self.memory_list.copy()
         if self.bias_recent and self.bias_reward: 
             logger.log("biasing both recent and reward not working, defaulting to no bias")
             return random.sample(self.memory_list, k=k)

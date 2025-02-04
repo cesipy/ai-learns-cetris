@@ -49,7 +49,39 @@ class State:
     #                 all_2s.append((row, col))
     
     
+    def get_holes_column_wise(self):
+        holes_per_column = np.zeros(len(self.game_board_copy[0]), dtype=np.float32)
+        
+        for col in range(len(self.game_board_copy[0])):
+            block_found = False
+            holes = 0
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    block_found = True
+                elif block_found and self.game_board_copy[row][col] == 0:
+                    holes += 1
+            holes_per_column[col] = holes
+            
+        return holes_per_column
+
+    def get_heights_column_wise(self):
+        heights = np.zeros(len(self.game_board_copy[0]), dtype=np.float32)
+        
+        for col in range(len(self.game_board_copy[0])):
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    heights[col] = len(self.game_board_copy) - row
+                    break
+                    
+        return heights
     
+    def get_column_features(self): 
+        column_holes = self.get_holes_column_wise()
+        column_height = self.get_heights_column_wise()
+
+        return np.stack([column_holes, column_height])   # (2, board_width)
+
+
     def is_state_game_over(self)-> bool:
         for cell in self.game_board_copy[2]:
             if cell == 1:

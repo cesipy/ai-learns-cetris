@@ -42,7 +42,7 @@ def calculate_reward(next_state: State):
     reward = 0
     
     #add basic reward for surviving: 
-    reward += 0.3 * next_state.piece_count
+    reward += 1.1 * next_state.piece_count ** 1.1
     
     if next_state.immedeate_lines_cleared > 0:
         line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
@@ -51,7 +51,7 @@ def calculate_reward(next_state: State):
         
     reward += -1.5 * next_state.get_height_variance()**1.8
     reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
-    reward -= .6 * next_state.holes                         # Strong hole penalty
+    reward -= .6 * next_state.holes ** 1.54                        # Strong hole penalty
     reward -= .7 * next_state.bumpiness 
         
     # Heavy punishment for game over (when game terminates)  

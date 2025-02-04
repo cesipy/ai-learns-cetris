@@ -164,21 +164,28 @@ class Agent:
         """
         states_game_board = []
         piece_types = []
+        states_column_features = []
         actions = []
         
         # reward does not matter here. so i can save good memory once and then use it for different reward implementations^
-        for (state_game_board, state_piece_type), action, _, _ in batch:
+        for (state_game_board, state_piece_type, state_column_features), action, _, _ in batch:
             states_game_board.append(state_game_board)
             piece_types.append(state_piece_type)
+            states_column_features.append(state_column_features)
             actions.append(action)
         
         # convert to tensors
         states_game_board = torch.stack(states_game_board).to(device)
         piece_types = torch.stack(piece_types).to(device)
+        states_column_features = torch.stack(states_column_features).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
 
         # Get model predictions
-        q_values = self.model(states_game_board, piece_types)
+        q_values = self.model(
+            x=states_game_board, 
+            piece_type=piece_types, 
+            column_features=state_column_features
+        )
         
         # For imitation learning, just match the expert's actions
         q_values = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
@@ -198,26 +205,29 @@ class Agent:
     def train(self, state: State, action, next_state: State, reward, is_expert_move: bool):
         state_array, piece_type = state.convert_to_array()
         next_state_array, next_piece_type = next_state.convert_to_array()
-        # state_array = state.convert_to_array()           # this is a tuple of (gameboard and piecetype one-hot)
-        # next_state_array = next_state.convert_to_array() # ditto
+
+        state_column_features = state.get_column_features()
+        next_state_column_features = next_state.get_column_features()
         
         # convert to tensors 
         
         state_array = torch.from_numpy(state_array).float()
         piece_type = torch.from_numpy(piece_type).float()
+        state_column_features = torch.from_numpy(state_column_features).float()
         next_state_array = torch.from_numpy(next_state_array).float()
         next_piece_type = torch.from_numpy(next_piece_type).float()
+        next_state_column_features = torch.from_numpy(next_state_column_features).float()
         
         # action space has negative values -> just workaround for this
         norm_action = State.normalize_action(action)
         
         #self.memory.append(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
-        self.memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+        self.memory.add(((state_array, piece_type, state_column_features), norm_action, reward, (next_state_array, next_piece_type, next_state_column_features)))
         
         # if the current state, action, reward pair is computed by the greedy expert 
         # => store in separate expert memory. 
         if is_expert_move: 
-            self.expert_memory.add(((state_array, piece_type), norm_action, reward, (next_state_array, next_piece_type)))
+            self.expert_memory.add(((state_array, piece_type, state_column_features), norm_action, reward, (next_state_array, next_piece_type, next_state_column_features)))
         
         if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
             
@@ -230,10 +240,18 @@ class Agent:
                 for _ in range(NUM_BATCHES):
                     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
                     self.train_batch(self.memory)
+
                     if self.counter % 10000 == 0:
                         self.train_batch(self.expert_memory)
                         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
                 
+                
+                logger.log(f"training on unbiased data!")
+                for _ in range(NUM_BATCHES//2):
+                    # also some sampling on non biased data to avoid overfitting on only good data
+                    
+                    self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE//2)
+
                 
         # sync the target and normal models.
         self.target_update_counter += 1
@@ -264,6 +282,9 @@ class Agent:
         state_array, piece_type = state.convert_to_array()
         state_array = torch.from_numpy(state_array).float()
         piece_type  = torch.from_numpy(piece_type).float()
+
+        column_features = state.get_column_features()
+        column_features = torch.from_numpy(column_features).float()
         
         is_expert_move = False
         # exploration
@@ -288,7 +309,11 @@ class Agent:
         # exploitation
         else:
             with torch.no_grad():  # Don't track gradients for prediction
-                q_values = self.model(state_array.unsqueeze(0), piece_type.unsqueeze(0))[0]
+                q_values = self.model(
+                    state_array.unsqueeze(0), 
+                    piece_type.unsqueeze(0), 
+                    column_features.unsqueeze(0),
+                )[0]
                 # normalized actions for lookup, denorm for return
                 action_q_values = {State.denormalize_action(i): q_value.item() 
                                 for i, q_value in enumerate(q_values)}
@@ -326,11 +351,14 @@ class Agent:
     def _load_memory(self, path:str): 
         pass
     
-    def train_batch(self, memory):
+    def train_batch(self, memory: Memory, is_not_bias=False, unbiased_batch_size=BATCH_SIZE):
         logger.log("starting batch training")
         # get batch from memory
         #batch = random.sample(self.memory, BATCH_SIZE)
-        batch = memory.sample(BATCH_SIZE)
+        if is_not_bias: 
+            batch = memory.sample_no_bias(unbiased_batch_size)
+        else: 
+            batch = memory.sample(BATCH_SIZE)
         
         # handling of all the elements for tensors
         states_game_board = []
@@ -339,30 +367,42 @@ class Agent:
         next_piece_types = []
         actions = []
         rewards = []
-        
-        for (state_game_board, state_piece_type), action, reward,(next_state_game_board, next_state_piece_type) in batch:
+        states_column_features = []
+        next_states_column_features = []
+
+        for (state_game_board, state_piece_type, state_column_features), action, reward,(next_state_game_board, next_state_piece_type, next_state_column_features) in batch:
             states_game_board.append(state_game_board)
             piece_types.append(state_piece_type)
+            states_column_features.append(state_column_features)
+
             next_states_game_board.append(next_state_game_board)
             next_piece_types.append(next_state_piece_type)
+            next_states_column_features.append(next_state_column_features)
             actions.append(action)
             rewards.append(reward)
         
         states_game_board = torch.stack(states_game_board).to(device)
         piece_types = torch.stack(piece_types).to(device)
+        states_column_features = torch.stack(states_column_features).to(device)
+
         next_states_game_board = torch.stack(next_states_game_board).to(device)
         next_piece_types = torch.stack(next_piece_types).to(device)
+        next_states_column_features = torch.stack(next_states_column_features).to(device)
+
         actions = torch.tensor(actions, dtype=torch.long).to(device)
         rewards = torch.tensor(rewards, dtype=torch.float).to(device)
 
+        current_qs = self.model(
+            x=states_game_board, 
+            piece_type=piece_types,
+            column_features=states_column_features
+        )
         
-        # logger.log(f"States shape: {states.shape}")
-        # logger.log(f"Next states shape: {next_states.shape}")
-        # logger.log(f"Actions shape: {actions.shape}")
-        # logger.log(f"Rewards shape: {rewards.shape}")
-        
-        current_qs = self.model(states_game_board, piece_types)
-        next_qs = self.target_model(next_states_game_board, next_piece_types)
+        next_qs = self.target_model(
+            x=next_states_game_board, 
+            piece_type=next_piece_types,
+            column_features=next_states_column_features
+        )
         
         max_next_q = next_qs.max(1)[0]
         target_qs = rewards + (self.discount_factor * max_next_q)

@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-02.txt
+tail -f ../logs/py_log_2025-02-04.txt
 
 
 - e4: only training, with super simple reward
@@ -63,3 +63,10 @@ docker-compose up --build experiment_1
 docker-compose up --build experiment_2
 
 ```
+
+
+
+## Working version for two pieces. 
+Switch to commit `0ccc4eb0ee345ab8a20dfde3619505e0f51d0e36` and use `models/trained_two_pieces_new.pt`. In the commit `0ccc4eb` everything should work. Note that in order to run it on Docker, you also need to copy it in the `Dockerfile`!
+
+
