@@ -6,7 +6,7 @@ tail -f ../logs/py_log_2025-02-04.txt
 
 ## TODOs
 
-- [ ] modify memory to include best rewards as bias. 
+- [x] modify memory to include best rewards as bias. 
 
 - [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes
 - [ ] epochs in imitation training, also normal training
@@ -68,5 +68,56 @@ docker-compose up --build experiment_2
 
 ## Working version for two pieces. 
 Switch to commit `0ccc4eb0ee345ab8a20dfde3619505e0f51d0e36` and use `models/trained_two_pieces_new.pt`. In the commit `0ccc4eb` everything should work. Note that in order to run it on Docker, you also need to copy it in the `Dockerfile`!
+
+
+The model improves drastically at about 4k-4.5k epochs. 
+Uses the following hyperparams: 
+
+```python
+EPSILON....................... 1.0
+EPSILON_DECAY................. 0.9955
+DISCOUNT...................... 0.96
+LEARNING_RATE................. 0.0008
+BATCH_SIZE.................... 1024
+COUNTER....................... 2000
+EPOCHS........................ 2
+NUM_BATCHES................... 40
+MIN_EPSILON................... 0.045
+EPSILON_COUNTER_EPOCH......... 50
+
+Model:
+------
+BOARD_HEIGHT.................. 28
+BOARD_WIDTH................... 10
+FC_HIDDEN_UNIT_SIZE........... 128
+NUMBER_OF_PIECES.............. 2
+
+Environment:
+------------
+BASE_DIR...................... /app
+SRC_DIR....................... /app/src
+LOG_DIR....................... /app/logs
+RES_DIR....................... /app/res
+TETRIS_COMMAND................ /app/src/cpp/tetris
+
+Communication:
+--------------
+FIFO_STATES................... fifo_states
+FIFO_CONTROLS................. fifo_controls
+COMMUNICATION_TIME_OUT........ 45.0
+SLEEPTIME..................... 1e-06
+INTER_ROUND_SLEEP_TIME........ 0.2
+
+Experiment:
+-----------
+LOGGING....................... False
+LOAD_MODEL.................... False
+ITERATIONS.................... 100000
+PLOT_COUNTER.................. 50
+MOVING_AVG_WINDOW_SIZE........ 50
+COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
+
+```
+![plot](./res/newplot.png)
 
 

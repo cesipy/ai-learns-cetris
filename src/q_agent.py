@@ -27,7 +27,7 @@ ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
-device = torch.device("cpu")
+device = torch.device("cuda")
 class Agent:
     def __init__(
         self, 
@@ -46,7 +46,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=150000, bias_recent=False, bias_reward=True)
+        self.memory              = Memory(maxlen=30000, bias_recent=False, bias_reward=True)
         self.expert_memory       = Memory(maxlen=50000, bias_recent=False)
         self.actions             = actions
         self.current_action      = None

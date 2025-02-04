@@ -15,6 +15,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+ENV PIP_NO_CACHE_DIR=false
+ENV PIP_ROOT_USER_ACTION=ignore
+RUN pip config set global.cache-dir /pip-cache
+
 COPY requirements.txt . 
 RUN pip install -r requirements.txt
 
