@@ -99,7 +99,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                #self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
+                self.train_imitation_learning(batch_size=1024, epochs_per_batch=10)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -171,7 +171,9 @@ class Agent:
         for (state_game_board, state_piece_type, state_column_features), action, _, _ in batch:
             states_game_board.append(state_game_board)
             piece_types.append(state_piece_type)
-            states_column_features.append(state_column_features)
+            if isinstance(state_column_features, np.ndarray):
+                state_column_features = torch.from_numpy(state_column_features).float()
+            states_column_features.append(state_column_features.reshape(-1))  # Flatten to 1D
             actions.append(action)
         
         # convert to tensors
@@ -179,6 +181,10 @@ class Agent:
         piece_types = torch.stack(piece_types).to(device)
         states_column_features = torch.stack(states_column_features).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
+        
+        
+        # this reshape is necessary for imitation learning
+        state_column_features = states_column_features.view(states_game_board.size(0), -1)
 
         # Get model predictions
         q_values = self.model(
