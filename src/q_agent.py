@@ -26,6 +26,7 @@ MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
+USE_LR_SCHEDULER =True
 
 device = torch.device("cpu")
 class Agent:
@@ -63,6 +64,7 @@ class Agent:
         self.epsilon_decay       = epsilon_decay
         self.tetris_expert       = TetrisExpert(self.actions)
 
+
         self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
@@ -75,6 +77,19 @@ class Agent:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
         # Copy weights to target model
         self.target_model.load_state_dict(self.model.state_dict())
+        
+        if USE_LR_SCHEDULER:
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                self.optimizer, 
+                mode="min", 
+                factor=0.5, 
+                patience=5,
+                verbose=False, 
+                min_lr=1e-6
+            )
+        
+        self.loss_history = []
+        self.avg_loss_window = 100  #how many batches to avg loss
             
         if load_model:
             self._load_model()
@@ -421,13 +436,22 @@ class Agent:
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
         
         self.optimizer.step()
-        logger.log(f"Batch training completed. Loss: {loss.item():.4f}")
+        
+        self.loss_history.append(loss.item())
+        if USE_LR_SCHEDULER and len(self.loss_history) >= self.avg_loss_window:
+            avg_loss = sum(self.loss_history[-self.avg_loss_window:]) / self.avg_loss_window
+            self.scheduler.step(avg_loss)
+            # Only keep recent losses
+            self.loss_history = self.loss_history[-self.avg_loss_window:]
+        
+        logger.log(f"Batch training completed. Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
         
         
     def _save_model(self):
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
             'epsilon': self.epsilon,
         }, f"{MODEL_NAME}.pt")
 
@@ -441,6 +465,8 @@ class Agent:
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
         self.target_model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if 'scheduler_state_dict' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.epsilon = checkpoint['epsilon']
 
 

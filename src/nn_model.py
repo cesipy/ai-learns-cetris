@@ -26,11 +26,15 @@ class CNN(nn.Module):
                 self.relu,
                 self.conv3,
                 self.relu,
-                self.pool
+                #self.pool
             )
             
-            conv_output_height = BOARD_HEIGHT // 2
-            conv_output_width = BOARD_WIDTH // 2
+            # using pooling use this.
+            # conv_output_height = BOARD_HEIGHT // 2
+            # conv_output_width = BOARD_WIDTH // 2
+            
+            conv_output_height = BOARD_HEIGHT
+            conv_output_width = BOARD_WIDTH 
             cov_output_size = 64 * conv_output_height * conv_output_width 
             column_feature_size = BOARD_WIDTH * 2      # as we have two column features: height, holes
             #cov_output_size = 64* BOARD_HEIGHT * BOARD_WIDTH       # current board dimensions, maybe change that.
