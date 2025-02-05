@@ -27,7 +27,7 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.9955
+EPSILON_DECAY = 0.999
 EPSILON = 1.0
 DISCOUNT = 0.96
 EPSILON_COUNTER_EPOCH = 50
@@ -37,7 +37,7 @@ LEARNING_RATE = 0.0008
 BATCH_SIZE    = 1024
 COUNTER       = 2000     #when to perform batch training
 EPOCHS        = 2       # how often to iterate over samples
-NUM_BATCHES   = 40    # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 45    # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -79,7 +79,7 @@ MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
 COUNTER_TETRIS_EXPERT = 3
-NUMBER_OF_PIECES      = 2       # how many pieces, default is 7 different (I, O, L, J, ...) 
+NUMBER_OF_PIECES      = 4       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.
@@ -99,7 +99,7 @@ LOAD_MODEL = False          # load model?
 
 # files ideosyncratic to the neural network
 # currently this is a CNN, maybe architecture is changed in the future
-FC_HIDDEN_UNIT_SIZE = 128
+FC_HIDDEN_UNIT_SIZE = 168
 BOARD_HEIGHT = 28
 BOARD_WIDTH  = 10
 SIMPLE_CNN = True       # want to use the simple cnn => True

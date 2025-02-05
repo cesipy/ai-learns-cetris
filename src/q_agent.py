@@ -27,7 +27,7 @@ ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 
-device = torch.device("cuda")
+device = torch.device("cpu")
 class Agent:
     def __init__(
         self, 
@@ -46,7 +46,7 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=30000, bias_recent=False, bias_reward=True)
+        self.memory              = Memory(maxlen=300000, bias_recent=False, bias_reward=True)
         self.expert_memory       = Memory(maxlen=50000, bias_recent=False)
         self.actions             = actions
         self.current_action      = None
@@ -99,7 +99,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=1024, epochs_per_batch=10)
+                self.train_imitation_learning(batch_size=1024, epochs_per_batch=3)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -297,9 +297,7 @@ class Agent:
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
             # if self.counter % 100 in [
-            #     0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20, 21, 22, 25, 26, 27, 28,
-            #     30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 43, 44, 45 ,46, 47, 48, 50, 52 ,53,
-            #     54, 55, 56, 57, 58, 59, 60, 65, 66, 67, 68, 84,85,86,87,88,89,90
+            #     i for i in range(1,97)
             # ]:
             if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
                 self.cunter_tetris_expert = 0
