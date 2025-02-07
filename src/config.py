@@ -27,17 +27,17 @@ FIFO_CONTROLS = "fifo_controls"
 # what should be logged
 LOGGING = False
 
-EPSILON_DECAY = 0.999
+EPSILON_DECAY = 0.995
 EPSILON = 1.0
-DISCOUNT = 0.96
+DISCOUNT = 0.97
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.045
 
 LEARNING_RATE = 0.0008
-BATCH_SIZE    = 1024
+BATCH_SIZE    = 32
 COUNTER       = 2000     #when to perform batch training
-EPOCHS        = 2       # how often to iterate over samples
-NUM_BATCHES   = 45    # when counter is reached, how many random batches are chosen from memory
+EPOCHS        = 1      # how often to iterate over samples
+NUM_BATCHES   = 150    # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([

@@ -50,7 +50,7 @@ def calculate_reward(next_state: State):
         
         
     reward += -1.5 * next_state.get_height_variance()**1.8
-    reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
+    reward -= 5.5 * next_state.max_height                           # Penalize tall stacks
     reward -= .6 * next_state.holes ** 1.54                        # Strong hole penalty
     reward -= .7 * next_state.bumpiness 
         
@@ -58,8 +58,7 @@ def calculate_reward(next_state: State):
     if next_state.is_state_game_over():
         reward -= 600
         
-    return reward
-
+    return reward/1000.0
 
 
 
