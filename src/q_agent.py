@@ -123,7 +123,7 @@ class Agent:
         dataset_size = len(self.imitation_learning_memory)
         losses = []
 
-        self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0.0001)
+        self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0.001)
         
         for epoch in range(epochs_per_batch):
             
