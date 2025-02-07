@@ -3,6 +3,8 @@ FROM python:3.11
 
 # Supposedly the various commands represent different layers,
 # => freq. changed files should be moved as far down as possible
+COPY requirements.txt . 
+RUN pip install -r requirements.txt
 
 # all the deps for keras and c tetris (like ncruses)
 RUN apt-get update && apt-get install -y \
@@ -15,12 +17,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-ENV PIP_NO_CACHE_DIR=false
-ENV PIP_ROOT_USER_ACTION=ignore
-RUN pip config set global.cache-dir /pip-cache
 
-COPY requirements.txt . 
-RUN pip install -r requirements.txt
+
 
 #RUN sudo apt update && sudo apt install -y 
 

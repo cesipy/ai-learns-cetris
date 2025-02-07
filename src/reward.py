@@ -37,28 +37,38 @@ logger = SimpleLogger()
 #     #     pass
 #     #     # logger.log(f"normal reward: {reward} for state: {next_state}")
 #     return reward
-def calculate_reward(next_state: State):
 
-    reward = 0
+def calculate_reward(next_state: State):
+    reward = (
+        next_state.piece_count + (next_state.immedeate_lines_cleared ** 2) * 10
+    )
+
+    if next_state.is_state_game_over(): 
+        reward -= 60
+    return reward/40.0
+
+# def calculate_reward(next_state: State):
+
+#     reward = 0
     
-    #add basic reward for surviving: 
-    reward += 1.4 * next_state.piece_count ** 1.25
+#     #add basic reward for surviving: 
+#     reward += 1.4 * next_state.piece_count ** 1.25
     
-    if next_state.immedeate_lines_cleared > 0:
-        line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
-        reward += line_weights.get(next_state.immedeate_lines_cleared, 0)
+#     if next_state.immedeate_lines_cleared > 0:
+#         line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
+#         reward += line_weights.get(next_state.immedeate_lines_cleared, 0)
         
         
-    reward += -1.5 * next_state.get_height_variance()**1.8
-    reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
-    reward -= .6 * next_state.holes ** 1.54                        # Strong hole penalty
-    reward -= .7 * next_state.bumpiness 
+#     reward += -1.5 * next_state.get_height_variance()**1.8
+#     reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
+#     reward -= .6 * next_state.holes ** 1.54                        # Strong hole penalty
+#     reward -= .7 * next_state.bumpiness 
         
-    # Heavy punishment for game over (when game terminates)  
-    if next_state.is_state_game_over():
-        reward -= 600
+#     # Heavy punishment for game over (when game terminates)  
+#     if next_state.is_state_game_over():
+#         reward -= 600
         
-    return reward
+#     return reward/1000.0
 
 
 
