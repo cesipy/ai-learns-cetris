@@ -23,8 +23,7 @@ TETRIS_COMMAND = os.path.join(SRC_DIR, "cpp", "tetris")
 FIFO_STATES = "fifo_states"
 FIFO_CONTROLS = "fifo_controls"
 
-#TODO: complete this
-# what should be logged
+
 LOGGING = False
 
 EPSILON_DECAY = 0.995
@@ -38,38 +37,6 @@ BATCH_SIZE    = 32
 COUNTER       = 2000     #when to perform batch training
 EPOCHS        = 1       # how often to iterate over samples
 NUM_BATCHES   = 150 # when counter is reached, how many random batches are chosen from memory
-
-# placeholder for the pretraining. currently not used, as it would require real examles. 
-PLACEHOLDER_GAME_BOARD = np.array([
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 2., 2., 2., 2., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-    [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0.],
-    [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 1., 0.],
-    [0., 0., 0., 0., 0., 1., 1., 0., 0., 0., 0., 0., 1., 0.],
-    [1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 1., 1., 1.]
-])
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -107,7 +74,19 @@ SIMPLE_CNN = True       # want to use the simple cnn => True
 
 
 #q agent stuff
+# ---------------------------------
 ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
 IMITATIO_LEARNING_BATCHES = 130
 USE_LR_SCHEDULER =True
+
+# memory obs
+# max length for the memory objects
+MEMORY_MAXLEN        = 11000
+MEMORY_EXPERT_MAXLEN = 20000
+# biases for sampling from memory   
+USE_REWARD_BIAS  = True     # favor best reward-samples in memory
+USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
+
+MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
+MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem

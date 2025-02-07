@@ -20,8 +20,6 @@ from memory import Memory
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
-MODEL_NAME = "../models/model"
-MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
 
 
@@ -42,10 +40,11 @@ class Agent:
         self.n_neurons           = n_neurons
         self.epsilon             = epsilon
         self.q_table             = q_table
-        #self.memory              = deque(maxlen=70000)
+        
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=110000, bias_recent=False, bias_reward=True)
-        self.expert_memory       = Memory(maxlen=20000, bias_recent=False)
+        #self.memory              = deque(maxlen=70000)
+        self.memory              = Memory(maxlen=MEMORY_MAXLEN, bias_recent=USE_RECENCY_BIAS, bias_reward=USE_REWARD_BIAS)
+        self.expert_memory       = Memory(maxlen=MEMORY_EXPERT_MAXLEN, bias_recent=USE_RECENCY_BIAS)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
