@@ -7,7 +7,7 @@ import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
 from nn_model import CNN, nn
 
-from typing import Tuple
+from typing import Tuple, Optional
 import numpy as np
 import random
 from collections import deque
@@ -277,8 +277,9 @@ class Agent:
             self.target_update_counter = 0
         
         self.counter += 1
+        # checkpointing
         if self.counter % COUNTER == 0:
-            self._save_model()
+            self._save_model(suffix=self.counter)
 
 
     def epsilon_greedy_policy(self, state: State) -> Tuple[int, bool]:
@@ -443,15 +444,21 @@ class Agent:
         logger.log(f"Batch training completed. Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
         
         
-    def _save_model(self):
+    def _save_model(self, suffix: Optional[str]=None):
+        if USE_LR_SCHEDULER: 
+            torch.save({
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'scheduler_state_dict': self.scheduler.state_dict(),
+                'epsilon': self.epsilon,
+            }, f"{MODEL_NAME}-{suffix}.pt")
+        else: 
+            torch.save({
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'epsilon': self.epsilon,
+            }, f"{MODEL_NAME}-{suffix}.pt")
         
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-            'scheduler_state_dict': self.scheduler.state_dict(),
-            'epsilon': self.epsilon,
-        }, f"{MODEL_NAME}.pt")
-
     def _load_model(self):
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
         self.model.load_state_dict(checkpoint['model_state_dict'])
