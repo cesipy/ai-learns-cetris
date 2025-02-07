@@ -264,7 +264,7 @@ class Agent:
                 for _ in range(NUM_BATCHES//2):
                     # also some sampling on non biased data to avoid overfitting on only good data
                     
-                    self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE//2)
+                    self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE)
 
                 
         # sync the target and normal models.
