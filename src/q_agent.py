@@ -23,10 +23,7 @@ logger = SimpleLogger()
 MODEL_NAME = "../models/model"
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"
 
-ONLY_TRAINING = False           # only training, no pretraining with expert
-IMITATION_COLLECTOR = False
-IMITATIO_LEARNING_BATCHES = 130
-USE_LR_SCHEDULER =True
+
 
 device = torch.device("cpu")
 class Agent:
@@ -47,8 +44,8 @@ class Agent:
         self.q_table             = q_table
         #self.memory              = deque(maxlen=70000)
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=300000, bias_recent=False, bias_reward=True)
-        self.expert_memory       = Memory(maxlen=50000, bias_recent=False)
+        self.memory              = Memory(maxlen=110000, bias_recent=False, bias_reward=True)
+        self.expert_memory       = Memory(maxlen=20000, bias_recent=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -85,7 +82,7 @@ class Agent:
                 factor=0.5, 
                 patience=5,
                 verbose=False, 
-                min_lr=1e-6
+                min_lr=5e-4
             )
         
         self.loss_history = []
@@ -114,7 +111,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=1024, epochs_per_batch=3)
+                #self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -448,6 +445,7 @@ class Agent:
         
         
     def _save_model(self):
+        
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),

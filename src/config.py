@@ -29,15 +29,15 @@ LOGGING = False
 
 EPSILON_DECAY = 0.995
 EPSILON = 1.0
-DISCOUNT = 0.97
+DISCOUNT = 0.99
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.045
 
-LEARNING_RATE = 0.0008
+LEARNING_RATE = 0.001
 BATCH_SIZE    = 32
 COUNTER       = 2000     #when to perform batch training
-EPOCHS        = 1      # how often to iterate over samples
-NUM_BATCHES   = 150    # when counter is reached, how many random batches are chosen from memory
+EPOCHS        = 1       # how often to iterate over samples
+NUM_BATCHES   = 150 # when counter is reached, how many random batches are chosen from memory
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
 PLACEHOLDER_GAME_BOARD = np.array([
@@ -104,3 +104,10 @@ BOARD_HEIGHT = 28
 BOARD_WIDTH  = 10
 SIMPLE_CNN = True       # want to use the simple cnn => True
                         # more sophisticated with pooling etc => False
+
+
+#q agent stuff
+ONLY_TRAINING = False           # only training, no pretraining with expert
+IMITATION_COLLECTOR = False
+IMITATIO_LEARNING_BATCHES = 130
+USE_LR_SCHEDULER =True
