@@ -42,9 +42,8 @@ class Agent:
         self.q_table             = q_table
         
         #replacing normal deque with priority based model
-        #self.memory              = deque(maxlen=70000)
-        self.memory              = Memory(maxlen=MEMORY_MAXLEN, bias_recent=USE_RECENCY_BIAS, bias_reward=USE_REWARD_BIAS)
-        self.expert_memory       = Memory(maxlen=MEMORY_EXPERT_MAXLEN, bias_recent=USE_RECENCY_BIAS)
+        self.memory              = Memory(maxlen=40000, bias_recent=False, bias_reward=False)
+        self.expert_memory       = Memory(maxlen=20000, bias_recent=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -64,7 +63,7 @@ class Agent:
         self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
-        self.target_update_frequency = 1000
+        self.target_update_frequency = 500
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20 
@@ -110,7 +109,7 @@ class Agent:
             else:
                 self.imitation_learning_memory = Memory(maxlen=30000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                #self.train_imitation_learning(batch_size=1024, epochs_per_batch=1)
+                self.train_imitation_learning(batch_size=512, epochs_per_batch=15)
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -198,18 +197,14 @@ class Agent:
         state_column_features = states_column_features.view(states_game_board.size(0), -1)
 
         # Get model predictions
-        q_values = self.model(
+        logits = self.model(
             x=states_game_board, 
             piece_type=piece_types, 
             column_features=state_column_features
         )
         
-        # For imitation learning, just match the expert's actions
-        q_values = q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
-        # Create targets - 1 for taken action, 0 for others
-        targets = torch.ones_like(q_values)
-
-        loss = nn.MSELoss()(q_values, targets)
+        # Use the full logits tensor and let CrossEntropyLoss select the expert action index
+        loss = nn.CrossEntropyLoss()(logits, actions)
         
         self.imitation_optimizer.zero_grad()
         loss.backward()
