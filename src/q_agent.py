@@ -257,16 +257,21 @@ class Agent:
                     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
                     self.train_batch(self.memory)
 
-                    if self.counter % 10000 == 0:
+                    if self.counter % 20000 == 0:
                         self.train_batch(self.expert_memory)
                         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
                 
-                
-                logger.log(f"training on unbiased data!")
-                for _ in range(NUM_BATCHES//2):
-                    # also some sampling on non biased data to avoid overfitting on only good data
-                    
-                    self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE)
+                if USE_REWARD_BIAS:
+                    logger.log(f"training on unbiased data!")
+                    for _ in range(NUM_BATCHES//2):
+                        # also some sampling on non biased data to avoid overfitting on only good data
+                        
+                        self.train_batch(self.memory, explicit_bias=False, unbiased_batch_size=BATCH_SIZE)
+                else:
+                # temp: only very few biased training steps. 
+                    for _ in range(10):
+                        logger.log(f"training on biased data!")
+                        self.train_batch(self.memory, explicit_bias=True)
     
             
 
@@ -368,14 +373,24 @@ class Agent:
     def _load_memory(self, path:str): 
         pass
     
-    def train_batch(self, memory: Memory, is_not_bias=False, unbiased_batch_size=BATCH_SIZE):
+    def train_batch(self, memory: Memory, explicit_bias:Optional[bool], unbiased_batch_size=BATCH_SIZE):
+
         logger.log("starting batch training")
         # get batch from memory
         #batch = random.sample(self.memory, BATCH_SIZE)
-        if is_not_bias: 
-            batch = memory.sample_no_bias(unbiased_batch_size)
-        else: 
+
+        if explicit_bias == None: 
             batch = memory.sample(BATCH_SIZE)
+
+        elif explicit_bias==False: 
+            batch = memory.sample_no_bias(unbiased_batch_size)
+        
+        else: 
+            # ensure biased sampling and set back to prior value
+            memory_bias_before = memory.bias_reward
+            memory.bias_reward = True
+            batch = memory.sample(BATCH_SIZE)
+            memory.bias_reward = memory_bias_before 
         
         # handling of all the elements for tensors
         states_game_board = []
@@ -444,15 +459,15 @@ class Agent:
                 self.loss_history = self.loss_history[-self.avg_loss_window:]
             
             logger.log(f"Epoch {epoch+1}: Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
-            with torch.no_grad():
-                q_values = current_qs.gather(1, actions.unsqueeze(1))
-                logger.log({
-                    'q_mean': q_values.mean().item(),
-                    'q_std': q_values.std().item(),
-                    'max_q': q_values.max().item(),
-                    'min_q': q_values.min().item(),
-                    'td_error': (target_qs - q_values).abs().mean().item()
-                })
+            # with torch.no_grad():
+            #     q_values = current_qs.gather(1, actions.unsqueeze(1))
+            #     logger.log({
+            #         'q_mean': q_values.mean().item(),
+            #         'q_std': q_values.std().item(),
+            #         'max_q': q_values.max().item(),
+            #         'min_q': q_values.min().item(),
+            #         'td_error': (target_qs - q_values).abs().mean().item()
+            #     })
     
         
     def _save_model(self, suffix: Optional[str]=None):

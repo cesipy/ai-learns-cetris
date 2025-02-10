@@ -125,9 +125,10 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 ## Experiments 
 
 ### 10.02
-- exp 1-5: old architecture, different hyperparams. 
-- exp6: new architecture with pooling
-- exp7: new arch + batch norm
+- exp 1,7 - new architecture, batches= 70, no bias
+- exp 2   - 150 num batches, more imitation learning
+- exp 3   - same as above, no imitation learning
+- 
 
 ### 08.02
 - exp4: simple reward, no imitation learning
