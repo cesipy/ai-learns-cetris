@@ -42,12 +42,24 @@ class CNN(nn.Module):
             
             #process the piece type (a one-hot vector of length NUMBER_OF_PIECES)
             # with its own fc
+            self.piece_embed = nn.Embedding(NUMBER_OF_PIECES, 16)
             self.piece_fc = nn.Sequential(
-                nn.Linear(NUMBER_OF_PIECES, 32),
+                nn.Linear(16, 32),
                 nn.ReLU()
             )
+
+            self.column_fc = nn.Sequential(
+                nn.Linear(BOARD_WIDTH*2, 32), #2 featuires per column
+                nn.ReLU()
+            )
+        #     self.column_net = nn.Sequential(
+        #     nn.Conv1d(1, 16, kernel_size=3, padding=1),  # Process column neighborhoods
+        #     nn.ReLU(),
+        #     nn.Flatten(),
+        #     nn.Linear(16*BOARD_WIDTH, 32)
+        # )
             
-            self.fc1 = nn.Linear(cov_output_size + 32 + column_feature_size, FC_HIDDEN_UNIT_SIZE )
+            self.fc1 = nn.Linear(cov_output_size + 32 + 32, FC_HIDDEN_UNIT_SIZE )
             self.relu2 = nn.ReLU()
             self.fc2 = nn.Linear(FC_HIDDEN_UNIT_SIZE, num_actions)
             
@@ -144,12 +156,19 @@ class CNN(nn.Module):
             if len(piece_type.shape) == 1:
                 piece_type = piece_type.unsqueeze(0)
             
-            pieces_features = self.piece_fc(piece_type)
+            piece_type_indices = torch.argmax(piece_type, dim=1).long()
+        
+            pieces = self.piece_embed(piece_type_indices)  # Now 2D: [batch, 16]
+            pieces = self.piece_fc(pieces)  # [batch, 32]
 
-            column_features = torch.flatten(column_features, start_dim=1)
+            column_features = column_features.view(-1, BOARD_WIDTH*2)
+            column_features = self.column_fc(column_features)
+
+        
+            #column_features = torch.flatten(column_features, start_dim=1)
             
             
-            combined = torch.cat([x, pieces_features, column_features], dim=1)
+            combined = torch.cat([x, pieces, column_features], dim=1)
             #logger.log(f"combined shape {combined.shape}")
             
             x = self.fc1(combined)

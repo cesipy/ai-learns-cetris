@@ -42,8 +42,8 @@ class Agent:
         self.q_table             = q_table
         
         #replacing normal deque with priority based model
-        self.memory              = Memory(maxlen=40000, bias_recent=False, bias_reward=False)
-        self.expert_memory       = Memory(maxlen=20000, bias_recent=False)
+        self.memory              = Memory(maxlen=MEMORY_MAXLEN, bias_recent=USE_RECENCY_BIAS, bias_reward=USE_REWARD_BIAS)
+        self.expert_memory       = Memory(maxlen=MEMORY_EXPERT_MAXLEN, bias_recent=False)
         self.actions             = actions
         self.current_action      = None
         self.current_state       = None
@@ -63,13 +63,13 @@ class Agent:
         self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
-        self.target_update_frequency = 500
+        self.target_update_frequency = 1000
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20 
             
             
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LEARNING_RATE, weight_decay=0.0001)
         # Copy weights to target model
         self.target_model.load_state_dict(self.model.state_dict())
         
@@ -107,9 +107,12 @@ class Agent:
                         logger.log(f"Created directory for storing memory: {memory_dir}")
                     
             else:
-                self.imitation_learning_memory = Memory(maxlen=30000)
+                self.imitation_learning_memory = Memory(maxlen=300000)
                 self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(batch_size=512, epochs_per_batch=15)
+                self.train_imitation_learning(#
+                    batch_size=IMITATION_LEARNING_BATCH_SIZE, 
+                    epochs_per_batch=IMITATION_LEARNING_EPOCHS,
+                )
 
 
         logger.log(f"actions in __init__: {self.actions}")
@@ -122,7 +125,7 @@ class Agent:
         dataset_size = len(self.imitation_learning_memory)
         losses = []
 
-        self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=0.005)
+        self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=IMITATION_LEARNING_LR)
         
         for epoch in range(epochs_per_batch):
             
@@ -157,7 +160,7 @@ class Agent:
         plot_dir = os.path.dirname(MODEL_NAME)
         plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
         
-        # Create directory if it doesn't exist
+
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
             
@@ -196,7 +199,8 @@ class Agent:
         # this reshape is necessary for imitation learning
         state_column_features = states_column_features.view(states_game_board.size(0), -1)
 
-        # Get model predictions
+        # preds in logits, to be used for corss entropy loss (classification)
+        # tried before with MSE, but had really bad results. 
         logits = self.model(
             x=states_game_board, 
             piece_type=piece_types, 
@@ -241,7 +245,7 @@ class Agent:
         if is_expert_move: 
             self.expert_memory.add(((state_array, piece_type, state_column_features), norm_action, reward, (next_state_array, next_piece_type, next_state_column_features)))
         
-        if len(self.memory) >=1500 and self.counter % COUNTER == 0 :
+        if len(self.memory) >=10000 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
                 # save list as pickle (checkpointing)
@@ -263,6 +267,8 @@ class Agent:
                     # also some sampling on non biased data to avoid overfitting on only good data
                     
                     self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE)
+    
+            
 
                 
         # sync the target and normal models.
@@ -403,41 +409,51 @@ class Agent:
         actions = torch.tensor(actions, dtype=torch.long).to(device)
         rewards = torch.tensor(rewards, dtype=torch.float).to(device)
 
-        current_qs = self.model(
-            x=states_game_board, 
-            piece_type=piece_types,
-            column_features=states_column_features
-        )
-        
-        next_qs = self.target_model(
-            x=next_states_game_board, 
-            piece_type=next_piece_types,
-            column_features=next_states_column_features
-        )
-        
-        max_next_q = next_qs.max(1)[0]
-        target_qs = rewards + (self.discount_factor * max_next_q)
-        
-        q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
+        for epoch in range(EPOCHS):
+            current_qs = self.model(
+                x=states_game_board, 
+                piece_type=piece_types,
+                column_features=states_column_features
+            )
+            
+            next_qs = self.target_model(
+                x=next_states_game_board, 
+                piece_type=next_piece_types,
+                column_features=next_states_column_features
+            )
+            
+            max_next_q = next_qs.max(1)[0]
+            target_qs = rewards + (self.discount_factor * max_next_q)
+            
+            q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        loss = nn.HuberLoss()(q_values, target_qs.detach())
-        
-        self.optimizer.zero_grad()
-        loss.backward()
-        
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-        
-        self.optimizer.step()
-        
-        self.loss_history.append(loss.item())
-        if USE_LR_SCHEDULER and len(self.loss_history) >= self.avg_loss_window:
-            avg_loss = sum(self.loss_history[-self.avg_loss_window:]) / self.avg_loss_window
-            self.scheduler.step(avg_loss)
-            # Only keep recent losses
-            self.loss_history = self.loss_history[-self.avg_loss_window:]
-        
-        logger.log(f"Batch training completed. Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
-        
+            loss = nn.HuberLoss()(q_values, target_qs.detach())
+            
+            self.optimizer.zero_grad()
+            loss.backward()
+            
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            
+            self.optimizer.step()
+            
+            self.loss_history.append(loss.item())
+            if USE_LR_SCHEDULER and len(self.loss_history) >= self.avg_loss_window:
+                avg_loss = sum(self.loss_history[-self.avg_loss_window:]) / self.avg_loss_window
+                self.scheduler.step(avg_loss)
+                # Only keep recent losses
+                self.loss_history = self.loss_history[-self.avg_loss_window:]
+            
+            logger.log(f"Epoch {epoch+1}: Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
+            with torch.no_grad():
+                q_values = current_qs.gather(1, actions.unsqueeze(1))
+                logger.log({
+                    'q_mean': q_values.mean().item(),
+                    'q_std': q_values.std().item(),
+                    'max_q': q_values.max().item(),
+                    'min_q': q_values.min().item(),
+                    'td_error': (target_qs - q_values).abs().mean().item()
+                })
+    
         
     def _save_model(self, suffix: Optional[str]=None):
         if USE_LR_SCHEDULER: 
@@ -446,7 +462,8 @@ class Agent:
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 'scheduler_state_dict': self.scheduler.state_dict(),
                 'epsilon': self.epsilon,
-            }, f"{MODEL_NAME}-{suffix}.pt")
+            #}, f"{MODEL_NAME}-{suffix}.pt")
+            }, f"{MODEL_NAME}-{1}.pt")
         else: 
             torch.save({
                 'model_state_dict': self.model.state_dict(),

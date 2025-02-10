@@ -1,8 +1,7 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-07.txt
+tail -f ../logs/py_log_2025-02-09.txt
 
 
-- e4: only training, with super simple reward
 
 ## TODOs
 
@@ -121,3 +120,47 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 ![plot](./res/newplot.png)
 
 
+
+
+## Experiments 
+
+### 10.02
+- exp 1-5: old architecture, different hyperparams. 
+- exp6: new architecture with pooling
+
+
+### 08.02
+- exp4: simple reward, no imitation learning
+- exp5: simple reward + imitation learning, epsilon = 1.0
+
+ 
+### 07.02
+experimenting with four pieces + new imitation learning. 
+Seems to be promising, going to do more experiments with pretraining. 
+
+current running experiments: 
+- exp1: complex reward
+    ```python 
+    IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
+    IMITATIO_LEARNING_BATCHES     = 130     # currently not used
+    IMITATION_LEARNING_EPOCHS     = 25
+    # memory objs
+    # max length for the memory objects
+    MEMORY_MAXLEN        = 40000
+    MEMORY_EXPERT_MAXLEN = 20000
+    # biases for sampling from memory   
+    USE_REWARD_BIAS  = True     # favor best reward-samples in memory
+    USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
+
+    ```
+- exp4: same as above, but with simple reward
+- exp6: same as exp4, but epochs = 14
+- currently epsilon is 0.02! no random exploration => test this next
+
+all of them did not work 
+
+- exp1: simple reward, reward bias, epochs=3
+- exp2: same as e1, but no reward bias. 
+- epx5: new reward with holes
+- exp6: exp5 + piece embedd
+- exp7

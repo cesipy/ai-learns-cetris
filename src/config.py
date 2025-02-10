@@ -26,17 +26,17 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.995
-EPSILON = 0.02#1.0
-DISCOUNT = 0.99
+EPSILON_DECAY = 0.996
+EPSILON = 1.0
+DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.045
 
 LEARNING_RATE = 0.001
 BATCH_SIZE    = 64
-COUNTER       = 300     #when to perform batch training
-EPOCHS        = 1       # how often to iterate over samples
-NUM_BATCHES   = 15 # when counter is reached, how many random batches are chosen from memory
+COUNTER       = 2000     #when to perform batch training
+EPOCHS        = 1      # how often to iterate over samples
+NUM_BATCHES   = 30 # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -66,7 +66,7 @@ LOAD_MODEL = False          # load model?
 
 # files ideosyncratic to the neural network
 # currently this is a CNN, maybe architecture is changed in the future
-FC_HIDDEN_UNIT_SIZE = 168
+FC_HIDDEN_UNIT_SIZE = 150
 BOARD_HEIGHT = 28
 BOARD_WIDTH  = 10
 SIMPLE_CNN = True       # want to use the simple cnn => True
@@ -77,16 +77,22 @@ SIMPLE_CNN = True       # want to use the simple cnn => True
 # ---------------------------------
 ONLY_TRAINING = False           # only training, no pretraining with expert
 IMITATION_COLLECTOR = False
-IMITATIO_LEARNING_BATCHES = 130
+
 USE_LR_SCHEDULER =True
 
-# memory obs
+# memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 11000
-MEMORY_EXPERT_MAXLEN = 20000
+MEMORY_MAXLEN        = 300000
+MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = True     # favor best reward-samples in memory
+USE_REWARD_BIAS  = True    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
+
+# pretraining / imitation learning at the start of learning to nudge model in right direction
+IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
+IMITATIO_LEARNING_BATCHES     = 130     # currently not used
+IMITATION_LEARNING_BATCH_SIZE = 128
+IMITATION_LEARNING_EPOCHS     = 5
 
 MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
