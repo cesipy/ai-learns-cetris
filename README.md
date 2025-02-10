@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-09.txt
+tail -f ../logs/py_log_2025-02-10.txt
 
 
 
@@ -127,7 +127,7 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 ### 10.02
 - exp 1-5: old architecture, different hyperparams. 
 - exp6: new architecture with pooling
-
+- exp7: new arch + batch norm
 
 ### 08.02
 - exp4: simple reward, no imitation learning

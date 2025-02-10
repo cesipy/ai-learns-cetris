@@ -5,7 +5,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
 
 import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
-from nn_model import CNN, nn
+from nn_model import CNN, nn, DB_CNN
 
 from typing import Tuple, Optional
 import numpy as np
@@ -60,8 +60,8 @@ class Agent:
         self.tetris_expert       = TetrisExpert(self.actions)
 
 
-        self.model        = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
-        self.target_model = CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
+        self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
+        self.target_model = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_update_counter = 0
         self.target_update_frequency = 1000
         
@@ -80,7 +80,7 @@ class Agent:
                 factor=0.5, 
                 patience=5,
                 verbose=False, 
-                min_lr=5e-4
+                min_lr=2e-4
             )
         
         self.loss_history = []

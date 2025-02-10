@@ -6,6 +6,61 @@ import torch
 
 logger = SimpleLogger()
 
+
+class DB_CNN(nn.Module):
+    def __init__(self,num_actions: int, simple_cnn=False):      # sinmple cnn is currently only placeholder 
+        super().__init__()
+
+        self.branch1 = nn.Sequential(
+            nn.Conv2d(1, 32, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, 3, padding=1),
+            #nn.BatchNorm2d(64),
+            nn.ReLU()
+        )
+        
+        self.branch2 = nn.Sequential(
+            nn.Conv2d(1, 64, 5, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 64, 5, padding=2),
+            #nn.BatchNorm2d(64), 
+            nn.ReLU()
+        )
+        self.piece_embed = nn.Embedding(NUMBER_OF_PIECES, 16)
+        self.piece_fc = nn.Sequential(
+            nn.Linear(16, 32),
+            nn.ReLU()
+        )
+        # Feature processing
+        self.fc = nn.Sequential(
+            nn.Linear(64*(BOARD_HEIGHT//2)*(BOARD_WIDTH//2)*2 + 32, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            #nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Linear(128, num_actions)
+        )
+
+    def forward(self, x, piece_type, column_features): 
+
+        if len(x.shape) == 3:
+            x = x.unsqueeze(1)  # ensure x has shape [batch, 1, H, W]
+        x1 = self.branch1(x)
+        x2 = self.branch2(x)
+        x_conv = torch.cat([x1.flatten(1), x2.flatten(1)], dim=1)
+
+        piece_type_indices = torch.argmax(piece_type, dim=1).long()
+
+        embedded_piece = self.piece_embed(piece_type_indices)
+        embedded_piece = self.piece_fc(embedded_piece)
+
+        combined = torch.cat([x_conv, embedded_piece], dim=1)
+
+        result = self.fc(combined)
+        return result
+
 class CNN(nn.Module):
     def __init__(self, num_actions: int, simple_cnn: bool): 
         super().__init__()
