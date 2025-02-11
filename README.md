@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-10.txt
+tail -f ../logs/py_log_2025-02-11.txt
 
 
 
@@ -63,6 +63,82 @@ docker-compose up --build experiment_2
 
 ```
 
+## Working version for four pieces. 
+Switch to commit "insert here". 
+
+The model reached a plateau at about 8k episodes with avg 20 lines cleared. 
+Uses the following hyperparams: 
+```python
+Training:
+---------
+EPSILON....................... 1.0
+EPSILON_DECAY................. 0.996
+DISCOUNT...................... 0.85
+LEARNING_RATE................. 0.002
+BATCH_SIZE.................... 64
+COUNTER....................... 2000
+EPOCHS........................ 2
+NUM_BATCHES................... 70
+MIN_EPSILON................... 0.01
+EPSILON_COUNTER_EPOCH......... 50
+
+Model:
+------
+BOARD_HEIGHT.................. 28
+BOARD_WIDTH................... 10
+FC_HIDDEN_UNIT_SIZE........... 150
+NUMBER_OF_PIECES.............. 4
+
+Environment:
+------------
+BASE_DIR...................... /app
+SRC_DIR....................... /app/src
+LOG_DIR....................... /app/logs
+RES_DIR....................... /app/res
+TETRIS_COMMAND................ /app/src/cpp/tetris
+
+Communication:
+--------------
+FIFO_STATES................... fifo_states
+FIFO_CONTROLS................. fifo_controls
+COMMUNICATION_TIME_OUT........ 45.0
+SLEEPTIME..................... 1e-06
+INTER_ROUND_SLEEP_TIME........ 0.2
+
+Experiment:
+-----------
+LOGGING....................... False
+LOAD_MODEL.................... True
+ITERATIONS.................... 100000
+PLOT_COUNTER.................. 50
+MOVING_AVG_WINDOW_SIZE........ 50
+COUNTER_TETRIS_EXPERT......... 2
+
+Other Variables:
+--------------
+ACTIONS....................... [-20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+IMITATION_COLLECTOR........... False
+IMITATION_LEARNING_BATCH_SIZE. 64
+IMITATION_LEARNING_EPOCHS..... 15
+IMITATION_LEARNING_LR......... 0.002
+IMITATIO_LEARNING_BATCHES..... 130
+MEMORY_EXPERT_MAXLEN.......... 60000
+MEMORY_MAXLEN................. 150000
+MEMORY_PATH................... ../res/precollected-memory/memory.pkl
+MODEL_NAME.................... ../models/model
+ONLY_TRAINING................. False
+
+POSSIBLE_NUMBER_STEPS......... 4
+SIMPLE_CNN.................... True
+USE_LR_SCHEDULER.............. True
+USE_RECENCY_BIAS.............. False
+USE_REWARD_BIAS............... True
+np............................ <module 'numpy' from '/usr/local/lib/python3.11/site-packages/numpy/__init__.py'>
+os............................ <module 'os' (frozen)>
+warnings...................... <module 'warnings' from '/usr/local/lib/python3.11/warnings.py'>
+08:10:24- fd_states: 8 fd_controls: 7
+``` 
+
 
 
 ## Working version for two pieces. 
@@ -124,12 +200,18 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 
 ## Experiments 
 
+## 11.02
+- exp 1: imitation learning with pretrained model from yesterday
+- exp 2: further training of yesterdays model, with lower gamma=0.85
+- exp 4: further training of yesterdays model with gamma=0.95
+- exp 6: also further training, lower mem, gameover penalty revisited, num batches 35, no bias
+
 ### 10.02
 - exp 1,7 - new architecture, batches= 70, no bias
 - exp 2   - 150 num batches, more imitation learning
 - exp 3   - same as above, no imitation learning
-- 
-
+- exp 4   - old arch, 300 batches 
+- exp 5   - new arch, 40k mem, higher lr, gamma only 0.85!
 ### 08.02
 - exp4: simple reward, no imitation learning
 - exp5: simple reward + imitation learning, epsilon = 1.0

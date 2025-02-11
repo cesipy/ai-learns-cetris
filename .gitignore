@@ -23,4 +23,4 @@ res/saved_game.pkl
 res/collected_logs
 res/*.html
 #res/precollected-memory/*.pkl
-models/*
+models/model*
