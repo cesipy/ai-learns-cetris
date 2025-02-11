@@ -62,6 +62,10 @@ class Agent:
 
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
+        
+        torch.compile(self.model)
+        torch.compile(self.target_model)
+        
         self.target_update_counter = 0
         self.target_update_frequency = 1000
         
@@ -74,13 +78,10 @@ class Agent:
         self.target_model.load_state_dict(self.model.state_dict())
         
         if USE_LR_SCHEDULER:
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer, 
-                mode="min", 
-                factor=0.5, 
-                patience=5,
-                verbose=False, 
-                min_lr=2e-4
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optimizer,
+                T_max=10000,  # Number of iterations/updates for a complete cosine cycle
+                eta_min=1e-4  # Minimum learning rate
             )
         
         self.loss_history = []
@@ -347,7 +348,11 @@ class Agent:
         self.counter_epsilon += 1
         if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
             if self.epsilon >= MIN_EPSILON:
-                self.epsilon *= self.epsilon_decay
+                # only temp. really slow decay at first 12000
+                if self.counter < 15000:
+                    self.epsilon -= 0.000006        #12*0.000006 = 0.72
+                else:
+                    self.epsilon *= self.epsilon_decay
             self.counter_epsilon = 0
 
         return return_val, is_expert_move
@@ -373,7 +378,7 @@ class Agent:
     def _load_memory(self, path:str): 
         pass
     
-    def train_batch(self, memory: Memory, explicit_bias:Optional[bool], unbiased_batch_size=BATCH_SIZE):
+    def train_batch(self, memory: Memory, explicit_bias:Optional[bool]=None, unbiased_batch_size=BATCH_SIZE):
 
         logger.log("starting batch training")
         # get batch from memory
@@ -447,27 +452,26 @@ class Agent:
             self.optimizer.zero_grad()
             loss.backward()
             
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             
             self.optimizer.step()
             
             self.loss_history.append(loss.item())
-            if USE_LR_SCHEDULER and len(self.loss_history) >= self.avg_loss_window:
-                avg_loss = sum(self.loss_history[-self.avg_loss_window:]) / self.avg_loss_window
-                self.scheduler.step(avg_loss)
-                # Only keep recent losses
-                self.loss_history = self.loss_history[-self.avg_loss_window:]
+            if USE_LR_SCHEDULER:
+                self.scheduler.step()
             
             logger.log(f"Epoch {epoch+1}: Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
-            # with torch.no_grad():
-            #     q_values = current_qs.gather(1, actions.unsqueeze(1))
-            #     logger.log({
-            #         'q_mean': q_values.mean().item(),
-            #         'q_std': q_values.std().item(),
-            #         'max_q': q_values.max().item(),
-            #         'min_q': q_values.min().item(),
-            #         'td_error': (target_qs - q_values).abs().mean().item()
-            #     })
+            with torch.no_grad():
+                q_values = current_qs.gather(1, actions.unsqueeze(1))
+                log_string = f"norm: {norm:.4f}, q_mean: {q_values.mean().item():.4f}, q_std: {q_values.std().item():.4f}, max_q: {q_values.max().item():.4f}, min_q: {q_values.min().item():.4f}, td_error: {(target_qs - q_values).abs().mean().item():.4f}"
+                logger.log(log_string)
+                # logger.log({
+                #     'q_mean': q_values.mean().item(),
+                #     'q_std': q_values.std().item(),
+                #     'max_q': q_values.max().item(),
+                #     'min_q': q_values.min().item(),
+                #     'td_error': (target_qs - q_values).abs().mean().item()
+                # })
     
         
     def _save_model(self, suffix: Optional[str]=None):
@@ -484,7 +488,8 @@ class Agent:
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 'epsilon': self.epsilon,
-            }, f"{MODEL_NAME}-{suffix}.pt")
+            #}, f"{MODEL_NAME}-{suffix}.pt")
+            }, f"{MODEL_NAME}-{1}.pt")
         
     def _load_model(self):
         checkpoint = torch.load(f"{MODEL_NAME}.pt")

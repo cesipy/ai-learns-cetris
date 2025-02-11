@@ -26,17 +26,17 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.996
-EPSILON = 1.0
-DISCOUNT = 0.95
+EPSILON_DECAY = 0.995
+EPSILON = 0.9
+DISCOUNT = 0.75
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.001
-BATCH_SIZE    = 64
+LEARNING_RATE = 0.002
+BATCH_SIZE    = 32
 COUNTER       = 2000     #when to perform batch training
-EPOCHS        = 1   # how often to iterate over samples
-NUM_BATCHES   = 150  # when counter is reached, how many random batches are chosen from memory
+EPOCHS        = 2   # how often to iterate over samples
+NUM_BATCHES   = 95  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -85,14 +85,14 @@ USE_LR_SCHEDULER =True
 MEMORY_MAXLEN        = 110000
 MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = True    # favor best reward-samples in memory
+USE_REWARD_BIAS  = False    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS     = 10
+IMITATION_LEARNING_EPOCHS     = 12
 
 MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem

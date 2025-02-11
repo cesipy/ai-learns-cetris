@@ -47,7 +47,7 @@ def calculate_reward(next_state: State):
     reward -= next_state.holes * 0.7
 
     if next_state.is_state_game_over(): 
-        reward -= 100
+        reward -= 10
     return reward/40.0
 
 # def calculate_reward(next_state: State):
