@@ -15,9 +15,19 @@ logger = SimpleLogger()
 
 class TetrisExpert:
     
-    def __init__(self, actions):
+    def __init__(self, actions, expert_period: int, expert_period_len:int= 100):
+        """
+        Args:
+            actions (List[int]): List of possible actions
+            expert_period (int): Number of steps until we have a period of expert only, regardless of epsilon.
+            expert_period_len (int): Number of steps the expert period lasts.
+        """
         self.board_dimentsion = PLACEHOLDER_GAME_BOARD.shape
         self.actions     = actions     # is this the correct action space?
+        self.expert_period = expert_period
+        self.expert_period_len = expert_period_len
+
+        self.expert_period_counter = 0
         
     def _get_action_mapping(self, action: int)-> Tuple[int, int]: 
         """returns relative position, rotation"""
@@ -333,14 +343,6 @@ class TetrisExpert:
 
 
             
-        
-        
-        
-        
-        
-                
-        
-    
     def _get_max_reward_action(self, rewards: List[Tuple[int, float]]) -> Tuple[int, float]:
         if not rewards:  
             return None
@@ -367,10 +369,19 @@ class TetrisExpert:
             else:
                 random_idx = np.random.randint(0, len(multiple_max_rewards))
                 return multiple_max_rewards[random_idx] 
-                    
-                
-        
+
         return current_max_elem
+    
+    def step(self): 
+        self.expert_period_counter += 1
+        #logger.log(f"expert period counter: {self.expert_period_counter}")
+        if (self.expert_period_counter > self.expert_period and 
+            self.expert_period_counter < self.expert_period + self.expert_period_len +1):
+
+            self.expert_period_counter = 0 if self.expert_period_counter == self.expert_period + self.expert_period_len else self.expert_period_counter
+            logger.log(f"currently in expert period: {self.expert_period_counter}")
+            return True
+        return False
         
 
 

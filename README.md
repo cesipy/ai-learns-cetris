@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-11.txt
+tail -f ../logs/py_log_2025-02-12.txt
 
 
 
@@ -200,6 +200,9 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 
 ## Experiments 
 
+## 12.02
+- exp 2: new expert period test
+
 ## 11.02
 - exp 1: imitation learning with pretrained model from yesterday
 - exp 2: further training of yesterdays model, with lower gamma=0.85
@@ -212,6 +215,8 @@ COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
 - exp 3   - same as above, no imitation learning
 - exp 4   - old arch, 300 batches 
 - exp 5   - new arch, 40k mem, higher lr, gamma only 0.85!
+
+
 ### 08.02
 - exp4: simple reward, no imitation learning
 - exp5: simple reward + imitation learning, epsilon = 1.0

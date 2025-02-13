@@ -41,13 +41,13 @@ logger = SimpleLogger()
 def calculate_reward(next_state: State):
     reward = (
         next_state.piece_count  + 
-        (next_state.immedeate_lines_cleared ** 2.5) * 10 
+        (next_state.immedeate_lines_cleared ** 2.5) * 15 
     )
 
     reward -= next_state.holes * 0.7
 
     if next_state.is_state_game_over(): 
-        reward -= 10
+        reward -= 2
     return reward/40.0
 
 # def calculate_reward(next_state: State):

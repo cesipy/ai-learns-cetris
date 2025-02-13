@@ -57,7 +57,7 @@ class Agent:
         self.num_actions         = num_actions
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
-        self.tetris_expert       = TetrisExpert(self.actions)
+        self.tetris_expert       = TetrisExpert(self.actions, expert_period=200000, expert_period_len=5)
 
 
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
@@ -81,7 +81,7 @@ class Agent:
             self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer,
                 T_max=10000,  # Number of iterations/updates for a complete cosine cycle
-                eta_min=1e-4  # Minimum learning rate
+                eta_min=MIN_LEARNING_RATE  # Minimum learning rate
             )
         
         self.loss_history = []
@@ -297,6 +297,8 @@ class Agent:
                     expert_batch = self.expert_memory.sample_no_bias(k=sample_size)
                     for idx in range(NUM_BATCHES):
                         batch = expert_batch[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                        if len(batch) == 0:
+                            break
                         self.train_batch(batch)
                 
                 # for i in range(NUM_BATCHES):
@@ -357,6 +359,18 @@ class Agent:
         column_features = torch.from_numpy(column_features).float()
         
         is_expert_move = False
+
+
+        # use expert step to move forward. 
+        # we want to have a period (eg 100 pieces) of epxert placement regardless of epsilon
+        # to trigger this, use the expert here
+
+        if self.tetris_expert.step() == True: 
+            return_val = self.tetris_expert.get_best_move(state=state)
+            if return_val is None:
+                return_val = np.random.choice(self.actions)
+            return return_val, True
+
         # exploration
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
@@ -376,7 +390,7 @@ class Agent:
             
         # exploitation
         else:
-            with torch.no_grad():  # Don't track gradients for prediction
+            with torch.no_grad():  
                 q_values = self.model(
                     state_array.unsqueeze(0), 
                     piece_type.unsqueeze(0), 
@@ -394,10 +408,11 @@ class Agent:
         if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
             if self.epsilon >= MIN_EPSILON:
                 # only temp. really slow decay at first 12000
-                if self.counter < 15000:
-                    self.epsilon -= 0.000006        #12*0.000006 = 0.72
-                else:
-                    self.epsilon *= self.epsilon_decay
+                self.epsilon *= self.epsilon_decay
+                # if self.counter < 15000:
+                #     self.epsilon -= 0.000006        #12*0.000006 = 0.72
+                # else:
+                #     self.epsilon *= self.epsilon_decay
             self.counter_epsilon = 0
 
         return return_val, is_expert_move
@@ -424,9 +439,6 @@ class Agent:
         pass
     
     def train_batch(self, batch):
-
-    
-        
         # handling of all the elements for tensors
         states_game_board = []
         piece_types = []

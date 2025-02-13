@@ -95,3 +95,27 @@ services:
     stdin_open: true   # Keeps stdin open
     environment:
       - TERM=xterm     
+
+  experiment_8: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm     
+
+  experiment_9: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
