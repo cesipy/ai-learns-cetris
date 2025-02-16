@@ -218,6 +218,103 @@ class Agent:
         self.imitation_optimizer.step()
         
         return loss.item()
+    
+    def train_independent_batches(self):
+        sample_size = NUM_BATCHES * BATCH_SIZE
+        batch_unbiased = self.memory.sample_no_bias(k=sample_size)
+        batch_biased   = self.memory.sample_with_reward_bias(k=sample_size) #reward bias
+        batch_biased_rec = self.memory.sample_with_recent_bias(k=sample_size) #recency bias
+        
+        if USE_REWARD_BIAS: 
+            for idx in range(NUM_BATCHES):
+                batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+            
+            logger.log(f"\nstarting unbiased training!")
+            for idx in range(NUM_BATCHES//2): 
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+        elif USE_RECENCY_BIAS: 
+            for idx in range(NUM_BATCHES):
+                batch = batch_biased_rec[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+            
+            logger.log(f"\nstarting unbiased training!")
+            for idx in range(NUM_BATCHES//2):
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+        
+        # no bias
+        else:
+            for idx in range(NUM_BATCHES):
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+            # train a few iterations on biased data
+            logger.log("\ntraining on biased data!")
+            for idx in range(10):
+                batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+        
+        if self.counter % 20000 == 0:
+            logger.log("\ntraining on expert memory!")
+            expert_batch = self.expert_memory.sample_no_bias(k=sample_size)
+            for idx in range(NUM_BATCHES):
+                batch = expert_batch[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                if len(batch) == 0:
+                    break
+                self.train_batch(batch)
+        
+        # for i in range(NUM_BATCHES):
+        #     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+        #     self.train_batch(self.memory)
+
+        #     if self.counter % 20000 == 0:
+        #         self.train_batch(self.expert_memory)
+        #         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
+        
+        # if USE_REWARD_BIAS:
+        #     logger.log(f"training on unbiased data!")
+        #     for _ in range(NUM_BATCHES//2):
+        #         # also some sampling on non biased data to avoid overfitting on only good data
+                
+        #         self.train_batch(self.memory, explicit_bias=False, unbiased_batch_size=BATCH_SIZE)
+        # else:
+        # # temp: only very few biased training steps. 
+        #     for _ in range(10):
+        #         logger.log(f"training on biased data!")
+        #         self.train_batch(self.memory, explicit_bias=True)
+        
+    def train_batch_(self, fraction=2):
+        if USE_REWARD_BIAS: 
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+                
+        elif USE_RECENCY_BIAS: 
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_with_recent_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+                
+            
+        elif not USE_REWARD_BIAS and not USE_RECENCY_BIAS:
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_no_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+            return
+            
+        else:   
+            raise ValueError("Bias not correctly set in config.py")
+        
+        # some unbiased training whenever bias is used
+        for i in range(NUM_BATCHES//fraction):
+            batch = self.memory.sample_no_bias(k=BATCH_SIZE)
+            self.train_batch(batch=batch)
+
+            
+        
 
     def train(self, state: State, action, next_state: State, reward, is_expert_move: bool):
         state_array, piece_type = state.convert_to_array()
@@ -254,74 +351,9 @@ class Agent:
                 self._save_memory(MEMORY_PATH)
             
             else:
-                sample_size = NUM_BATCHES * BATCH_SIZE
-                batch_unbiased = self.memory.sample_no_bias(k=sample_size)
-                batch_biased   = self.memory.sample_with_reward_bias(k=sample_size) #reward bias
-                batch_biased_rec = self.memory.sample_with_recent_bias(k=sample_size) #recency bias
+                #self.train_independent_batches()       # compute single large batch, is then splitted. NO REPLACEMENT
+                self.train_batch_(fraction=2)           # compute small batches, replacement allowed
                 
-                if USE_REWARD_BIAS: 
-                    for idx in range(NUM_BATCHES):
-                        batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
-                    
-                    logger.log(f"\nstarting unbiased training!")
-                    for idx in range(NUM_BATCHES//2): 
-                        batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
-                        
-                elif USE_RECENCY_BIAS: 
-                    for idx in range(NUM_BATCHES):
-                        batch = batch_biased_rec[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
-                    
-                    logger.log(f"\nstarting unbiased training!")
-                    for idx in range(NUM_BATCHES//2):
-                        batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
-                
-                # no bias
-                else:
-                    for idx in range(NUM_BATCHES):
-                        batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
-                        
-                    # train a few iterations on biased data
-                    # logger.log("\ntraining on biased data!")
-                    # for idx in range(10):
-                    #     batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                    #     self.train_batch(batch)
-                        
-                
-                if self.counter % 20000 == 0:
-                    logger.log("\ntraining on expert memory!")
-                    expert_batch = self.expert_memory.sample_no_bias(k=sample_size)
-                    for idx in range(NUM_BATCHES):
-                        batch = expert_batch[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        if len(batch) == 0:
-                            break
-                        self.train_batch(batch)
-                
-                # for i in range(NUM_BATCHES):
-                #     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                #     self.train_batch(self.memory)
-
-                #     if self.counter % 20000 == 0:
-                #         self.train_batch(self.expert_memory)
-                #         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
-                
-                # if USE_REWARD_BIAS:
-                #     logger.log(f"training on unbiased data!")
-                #     for _ in range(NUM_BATCHES//2):
-                #         # also some sampling on non biased data to avoid overfitting on only good data
-                        
-                #         self.train_batch(self.memory, explicit_bias=False, unbiased_batch_size=BATCH_SIZE)
-                # else:
-                # # temp: only very few biased training steps. 
-                #     for _ in range(10):
-                #         logger.log(f"training on biased data!")
-                #         self.train_batch(self.memory, explicit_bias=True)
-    
-            
 
                 
         # sync the target and normal models.
@@ -507,13 +539,7 @@ class Agent:
                 q_values = current_qs.gather(1, actions.unsqueeze(1))
                 log_string = f"norm: {norm:.4f}, q_mean: {q_values.mean().item():.4f}, q_std: {q_values.std().item():.4f}, max_q: {q_values.max().item():.4f}, min_q: {q_values.min().item():.4f}, td_error: {(target_qs - q_values).abs().mean().item():.4f}"
                 logger.log(log_string)
-                # logger.log({
-                #     'q_mean': q_values.mean().item(),
-                #     'q_std': q_values.std().item(),
-                #     'max_q': q_values.max().item(),
-                #     'min_q': q_values.min().item(),
-                #     'td_error': (target_qs - q_values).abs().mean().item()
-                # })
+
     
         
     def _save_model(self, suffix: Optional[str]=None):
