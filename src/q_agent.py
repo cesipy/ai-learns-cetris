@@ -286,10 +286,10 @@ class Agent:
                         self.train_batch(batch)
                         
                     # train a few iterations on biased data
-                    logger.log("\ntraining on biased data!")
-                    for idx in range(10):
-                        batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
-                        self.train_batch(batch)
+                    # logger.log("\ntraining on biased data!")
+                    # for idx in range(10):
+                    #     batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                    #     self.train_batch(batch)
                         
                 
                 if self.counter % 20000 == 0:
