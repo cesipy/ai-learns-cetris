@@ -26,13 +26,13 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.995
+EPSILON_DECAY = 0.996
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.0008
+LEARNING_RATE = 0.001
 MIN_LEARNING_RATE = 2e-4
 BATCH_SIZE    = 64
 COUNTER       = 2000     #when to perform batch training
@@ -83,7 +83,7 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 150000
+MEMORY_MAXLEN        = 170000
 MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
 USE_REWARD_BIAS  = False    # favor best reward-samples in memory
@@ -93,7 +93,7 @@ USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifr
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS = 8
+IMITATION_LEARNING_EPOCHS = 5
 
 MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
