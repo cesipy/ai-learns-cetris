@@ -17,6 +17,8 @@ from tetris_expert import TetrisExpert
 from state import State
 from config import *
 from memory import Memory
+import utils
+
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
@@ -57,11 +59,16 @@ class Agent:
         self.num_actions         = num_actions
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
-        self.tetris_expert       = TetrisExpert(self.actions)
+        self.tetris_expert       = TetrisExpert(self.actions, expert_period=200000, expert_period_len=5)
+        self.step                = 0
 
 
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
+        
+        torch.compile(self.model)
+        torch.compile(self.target_model)
+        
         self.target_update_counter = 0
         self.target_update_frequency = 1000
         
@@ -73,15 +80,6 @@ class Agent:
         # Copy weights to target model
         self.target_model.load_state_dict(self.model.state_dict())
         
-        if USE_LR_SCHEDULER:
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer, 
-                mode="min", 
-                factor=0.5, 
-                patience=5,
-                verbose=False, 
-                min_lr=2e-4
-            )
         
         self.loss_history = []
         self.avg_loss_window = 100  #how many batches to avg loss
@@ -217,6 +215,109 @@ class Agent:
         self.imitation_optimizer.step()
         
         return loss.item()
+    
+    def train_independent_batches(self):
+        sample_size = NUM_BATCHES * BATCH_SIZE
+        batch_unbiased = self.memory.sample_no_bias(k=sample_size)
+        batch_biased   = self.memory.sample_with_reward_bias(k=sample_size) #reward bias
+        batch_biased_rec = self.memory.sample_with_recent_bias(k=sample_size) #recency bias
+        
+        if USE_REWARD_BIAS: 
+            for idx in range(NUM_BATCHES):
+                batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+            
+            logger.log(f"\nstarting unbiased training!")
+            for idx in range(NUM_BATCHES//2): 
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+        elif USE_RECENCY_BIAS: 
+            for idx in range(NUM_BATCHES):
+                batch = batch_biased_rec[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+            
+            logger.log(f"\nstarting unbiased training!")
+            for idx in range(NUM_BATCHES//2):
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+        
+        # no bias
+        else:
+            for idx in range(NUM_BATCHES):
+                batch = batch_unbiased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+            # train a few iterations on biased data
+            logger.log("\ntraining on biased data!")
+            for idx in range(10):
+                batch = batch_biased[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                self.train_batch(batch)
+                
+        
+        if self.counter % 20000 == 0:
+            logger.log("\ntraining on expert memory!")
+            expert_batch = self.expert_memory.sample_no_bias(k=sample_size)
+            for idx in range(NUM_BATCHES):
+                batch = expert_batch[idx*BATCH_SIZE: (idx+1)*BATCH_SIZE]
+                if len(batch) == 0:
+                    break
+                self.train_batch(batch)
+        
+        # for i in range(NUM_BATCHES):
+        #     #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
+        #     self.train_batch(self.memory)
+
+        #     if self.counter % 20000 == 0:
+        #         self.train_batch(self.expert_memory)
+        #         logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
+        
+        # if USE_REWARD_BIAS:
+        #     logger.log(f"training on unbiased data!")
+        #     for _ in range(NUM_BATCHES//2):
+        #         # also some sampling on non biased data to avoid overfitting on only good data
+                
+        #         self.train_batch(self.memory, explicit_bias=False, unbiased_batch_size=BATCH_SIZE)
+        # else:
+        # # temp: only very few biased training steps. 
+        #     for _ in range(10):
+        #         logger.log(f"training on biased data!")
+        #         self.train_batch(self.memory, explicit_bias=True)
+        
+    def train_batch_(self, fraction=2):
+        if USE_REWARD_BIAS: 
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+                
+        elif USE_RECENCY_BIAS: 
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_with_recent_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+                
+            
+        elif not USE_REWARD_BIAS and not USE_RECENCY_BIAS:
+            for i in range(NUM_BATCHES):
+                batch = self.memory.sample_no_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+                
+            # do some biased training
+            logger.log("\n\ntraining on biased data!")
+            for j in range(7): 
+                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE)
+                self.train_batch(batch=batch)
+            return
+            
+        else:   
+            raise ValueError("Bias not correctly set in config.py")
+        
+        # some unbiased training whenever bias is used
+        for i in range(NUM_BATCHES//fraction):
+            batch = self.memory.sample_no_bias(k=BATCH_SIZE)
+            self.train_batch(batch=batch)
+
+            
+        
 
     def train(self, state: State, action, next_state: State, reward, is_expert_move: bool):
         state_array, piece_type = state.convert_to_array()
@@ -253,22 +354,9 @@ class Agent:
                 self._save_memory(MEMORY_PATH)
             
             else:
-                for _ in range(NUM_BATCHES):
-                    #logger.log(f"processing batch from memory, current len: {len(self.memory)}")
-                    self.train_batch(self.memory)
-
-                    if self.counter % 10000 == 0:
-                        self.train_batch(self.expert_memory)
-                        logger.log(f"Expert memory training done. Current memory size: {len(self.memory)}")
+                #self.train_independent_batches()       # compute single large batch, is then splitted. NO REPLACEMENT
+                self.train_batch_(fraction=2)           # compute small batches, replacement allowed
                 
-                
-                logger.log(f"training on unbiased data!")
-                for _ in range(NUM_BATCHES//2):
-                    # also some sampling on non biased data to avoid overfitting on only good data
-                    
-                    self.train_batch(self.memory, is_not_bias=True, unbiased_batch_size=BATCH_SIZE)
-    
-            
 
                 
         # sync the target and normal models.
@@ -306,6 +394,18 @@ class Agent:
         column_features = torch.from_numpy(column_features).float()
         
         is_expert_move = False
+
+
+        # use expert step to move forward. 
+        # we want to have a period (eg 100 pieces) of epxert placement regardless of epsilon
+        # to trigger this, use the expert here
+
+        if self.tetris_expert.step() == True: 
+            return_val = self.tetris_expert.get_best_move(state=state)
+            if return_val is None:
+                return_val = np.random.choice(self.actions)
+            return return_val, True
+
         # exploration
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
@@ -325,7 +425,7 @@ class Agent:
             
         # exploitation
         else:
-            with torch.no_grad():  # Don't track gradients for prediction
+            with torch.no_grad():  
                 q_values = self.model(
                     state_array.unsqueeze(0), 
                     piece_type.unsqueeze(0), 
@@ -342,7 +442,12 @@ class Agent:
         self.counter_epsilon += 1
         if self.counter_epsilon == EPSILON_COUNTER_EPOCH:
             if self.epsilon >= MIN_EPSILON:
+                # only temp. really slow decay at first 12000
                 self.epsilon *= self.epsilon_decay
+                # if self.counter < 15000:
+                #     self.epsilon -= 0.000006        #12*0.000006 = 0.72
+                # else:
+                #     self.epsilon *= self.epsilon_decay
             self.counter_epsilon = 0
 
         return return_val, is_expert_move
@@ -368,14 +473,19 @@ class Agent:
     def _load_memory(self, path:str): 
         pass
     
-    def train_batch(self, memory: Memory, is_not_bias=False, unbiased_batch_size=BATCH_SIZE):
-        logger.log("starting batch training")
-        # get batch from memory
-        #batch = random.sample(self.memory, BATCH_SIZE)
-        if is_not_bias: 
-            batch = memory.sample_no_bias(unbiased_batch_size)
-        else: 
-            batch = memory.sample(BATCH_SIZE)
+    def train_batch(self, batch):
+        # update learning rate
+        if USE_LR_SCHEDULER:
+            lr = utils.get_lr(
+                iteration=self.step, 
+                warmup_steps=WARMUP_STEPS, 
+                max_steps=MAX_STEPS, 
+                init_lr=LEARNING_RATE, 
+                min_lr=MIN_LEARNING_RATE
+            )
+            for param_group in self.optimizer.param_groups: 
+                param_group["lr"] = lr
+
         
         # handling of all the elements for tensors
         states_game_board = []
@@ -432,27 +542,20 @@ class Agent:
             self.optimizer.zero_grad()
             loss.backward()
             
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             
             self.optimizer.step()
             
             self.loss_history.append(loss.item())
-            if USE_LR_SCHEDULER and len(self.loss_history) >= self.avg_loss_window:
-                avg_loss = sum(self.loss_history[-self.avg_loss_window:]) / self.avg_loss_window
-                self.scheduler.step(avg_loss)
-                # Only keep recent losses
-                self.loss_history = self.loss_history[-self.avg_loss_window:]
+
+            self.step += 1
             
             logger.log(f"Epoch {epoch+1}: Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
             with torch.no_grad():
                 q_values = current_qs.gather(1, actions.unsqueeze(1))
-                logger.log({
-                    'q_mean': q_values.mean().item(),
-                    'q_std': q_values.std().item(),
-                    'max_q': q_values.max().item(),
-                    'min_q': q_values.min().item(),
-                    'td_error': (target_qs - q_values).abs().mean().item()
-                })
+                log_string = f"norm: {norm:.4f}, q_mean: {q_values.mean().item():.4f}, q_std: {q_values.std().item():.4f}, max_q: {q_values.max().item():.4f}, min_q: {q_values.min().item():.4f}, td_error: {(target_qs - q_values).abs().mean().item():.4f}"
+                logger.log(log_string)
+
     
         
     def _save_model(self, suffix: Optional[str]=None):
@@ -460,7 +563,6 @@ class Agent:
             torch.save({
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-                'scheduler_state_dict': self.scheduler.state_dict(),
                 'epsilon': self.epsilon,
             #}, f"{MODEL_NAME}-{suffix}.pt")
             }, f"{MODEL_NAME}-{1}.pt")
@@ -469,7 +571,8 @@ class Agent:
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
                 'epsilon': self.epsilon,
-            }, f"{MODEL_NAME}-{suffix}.pt")
+            #}, f"{MODEL_NAME}-{suffix}.pt")
+            }, f"{MODEL_NAME}-{1}.pt")
         
     def _load_model(self):
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
@@ -481,8 +584,6 @@ class Agent:
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
         self.target_model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        if 'scheduler_state_dict' in checkpoint:
-            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.epsilon = checkpoint['epsilon']
 
 

@@ -32,10 +32,10 @@ DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.005
 MIN_LEARNING_RATE = 1e-4
-WARMUP_STEPS  = 500      # for LR scheduling
-MAX_STEPS     = 5000     # for lr scheduling
+WARMUP_STEPS  = 2000      # for LR scheduling
+MAX_STEPS     = 15000     # for lr scheduling
 BATCH_SIZE    = 64
 COUNTER       = 2000     #when to perform batch training
 EPOCHS        = 2   # how often to iterate over samples
@@ -96,7 +96,7 @@ REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS = 0
+IMITATION_LEARNING_EPOCHS = 5
 
 MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem

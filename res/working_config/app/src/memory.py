@@ -58,17 +58,38 @@ class Memory():
         
         return random.sample(self.memory_list, k=k)
     
-    def sample_with_reward_bias(self, k:int) -> List:
+    def sample_with_reward_bias(self, k:int, temperature=REWARD_TEMPERATURE) -> List:
+        """
+        Sample k elements from the memory buffer with a bias towards higher rewards.
+        
+        Args:
+            k (int): Number of elements to sample
+            temperature (float): Temperature parameter for the softmax function used to bias the sampling.
+                A value of 1.0 results in a strong bias, while a value of 0.0 results in a uniform distribution."""
+        if len(self.memory_list) <= k: 
+            return self.memory_list.copy()
+        
         rewards = []
         
         for t in self.memory_list: 
-            rewards.append(t[2])
+            rewards.append(t[2])        # extract rewards fro tuple t
         
         min_reward = min(rewards)
-        normalized_rewards = [ r - min_reward + 1e-6 for r in rewards]  # like partition function, small value
+        max_reward = max(rewards)
+        reward_range = max_reward - min_reward + 1e-6
         
-        total_rewards = sum(normalized_rewards)
-        probs         = [r/total_rewards for r in normalized_rewards]
+        normalized_rewards = [ (r - min_reward) / reward_range for r in rewards]  # like partition function, small value
+        
+        # temperature for the bias
+        # temperature = 1: strong bias
+        # temperature = 0: uniform distr.
+        
+        biased_rewards = [r ** temperature for r in normalized_rewards]
+        
+
+        
+        total_rewards = sum(biased_rewards)
+        probs         = [r/total_rewards for r in biased_rewards]
         
         samples_indecies = np.random.choice(
             len(self.memory_list),

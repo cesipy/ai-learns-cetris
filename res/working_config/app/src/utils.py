@@ -70,3 +70,17 @@ def log_config_variables():
     
     return log_text
 
+
+def get_lr(iteration: int, warmup_steps: int, max_steps: int, init_lr: float, min_lr: float): 
+    if iteration < warmup_steps: 
+        return init_lr * (iteration + 1) / warmup_steps
+    
+    if iteration > max_steps: 
+        return min_lr
+    
+    decay_ratio = (iteration - warmup_steps) / (max_steps - warmup_steps)
+    
+    coeff = 0.5 * (1 + np.cos(np.pi * decay_ratio))
+    
+    return min_lr + coeff * (init_lr - min_lr)
+
