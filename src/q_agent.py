@@ -17,6 +17,8 @@ from tetris_expert import TetrisExpert
 from state import State
 from config import *
 from memory import Memory
+import utils
+
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
@@ -58,6 +60,7 @@ class Agent:
         self.board_shape         = board_shape
         self.epsilon_decay       = epsilon_decay
         self.tetris_expert       = TetrisExpert(self.actions, expert_period=200000, expert_period_len=5)
+        self.step                = 0
 
 
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
@@ -77,12 +80,6 @@ class Agent:
         # Copy weights to target model
         self.target_model.load_state_dict(self.model.state_dict())
         
-        if USE_LR_SCHEDULER:
-            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                self.optimizer,
-                T_max=10000,  # Number of iterations/updates for a complete cosine cycle
-                eta_min=MIN_LEARNING_RATE  # Minimum learning rate
-            )
         
         self.loss_history = []
         self.avg_loss_window = 100  #how many batches to avg loss
@@ -471,6 +468,19 @@ class Agent:
         pass
     
     def train_batch(self, batch):
+        # update learning rate
+        if USE_LR_SCHEDULER:
+            lr = utils.get_lr(
+                iteration=self.step, 
+                warmup_steps=WARMUP_STEPS, 
+                max_steps=MAX_STEPS, 
+                init_lr=LEARNING_RATE, 
+                min_lr=MIN_LEARNING_RATE
+            )
+            for param_group in self.optimizer.param_groups: 
+                param_group["lr"] = lr
+
+        
         # handling of all the elements for tensors
         states_game_board = []
         piece_types = []
@@ -531,8 +541,8 @@ class Agent:
             self.optimizer.step()
             
             self.loss_history.append(loss.item())
-            if USE_LR_SCHEDULER:
-                self.scheduler.step()
+
+            self.step += 1
             
             logger.log(f"Epoch {epoch+1}: Loss: {loss.item():.4f}, LR: {self.optimizer.param_groups[0]['lr']:.6f}")
             with torch.no_grad():
@@ -547,7 +557,6 @@ class Agent:
             torch.save({
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict(),
-                'scheduler_state_dict': self.scheduler.state_dict(),
                 'epsilon': self.epsilon,
             #}, f"{MODEL_NAME}-{suffix}.pt")
             }, f"{MODEL_NAME}-{1}.pt")
@@ -569,8 +578,6 @@ class Agent:
         checkpoint = torch.load(f"{MODEL_NAME}.pt")
         self.target_model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        if 'scheduler_state_dict' in checkpoint:
-            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.epsilon = checkpoint['epsilon']
 
 

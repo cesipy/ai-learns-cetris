@@ -125,7 +125,8 @@ class TetrisExpert:
                 continue
             #currently not available
             
-            reward = calculate_reward_tetris_expert(next_state=next_state)
+            #reward = calculate_reward_tetris_expert(next_state=next_state)
+            reward = calculate_reward(next_state)
             # if LOGGING:
             #     logger.log(f"action: {action}, reward: {reward}, bumpiness: {next_state.bumpiness}")
             rewards.append((action, reward))
@@ -188,6 +189,7 @@ class TetrisExpert:
             piece_type=state.piece_type, 
             middle_point=state.middle_point
         )
+        new_state.immedeate_lines_cleared = new_lines_cleared
         return new_state
     
     def _get_new_lines_cleared(self, board: np.ndarray) -> int:
