@@ -167,26 +167,38 @@ class Memory():
         Args:
             path (str): Path where the memory buffer will be saved
         """
-    
         serializable_memory = []
-        
-        for experience in self.memory_list:
-            (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column) = experience
-            
+
+        for exp in self.memory_list: 
+            (state, norm_action, next_state) = exp
+
             serializable_memory.append((
-                (
-                    state_array.cpu().numpy() if torch.is_tensor(state_array) else state_array,
-                    piece_type.cpu().numpy() if torch.is_tensor(piece_type) else piece_type,
-                    state_column_features.cpu().numpy() if torch.is_tensor(state_column_features) else state_column_features
-                ),
-                action,
-                reward,
-                (
-                    next_state_array.cpu().numpy() if torch.is_tensor(next_state_array) else next_state_array,
-                    next_piece_type.cpu().numpy() if torch.is_tensor(next_piece_type) else next_piece_type, 
-                    next_state_column.cpu().numpy() if torch.is_tensor(next_state_column) else next_state_column
-                )
+                state.to_dict(), 
+                norm_action, 
+                next_state.to_dict()	
             ))
+
+
+
+        # serializable_memory = []
+        
+        # for experience in self.memory_list:
+        #     (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column) = experience
+            
+        #     serializable_memory.append((
+        #         (
+        #             state_array.cpu().numpy() if torch.is_tensor(state_array) else state_array,
+        #             piece_type.cpu().numpy() if torch.is_tensor(piece_type) else piece_type,
+        #             state_column_features.cpu().numpy() if torch.is_tensor(state_column_features) else state_column_features
+        #         ),
+        #         action,
+        #         reward,
+        #         (
+        #             next_state_array.cpu().numpy() if torch.is_tensor(next_state_array) else next_state_array,
+        #             next_piece_type.cpu().numpy() if torch.is_tensor(next_piece_type) else next_piece_type, 
+        #             next_state_column.cpu().numpy() if torch.is_tensor(next_state_column) else next_state_column
+        #         )
+        #     ))
         
         with open(path, 'wb') as f:
             pickle.dump({
@@ -212,24 +224,31 @@ class Memory():
         
         self.memory_list = []
         for experience in data['memory_list']:
-            (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column_features) = experience
-            
-            # Convert numpy arrays to tensors
+            (state_dict, action, next_state_dict) = experience
             self.memory_list.append((
-                (
-                    torch.from_numpy(state_array).float() if isinstance(state_array, np.ndarray) else state_array,
-                    torch.from_numpy(piece_type).float() if isinstance(piece_type, np.ndarray) else piece_type,
-                    torch.from_numpy(state_column_features).float() if isinstance(state_column_features, np.ndarray) else state_column_features
-                ),
-                action,
-                reward,
-                (
-                    torch.from_numpy(next_state_array).float() if isinstance(next_state_array, np.ndarray) else next_state_array,
-                    torch.from_numpy(next_piece_type).float() if isinstance(next_piece_type, np.ndarray) else next_piece_type, 
-                    torch.from_numpy(next_state_column_features).float() if isinstance(next_state_column_features, np.ndarray) else next_state_column_features
-                ),
-                
+                state_dict.from_dict(), 
+                action, 
+                next_state_dict.from_dict()
             ))
+
+            # (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column_features) = experience
+            
+            # # Convert numpy arrays to tensors
+            # self.memory_list.append((
+            #     (
+            #         torch.from_numpy(state_array).float() if isinstance(state_array, np.ndarray) else state_array,
+            #         torch.from_numpy(piece_type).float() if isinstance(piece_type, np.ndarray) else piece_type,
+            #         torch.from_numpy(state_column_features).float() if isinstance(state_column_features, np.ndarray) else state_column_features
+            #     ),
+            #     action,
+            #     reward,
+            #     (
+            #         torch.from_numpy(next_state_array).float() if isinstance(next_state_array, np.ndarray) else next_state_array,
+            #         torch.from_numpy(next_piece_type).float() if isinstance(next_piece_type, np.ndarray) else next_piece_type, 
+            #         torch.from_numpy(next_state_column_features).float() if isinstance(next_state_column_features, np.ndarray) else next_state_column_features
+            #     ),
+                
+            # ))
         
 # ----------------------------------------------
         

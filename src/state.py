@@ -1,8 +1,10 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import numpy as np
 
 from simpleLogger import SimpleLogger
 from config import *
+
+import json
 
 
 logger = SimpleLogger()
@@ -15,7 +17,8 @@ class State:
         lines_cleared: int,
         piece_type:int,
         piece_count:int,
-        middle_point: Tuple[int, int], 
+        middle_point: Tuple[int, int],
+        immedeate_lines_cleared: Optional[int]=None
     ):
         self.game_board = np.array(game_board, dtype=np.float32)
         self.game_board_copy = self._copy_game_board()
@@ -28,7 +31,7 @@ class State:
         self.piece_type = piece_type
         self.piece_count= piece_count
         self.middle_point = middle_point
-        self.immedeate_lines_cleared = None
+        self.immedeate_lines_cleared = immedeate_lines_cleared
         
         #advanced 
         self.column_heights = self._calculate_column_heights()
@@ -39,6 +42,29 @@ class State:
         
         self.max_height_diff = self.get_max_height_diff()
         self.height_diff = self.get_max_height_diff()
+
+    def to_dict(self): 
+        return {
+            "game_board": self.game_board.tolist(),
+            "lines_cleared": self.lines_cleared,
+            "piece_type": self.piece_type,
+            "piece_count": self.piece_count,
+            "middle_point": self.middle_point,
+            "immidiate_lines_cleared": self.immedeate_lines_cleared
+        }
+    
+    @classmethod
+    def from_dict(self, data):
+        return State(
+            game_board = data["game_board"],
+            lines_cleared = data["lines_cleared"],
+            piece_type = data["piece_type"],
+            piece_count = data["piece_count"],
+            middle_point = data["middle_point"],
+            immedeate_lines_cleared = data["immidiate_lines_cleared"]
+        ) 
+
+
         
         
     # def get_piece_type(self):

@@ -93,10 +93,10 @@ USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifr
 REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
-IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
+IMITATION_LEARNING_LR         = 0.0008       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS = 0
+IMITATION_LEARNING_EPOCHS = 5
 
 MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem

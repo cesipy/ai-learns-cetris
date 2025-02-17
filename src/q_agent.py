@@ -18,7 +18,7 @@ from state import State
 from config import *
 from memory import Memory
 import utils
-
+from reward import calculate_reward
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
@@ -92,12 +92,12 @@ class Agent:
         if not ONLY_TRAINING:           # circumvents the imitation collector
             if IMITATION_COLLECTOR:
                 if os.path.exists(MEMORY_PATH):
-                    self.memory.load_memory(MEMORY_PATH)
-                    self.memory.maxlen = 100000
+                    self.precollecting_memory.load_memory(MEMORY_PATH)
+                    self.precollecting_memory.memory.maxlen = 100000
                     logger.log(f"loaded memory with size: {len(self.memory)}")
                 else: 
                     logger.log("No existing memory found. Creating new memory for imitation learning collection.")
-                    self.memory = Memory(maxlen=100000, bias_recent=False)  
+                    self.precollecting_memory = Memory(maxlen=100000, bias_recent=False)  
                     
                     memory_dir = os.path.dirname(MEMORY_PATH)
                     if memory_dir and not os.path.exists(memory_dir):
@@ -116,56 +116,136 @@ class Agent:
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
         
-        
-    def train_imitation_learning(self, batch_size: int, epochs_per_batch: int):
+
+    def train_imitation_learning(self, batch_size: int, epochs_per_batch: int, iterations: int = 3000): 
         self.imitation_learning_memory.bias_recent = False
+        self.imitation_learning_memory.bias_reward = False
         memory_as_list = self.imitation_learning_memory.memory_list.copy()
-        dataset_size = len(self.imitation_learning_memory)
-        losses = []
 
         self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=IMITATION_LEARNING_LR)
-        
-        for epoch in range(epochs_per_batch):
-            
-            random.shuffle(memory_as_list)
-            epoch_loss = 0
-            
-            for i in range(0, dataset_size, batch_size):
-                batch = memory_as_list[i:i+batch_size]
-                if len(batch) == 0: 
-                    break
-                loss = self.imitation_learning_step(batch)
-                epoch_loss += loss
-                #logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
+
+                # handling of all the elements for tensors
+
+        for i in range(iterations): 
+            batch = random.sample(memory_as_list, batch_size)
+
+            states_game_board = []
+            piece_types = []
+            next_states_game_board = []
+            next_piece_types = []
+            actions = []
+            rewards = []
+            states_column_features = []
+            next_states_column_features = []
+
+            #for (state_game_board, state_piece_type, state_column_features), action, reward,(next_state_game_board, next_state_piece_type, next_state_column_features) in batch:
+            for (state, action, next_state) in batch:
+                s_arr, s_piece = state.convert_to_array(), state.get_piece_type_tensor()
+                ns_arr, ns_piece = next_state.convert_to_array(), next_state.get_piece_type_tensor()
+                s_cols = state.get_column_features()
+                ns_cols = next_state.get_column_features()
                 
-            avg_loss_epoch = epoch_loss / (dataset_size // batch_size)
-            losses.append(avg_loss_epoch)
-            
-            logger.log(f"Epoch {epoch+1}/{epochs_per_batch}: loss: {avg_loss_epoch:.4f}")
-            
-            self.target_model.load_state_dict(self.model.state_dict())
+                states_game_board.append(torch.from_numpy(s_arr).float())
+                piece_types.append(torch.from_numpy(s_piece).float())
+                states_column_features.append(torch.from_numpy(s_cols).float())
+                
+                next_states_game_board.append(torch.from_numpy(ns_arr).float())
+                next_piece_types.append(torch.from_numpy(ns_piece).float())
+                next_states_column_features.append(torch.from_numpy(ns_cols).float())
+                
+                actions.append(action)
+                # Compute reward dynamically
+                r = calculate_reward(state, next_state)
         
-        # Create and save the loss plot
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(10, 6))
-        plt.plot(losses, label='Average Loss per Batch')
-        plt.xlabel('Batch Number')
-        plt.ylabel('Average Loss')
-        plt.title('Imitation Learning Training Loss')
-        plt.grid(True)
-        plt.legend()
+            
+            states_game_board = torch.stack(states_game_board).to(device)
+            piece_types = torch.stack(piece_types).to(device)
+            states_column_features = torch.stack(states_column_features).to(device)
+
+            next_states_game_board = torch.stack(next_states_game_board).to(device)
+            next_piece_types = torch.stack(next_piece_types).to(device)
+            next_states_column_features = torch.stack(next_states_column_features).to(device)
+
+            actions = torch.tensor(actions, dtype=torch.long).to(device)
+            rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+
+
+            next_qs = self.target_model(
+                x=next_states_game_board, 
+                piece_type=next_piece_types,
+                column_features=next_states_column_features
+            )
+
+            max_next_q = next_qs.max(1)[0]
+            target_qs = rewards + (self.discount_factor * max_next_q)
+
+            current_qs = self.model(
+                x=states_game_board, 
+                piece_type=piece_types,
+                column_features=states_column_features
+            )
+            q_values = current_qs.gather(1, actions.unsqueeze(1)).squeeze(1)
+            loss = nn.HuberLoss()(q_values, target_qs.detach())
+
+            self.imitation_optimizer.zero_grad()
+
+            logger.log(f"iteration: {i+1} loss: {loss.item()}")
+            loss.backward()
+            self.imitation_optimizer.step()
+
+
+
+    
+
+    # def train_imitation_learning(self, batch_size: int, epochs_per_batch: int):
+    #     self.imitation_learning_memory.bias_recent = False
+    #     memory_as_list = self.imitation_learning_memory.memory_list.copy()
+    #     dataset_size = len(self.imitation_learning_memory)
+    #     losses = []
+
+    #     self.imitation_optimizer = torch.optim.Adam(params=self.model.parameters(), lr=IMITATION_LEARNING_LR)
         
-        plot_dir = os.path.dirname(MODEL_NAME)
-        plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
+    #     for epoch in range(epochs_per_batch):
+            
+    #         random.shuffle(memory_as_list)
+    #         epoch_loss = 0
+            
+    #         for i in range(0, dataset_size, batch_size):
+    #             batch = memory_as_list[i:i+batch_size]
+    #             if len(batch) == 0: 
+    #                 break
+    #             loss = self.imitation_learning_step(batch)
+    #             epoch_loss += loss
+    #             #logger.log(f"epoch: {epoch+1}/{epochs_per_batch}, batch: {i//batch_size+1}/{dataset_size//batch_size}, loss: {loss:.4f}")
+                
+    #         avg_loss_epoch = epoch_loss / (dataset_size // batch_size)
+    #         losses.append(avg_loss_epoch)
+            
+    #         logger.log(f"Epoch {epoch+1}/{epochs_per_batch}: loss: {avg_loss_epoch:.4f}")
+            
+    #         self.target_model.load_state_dict(self.model.state_dict())
+        
+    #     # Create and save the loss plot
+    #     import matplotlib.pyplot as plt
+    #     plt.figure(figsize=(10, 6))
+    #     plt.plot(losses, label='Average Loss per Batch')
+    #     plt.xlabel('Batch Number')
+    #     plt.ylabel('Average Loss')
+    #     plt.title('Imitation Learning Training Loss')
+    #     plt.grid(True)
+    #     plt.legend()
+        
+    #     plot_dir = os.path.dirname(MODEL_NAME)
+    #     plot_path = os.path.join(plot_dir, 'imitation_learning_loss.png')
         
 
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
+    #     if not os.path.exists(plot_dir):
+    #         os.makedirs(plot_dir)
             
-        plt.savefig(plot_path)
-        plt.close()  # Close the plot to free memory
+    #     plt.savefig(plot_path)
+    #     plt.close()  # Close the plot to free memory
         
-        logger.log(f"Loss plot saved to: {plot_path}")
+    #     logger.log(f"Loss plot saved to: {plot_path}")
 
         
 
@@ -346,6 +426,13 @@ class Agent:
         if is_expert_move: 
             self.expert_memory.add(((state_array, piece_type, state_column_features), norm_action, reward, (next_state_array, next_piece_type, next_state_column_features)))
         
+        if (not ONLY_TRAINING) and IMITATION_COLLECTOR: 
+            current_state = (
+                state, norm_action, next_state
+            )
+            self.precollecting_memory.add(current_state)
+
+
         if len(self.memory) >=10000 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
