@@ -90,6 +90,7 @@ MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
 USE_REWARD_BIAS  = False    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
+REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining

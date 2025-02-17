@@ -26,11 +26,11 @@ def calculate_reward(next_state: State):
     reward -= 0.95 * next_state.holes
     
     if next_state.is_state_game_over():
-        game_over_penalty = 1000 
+        game_over_penalty = 500 
         reward -= game_over_penalty
         #logger.log(f"game over reward: {reward}")
         
-    return reward/100.0
+    return reward/200.0
 
 # def calculate_reward(next_state: State):
 #     lines_cleared = 0
