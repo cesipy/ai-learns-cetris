@@ -87,30 +87,31 @@ class Agent:
         if load_model:
             self._load_model()
             self._load_target_model()
-            self.epsilon = 0.01     # only small expsilon here
-            
-        if not ONLY_TRAINING:           # circumvents the imitation collector
-            if IMITATION_COLLECTOR:
-                if os.path.exists(MEMORY_PATH):
-                    self.memory.load_memory(MEMORY_PATH)
-                    self.memory.maxlen = 100000
-                    logger.log(f"loaded memory with size: {len(self.memory)}")
-                else: 
-                    logger.log("No existing memory found. Creating new memory for imitation learning collection.")
-                    self.memory = Memory(maxlen=100000, bias_recent=False)  
-                    
-                    memory_dir = os.path.dirname(MEMORY_PATH)
-                    if memory_dir and not os.path.exists(memory_dir):
-                        os.makedirs(memory_dir, exist_ok=True)
-                        logger.log(f"Created directory for storing memory: {memory_dir}")
-                    
-            else:
-                self.imitation_learning_memory = Memory(maxlen=300000)
-                self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
-                self.train_imitation_learning(#
-                    batch_size=IMITATION_LEARNING_BATCH_SIZE, 
-                    epochs_per_batch=IMITATION_LEARNING_EPOCHS,
-                )
+            self.epsilon = 0.001     # only small expsilon here
+
+        else:
+            if not ONLY_TRAINING:           # circumvents the imitation collector
+                if IMITATION_COLLECTOR:
+                    if os.path.exists(MEMORY_PATH):
+                        self.memory.load_memory(MEMORY_PATH)
+                        self.memory.maxlen = 100000
+                        logger.log(f"loaded memory with size: {len(self.memory)}")
+                    else: 
+                        logger.log("No existing memory found. Creating new memory for imitation learning collection.")
+                        self.memory = Memory(maxlen=100000, bias_recent=False)  
+                        
+                        memory_dir = os.path.dirname(MEMORY_PATH)
+                        if memory_dir and not os.path.exists(memory_dir):
+                            os.makedirs(memory_dir, exist_ok=True)
+                            logger.log(f"Created directory for storing memory: {memory_dir}")
+                        
+                else:
+                    self.imitation_learning_memory = Memory(maxlen=300000)
+                    self.imitation_learning_memory.load_memory(path=MEMORY_PATH)
+                    self.train_imitation_learning(#
+                        batch_size=IMITATION_LEARNING_BATCH_SIZE, 
+                        epochs_per_batch=IMITATION_LEARNING_EPOCHS,
+                    )
 
 
         logger.log(f"actions in __init__: {self.actions}")
