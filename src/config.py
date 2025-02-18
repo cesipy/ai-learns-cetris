@@ -32,9 +32,9 @@ DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.005
+LEARNING_RATE = 0.002
 MIN_LEARNING_RATE = 1e-4
-WARMUP_STEPS  = 2000      # for LR scheduling
+WARMUP_STEPS  = 500      # for LR scheduling
 MAX_STEPS     = 15000     # for lr scheduling
 BATCH_SIZE    = 64
 COUNTER       = 2000     #when to perform batch training
