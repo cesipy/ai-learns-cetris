@@ -26,20 +26,20 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.995
+EPSILON_DECAY = 0.996
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE = 0.002
-MIN_LEARNING_RATE = 1e-4
-WARMUP_STEPS  = 500      # for LR scheduling
-MAX_STEPS     = 15000     # for lr scheduling
-BATCH_SIZE    = 64
-COUNTER       = 2000     #when to perform batch training
-EPOCHS        = 2   # how often to iterate over samples
-NUM_BATCHES   = 70  # when counter is reached, how many random batches are chosen from memory
+LEARNING_RATE = 3e-5
+MIN_LEARNING_RATE = 2e-5
+WARMUP_STEPS  = 700      # for LR scheduling
+MAX_STEPS     = 3000     # for lr scheduling
+BATCH_SIZE    =  128
+COUNTER       = 15000     #when to perform batch training
+EPOCHS        = 3   # how often to iterate over samples
+NUM_BATCHES   = 100  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -64,7 +64,8 @@ INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
-LOAD_MODEL = False          # load model?
+LOAD_MODEL = True          # load model?
+LOAD_EPSILON = 0.003          # what initial epsilon to use when loading
 
 
 # files ideosyncratic to the neural network
@@ -85,8 +86,8 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 170000
-MEMORY_EXPERT_MAXLEN = 60000
+MEMORY_MAXLEN        = 75000
+MEMORY_EXPERT_MAXLEN = 6000
 # biases for sampling from memory   
 USE_REWARD_BIAS  = False    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
@@ -98,7 +99,7 @@ IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
 IMITATION_LEARNING_EPOCHS = 5
 
-MODEL_NAME = "../models/model"  # where are models saved? (for e.g. checkpointing )
+MODEL_NAME = "../models/model-1"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 

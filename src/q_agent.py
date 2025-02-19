@@ -70,7 +70,7 @@ class Agent:
         #torch.compile(self.target_model)
         
         self.target_update_counter = 0
-        self.target_update_frequency = 1000
+        self.target_update_frequency = 3000
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20 
@@ -87,7 +87,7 @@ class Agent:
         if load_model:
             self._load_model()
             self._load_target_model()
-            self.epsilon = 0.001     # only small expsilon here
+            self.epsilon = LOAD_EPSILON     # only small expsilon here
         
         else:  
             if not ONLY_TRAINING:           # circumvents the imitation collector

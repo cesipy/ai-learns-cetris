@@ -63,6 +63,13 @@ docker-compose up --build experiment_2
 
 ```
 
+## Working version for four pieces reloaded
+Switch to commit "856b9a834909d643897f0f2e2610bc221b455fea" and train the model from scratch. after about 15k episodes the model averaged to 7 lines cleared. Then I saved the model and tuned it with a smaller learning rate and a smaller replay memory. This helped to achieve ... pieces. 
+
+This is a video showcasing the training process: 
+![traininge](./res/training_4_pieces.gif)
+
+
 ## Working version for four pieces. 
 Switch to commit "insert here". 
 
