@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-17.txt
+tail -f ../logs/py_log_2025-02-19.txt
 
 
 
@@ -62,6 +62,10 @@ docker-compose up --build experiment_1
 docker-compose up --build experiment_2
 
 ```
+
+## working version with four pieces reloaded 2
+model is trained from commit: "452fa334dc9c433425a1dde0d0fdecad9e86a21e".
+This resulted in an average of 16 pieces cleared. Then finetuned furthermore.  
 
 ## Working version for four pieces. 
 Switch to commit "insert here". 

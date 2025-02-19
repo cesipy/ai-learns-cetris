@@ -66,8 +66,8 @@ class Agent:
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         
-        torch.compile(self.model)
-        torch.compile(self.target_model)
+        #torch.compile(self.model)
+        #torch.compile(self.target_model)
         
         self.target_update_counter = 0
         self.target_update_frequency = 1000
@@ -87,7 +87,7 @@ class Agent:
         if load_model:
             self._load_model()
             self._load_target_model()
-            self.epsilon = 0.001     # only small expsilon here
+            self.epsilon = LOAD_EPSILON     # only small expsilon here
 
         else:
             if not ONLY_TRAINING:           # circumvents the imitation collector
