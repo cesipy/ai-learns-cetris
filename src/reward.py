@@ -31,7 +31,7 @@ def calculate_reward(next_state: State):
         #logger.log(f"line cleared reward: {line_cleared_reward}")
         reward += line_cleared_reward
         
-    survival_bonus = 0.5* next_state.piece_count 
+    survival_bonus = 1.0* next_state.piece_count 
     reward += survival_bonus
     
 

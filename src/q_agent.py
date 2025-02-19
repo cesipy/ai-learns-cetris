@@ -411,7 +411,7 @@ class Agent:
         if random.random() <= self.epsilon:
             # this is the tetris expert for imitation learning
             # if self.counter % 100 in [
-            #     i for i in range(1,97)
+            #     i for i in range(1,96)
             # ]:
             if self.cunter_tetris_expert % int(round(self.starting_tetris_expert_modulo)) == 0:
                 self.cunter_tetris_expert = 0

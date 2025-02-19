@@ -32,9 +32,9 @@ DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
 MIN_EPSILON = 0.01
 
-LEARNING_RATE     = 7e-4
-MIN_LEARNING_RATE = 2e-5
-WARMUP_STEPS  = 700      # for LR scheduling
+LEARNING_RATE     = 0.002
+MIN_LEARNING_RATE = 1e-4
+WARMUP_STEPS  = 1000      # for LR scheduling
 MAX_STEPS     = 5000     # for lr scheduling
 BATCH_SIZE    = 128
 COUNTER       = 2000     #when to perform batch training
@@ -49,7 +49,7 @@ MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
 COUNTER_TETRIS_EXPERT = 2
-NUMBER_OF_PIECES      = 4       # how many pieces, default is 7 different (I, O, L, J, ...) 
+NUMBER_OF_PIECES      = 6       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.
@@ -64,7 +64,7 @@ INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
-LOAD_MODEL = True          # load model?
+LOAD_MODEL = False        # load model?
 LOAD_EPSILON = 0.3
 
 # files ideosyncratic to the neural network
@@ -85,7 +85,7 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 70000
+MEMORY_MAXLEN        = 100000
 MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
 USE_REWARD_BIAS  = False    # favor best reward-samples in memory
@@ -96,9 +96,9 @@ REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS = 5
+IMITATION_LEARNING_EPOCHS = 7
 
-MODEL_NAME = "../models/trained_4_pieces_16_avg"  # where are models saved? (for e.g. checkpointing )
+MODEL_NAME = "../models/model-1"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
