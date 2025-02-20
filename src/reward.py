@@ -46,7 +46,7 @@ def calculate_reward(next_state: State):
         reward -= game_over_penalty
         #logger.log(f"game over reward: {reward}")
         
-    return reward/200.0
+    return reward/500.0
 
 
 

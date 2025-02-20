@@ -88,8 +88,8 @@ class Agent:
             self._load_model()
             self._load_target_model()
             self.epsilon = LOAD_EPSILON     # only small expsilon here
-        
-        else:  
+
+        else:
             if not ONLY_TRAINING:           # circumvents the imitation collector
                 if IMITATION_COLLECTOR:
                     if os.path.exists(MEMORY_PATH):

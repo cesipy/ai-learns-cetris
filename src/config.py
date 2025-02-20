@@ -65,7 +65,7 @@ ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
 LOAD_MODEL = True          # load model?
-LOAD_EPSILON = 0.1         # what initial epsilon to use when loading
+LOAD_EPSILON = 0.001         # what initial epsilon to use when loading
 
 
 # files ideosyncratic to the neural network
