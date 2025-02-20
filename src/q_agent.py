@@ -305,8 +305,8 @@ class Agent:
             # do some biased training
             logger.log("\n\ntraining on biased data!")
             for j in range(7): 
-                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE)
-                self.train_batch(batch=batch)
+                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE, temperature=1.0)
+                self.train_batch(batch=batch,)
             return
             
         else:   

@@ -26,20 +26,20 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.996
+EPSILON_DECAY = 0.995
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.01
+MIN_EPSILON = 0.001
 
-LEARNING_RATE = 3e-5
-MIN_LEARNING_RATE = 2e-5
+LEARNING_RATE = 1e-5
+MIN_LEARNING_RATE = 5e-6
 WARMUP_STEPS  = 700      # for LR scheduling
 MAX_STEPS     = 3000     # for lr scheduling
 BATCH_SIZE    =  128
-COUNTER       = 15000     #when to perform batch training
+COUNTER       = 4000     #when to perform batch training
 EPOCHS        = 3   # how often to iterate over samples
-NUM_BATCHES   = 100  # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 50  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -65,7 +65,7 @@ ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
 LOAD_MODEL = True          # load model?
-LOAD_EPSILON = 0.003          # what initial epsilon to use when loading
+LOAD_EPSILON = 0.1         # what initial epsilon to use when loading
 
 
 # files ideosyncratic to the neural network
@@ -89,9 +89,9 @@ USE_LR_SCHEDULER =True
 MEMORY_MAXLEN        = 75000
 MEMORY_EXPERT_MAXLEN = 6000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = False    # favor best reward-samples in memory
+USE_REWARD_BIAS  = True    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
-REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
+REWARD_TEMPERATURE = 0.5    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
