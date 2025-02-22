@@ -1,7 +1,7 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
-os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Empty string to disable CUDA
 
 import torch
 #torch.set_num_threads(1)  # This helps prevent multiprocessing issues
@@ -24,8 +24,8 @@ os.chdir(SRC_DIR)
 logger = SimpleLogger()
 
 
+logger.log(f"using device: {device}")
 
-device = torch.device("cpu")
 class Agent:
     def __init__(
         self, 
@@ -66,8 +66,7 @@ class Agent:
         self.model        = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         self.target_model = DB_CNN(num_actions=num_actions, simple_cnn=SIMPLE_CNN).to(device)
         
-        #torch.compile(self.model)
-        #torch.compile(self.target_model)
+
         
         self.target_update_counter = 0
         self.target_update_frequency = 1000
@@ -89,7 +88,11 @@ class Agent:
             self._load_target_model()
             self.epsilon = LOAD_EPSILON     # only small expsilon here
 
-        else:
+        # compile after loading or else normal code. 
+        torch.compile(self.model)
+        torch.compile(self.target_model)
+
+        if not load_model: 
             if not ONLY_TRAINING:           # circumvents the imitation collector
                 if IMITATION_COLLECTOR:
                     if os.path.exists(MEMORY_PATH):
@@ -112,8 +115,7 @@ class Agent:
                         batch_size=IMITATION_LEARNING_BATCH_SIZE, 
                         epochs_per_batch=IMITATION_LEARNING_EPOCHS,
                     )
-
-
+        
         logger.log(f"actions in __init__: {self.actions}")
         #self.train_on_basic_scenarios()
         
@@ -305,7 +307,7 @@ class Agent:
             # do some biased training
             logger.log("\n\ntraining on biased data!")
             for j in range(7): 
-                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE)
+                batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE, temperature=1.0)
                 self.train_batch(batch=batch)
             return
             
@@ -329,12 +331,12 @@ class Agent:
         
         # convert to tensors 
         
-        state_array = torch.from_numpy(state_array).float()
-        piece_type = torch.from_numpy(piece_type).float()
-        state_column_features = torch.from_numpy(state_column_features).float()
-        next_state_array = torch.from_numpy(next_state_array).float()
-        next_piece_type = torch.from_numpy(next_piece_type).float()
-        next_state_column_features = torch.from_numpy(next_state_column_features).float()
+        state_array = torch.from_numpy(state_array).float().to(device)
+        piece_type = torch.from_numpy(piece_type).float().to(device)
+        state_column_features = torch.from_numpy(state_column_features).float().to(device)
+        next_state_array = torch.from_numpy(next_state_array).float().to(device)
+        next_piece_type = torch.from_numpy(next_piece_type).float().to(device)
+        next_state_column_features = torch.from_numpy(next_state_column_features).float().to(device)
         
         # action space has negative values -> just workaround for this
         norm_action = State.normalize_action(action)
@@ -388,8 +390,8 @@ class Agent:
             was taken by the expert
         """
         state_array, piece_type = state.convert_to_array()
-        state_array = torch.from_numpy(state_array).float()
-        piece_type  = torch.from_numpy(piece_type).float()
+        state_array = torch.from_numpy(state_array).float().to(device)
+        piece_type  = torch.from_numpy(piece_type).float().to(device)
 
         column_features = state.get_column_features()
         column_features = torch.from_numpy(column_features).float()
@@ -576,13 +578,13 @@ class Agent:
             }, f"{MODEL_NAME}-{1}.pt")
         
     def _load_model(self):
-        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        checkpoint = torch.load(f"{MODEL_NAME}.pt", map_location=device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epsilon = checkpoint['epsilon']
         
     def _load_target_model(self): 
-        checkpoint = torch.load(f"{MODEL_NAME}.pt")
+        checkpoint = torch.load(f"{MODEL_NAME}.pt", map_location=device)
         self.target_model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.epsilon = checkpoint['epsilon']

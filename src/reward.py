@@ -22,16 +22,11 @@ def calculate_reward(next_state: State):
     reward = 0
     
     if next_state.immedeate_lines_cleared > 0:
-        fraction = next_state.piece_count / 70
-        if fraction > 1: 
-            #logger.log("70 pieces reached!")
-            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
-        else:
-            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
-        #logger.log(f"line cleared reward: {line_cleared_reward}")
+        line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
+
         reward += line_cleared_reward
         
-    survival_bonus = 1.0* next_state.piece_count 
+    survival_bonus = min(1.0* next_state.piece_count, 80)
     reward += survival_bonus
     
 

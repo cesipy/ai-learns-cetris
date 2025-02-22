@@ -3,6 +3,7 @@ import numpy as np
 
 import warnings
 import numpy as np
+import torch
 
 # Suppress specific NumPy warnings
 #warnings.filterwarnings("ignore", category=RuntimeWarning, module="numpy.core")
@@ -10,9 +11,12 @@ import numpy as np
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", message="invalid value encountered in scalar divide")
 
-# problem with tf.keras on WSL ubuntu, have to choose gpu
-# TODO: not used in all files? currently im setting this env in multiple files
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# # problem with tf.keras on WSL ubuntu, have to choose gpu
+# # TODO: not used in all files? currently im setting this env in multiple files
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"using device: {device}")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR  = os.path.join(BASE_DIR, "src")
@@ -26,20 +30,20 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.995
+EPSILON_DECAY = 0.99965
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.01
+MIN_EPSILON = 0.02
 
-LEARNING_RATE     = 0.002
-MIN_LEARNING_RATE = 1e-4
+LEARNING_RATE     = 4e-6
+MIN_LEARNING_RATE = 1e-6
 WARMUP_STEPS  = 1000      # for LR scheduling
-MAX_STEPS     = 5000     # for lr scheduling
+MAX_STEPS     = 3000     # for lr scheduling
 BATCH_SIZE    = 128
-COUNTER       = 2000     #when to perform batch training
-EPOCHS        = 2   # how often to iterate over samples
-NUM_BATCHES   = 80  # when counter is reached, how many random batches are chosen from memory
+COUNTER       = 2500     #when to perform batch training
+EPOCHS        = 3   # how often to iterate over samples
+NUM_BATCHES   = 70  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -48,8 +52,8 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 2
-NUMBER_OF_PIECES      = 6       # how many pieces, default is 7 different (I, O, L, J, ...) 
+COUNTER_TETRIS_EXPERT = 3
+NUMBER_OF_PIECES      = 7       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
 # how long to wait in receive_from_pipe.
@@ -64,8 +68,8 @@ INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
-LOAD_MODEL = False        # load model?
-LOAD_EPSILON = 0.3
+LOAD_MODEL = True        # load model?
+LOAD_EPSILON = 0.2
 
 # files ideosyncratic to the neural network
 # currently this is a CNN, maybe architecture is changed in the future
@@ -85,18 +89,18 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 100000
+MEMORY_MAXLEN        = 80000
 MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = False    # favor best reward-samples in memory
+USE_REWARD_BIAS  = True    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
-REWARD_TEMPERATURE = 1.0    # if 0 - uniform, if 1 strong bias
+REWARD_TEMPERATURE = 0.6    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS = 7
+IMITATION_LEARNING_EPOCHS     = 7
 
 MODEL_NAME = "../models/model-1"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem

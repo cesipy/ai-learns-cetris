@@ -119,3 +119,279 @@ services:
     stdin_open: true   # Keeps stdin open
     environment:
       - TERM=xterm    
+
+
+  
+  experiment_cuda1: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda2: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda3: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda4: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda5: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda6: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda7: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            
+
+  experiment_cuda8: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+
+  experiment_cuda9: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            
+
+  experiment_cuda10: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  experiment_cuda11: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            
+
+  experiment_cuda12: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+
+  experiment_cuda13: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+            
+
+  experiment_cuda14: 
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ai-learns-tetris
+    # special case for my tetris implementation, from gpt. 
+    # currently no visuals
+    tty: true          # Allocates a pseudo-TTY
+    stdin_open: true   # Keeps stdin open
+    environment:
+      - TERM=xterm    
+    deploy:
+      resources: 
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  

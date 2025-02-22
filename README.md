@@ -1,5 +1,5 @@
 # AI learns cetris - Reinforement Machine Learning
-tail -f ../logs/py_log_2025-02-19.txt
+tail -f ../logs/py_log_2025-02-21.txt
 
 
 
@@ -143,6 +143,52 @@ warnings...................... <module 'warnings' from '/usr/local/lib/python3.1
 08:10:24- fd_states: 8 fd_controls: 7
 ``` 
 
+
+## Reward function
+The tuning of the reward function was the central part for the learning process. After hundreds of trial and errors I came up with the following reward function. It was working very well for (adjust) x pieces. 
+
+```python
+def calculate_reward(next_state: State):
+    reward = 0
+    
+    if next_state.immedeate_lines_cleared > 0:
+        fraction = next_state.piece_count / 70
+        if fraction > 1: 
+            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
+        else:
+            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
+
+        reward += line_cleared_reward
+        
+    survival_bonus = 1.0* next_state.piece_count 
+    reward += survival_bonus
+    
+    reward -= 0.3 * next_state.get_height_variance() ** 1.5
+    reward -= 1.5 * next_state.max_height
+
+    reward -= 0.2 * next_state.bumpiness
+    reward -= 0.95 * next_state.holes
+    
+    if next_state.is_state_game_over():
+        game_over_penalty = 500 
+        reward -= game_over_penalty
+
+    return reward/500.0
+```
+
+Both the expert used and the model optimized this function. 
+
+In the beginning I used really simple rewards such as only lines cleared and number of pieces on the board. But then the agent never reached the reward, as it was highly unlikely to clear lines at random. So I implemented negative rewards or punishments as described [here](https://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf). 
+But also here the model struggled to learn and discover positive rewards.
+
+In combination with greedily expert moves the model was able to learn the game with the above reward function.
+
+
+
+## Expert training
+To discover positive rewards like clearing lines, I implemented a tetris expert. This expert is a greedy algorithm that tries all possible moves and calculates the reward of the resulting states. The best move is then chosen.
+
+ 
 
 
 ## Working version for two pieces. 
