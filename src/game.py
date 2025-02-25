@@ -100,6 +100,9 @@ class Game:
         current_lines_cleared: int, 
         elapsed_time:float, 
         avg_reward: float,
+        memory_len: int, 
+        expert_memory_len: int, 
+        
         ) -> str: 
         string:str = f"""
     -------------------------------------------------------------------------
@@ -111,6 +114,8 @@ class Game:
     total lines cleared  ={self.total_lines_cleared}
     elapsed time         ={elapsed_time:.3f}
     current avg reward   ={avg_reward:.3f}
+    memory length        ={memory_len}
+    expert mem length    ={expert_memory_len}
     -------------------------------------------------------------------------
 
     -------------------------------------------------------------------------

@@ -31,7 +31,7 @@
 #define BOARD_EDGE_RIGHT (BOARD_WIDTH-17)
 #define DIRECTION left
 #define NO_COLOR 8
-#define DETERMINISTIC 1
+#define DETERMINISTIC 0
 
 #define ADD_BLOCK(w,x) waddch((w),' '|A_REVERSE|COLOR_PAIR(x));     \
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))

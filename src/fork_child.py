@@ -23,12 +23,16 @@ from game import Game
 
 from communication import Communicator
 from reward import calculate_reward
+from utils import log_config_variables
+from q_agent import Agent as Q_Agent
 
 os.chdir(SRC_DIR)
 
 logger = SimpleLogger()
 
 def child_function():
+    
+    logger.log(log_config_variables())
     
     #currently all of this code is a bit messy with all the sub functions
     # only copied all the code directly from the main, to adapt it to the 
@@ -219,14 +223,14 @@ def child_function():
             
 
 
-    def step(communicator, agent) -> int:
+    def step(communicator, agent: Q_Agent) -> int:
         
         if LOGGING:
             return step_verbose(communicator, agent)
         else:
             return step_minimal(communicator, agent)
 
-    def step_verbose(communicator: Communicator, agent) -> int:
+    def step_verbose(communicator: Communicator, agent: Q_Agent) -> int:
         received_game_state = communicator.receive_from_pipe()
         logger.log(f"received_game_state1: {received_game_state}")
         status = parse_ending_message(received_game_state)
@@ -236,7 +240,7 @@ def child_function():
         state = parse_state(received_game_state, game.current_piece_count)
         logger.log(f"parsed state: {state}")
         time.sleep(SLEEPTIME)
-        action = agent.epsilon_greedy_policy(state)
+        action, is_expert_move = agent.epsilon_greedy_policy(state)
         perform_action(action, communicator)
         
         current_lines_cleared = state.lines_cleared
@@ -264,22 +268,20 @@ def child_function():
         game.current_rewards.append(reward)         # add reward for mean reward calculation
         
         logger.log(f"reward: {reward}\n")
-        agent.train(state, action, next_state, reward)
+        agent.train(state, action, next_state, reward, is_expert_move=is_expert_move)
         return 0
 
-    def step_minimal(communicator: Communicator, agent) -> int:
+    def step_minimal(communicator: Communicator, agent: Q_Agent) -> int:
         # First state
         received_game_state = communicator.receive_from_pipe()
         status = parse_ending_message(received_game_state)
         if status: return status
         
         state = parse_state(received_game_state, game.current_piece_count)
-        #logger.log(f"state::\n{state.game_board}")
         time.sleep(SLEEPTIME)
-        action = agent.epsilon_greedy_policy(state)
+        action, is_expert_move = agent.epsilon_greedy_policy(state)
         perform_action(action, communicator)
 
-        
         current_lines_cleared = state.lines_cleared
         
         # Next state
@@ -302,8 +304,7 @@ def child_function():
         reward = calculate_reward(next_state)
         game.current_rewards.append(reward)         # add reward for mean reward calculation
         
-        agent.train(state, action, next_state, reward)
-        #logger.log("-----------------------\n")
+        agent.train(state, action, next_state, reward, is_expert_move=is_expert_move)
         return 0
 
 
@@ -317,7 +318,7 @@ def child_function():
             return 0
 
 
-    def play_one_round(communicator: communication.Communicator, agent) -> int:
+    def play_one_round(communicator: communication.Communicator, agent: Q_Agent) -> int:
         game.start_time_measurement()
         logger.log("started new round")
         if LOGGING:
@@ -350,6 +351,8 @@ def child_function():
             current_lines_cleared=current_lines_cleared, 
             elapsed_time=elapsed_time, 
             avg_reward=current_avg_reward,
+            memory_len=len(agent.memory), 
+            expert_memory_len=len(agent.expert_memory)
             ))
         if LOGGING:
             logger.log(f"return_value in play one round: {return_value}")
@@ -379,18 +382,6 @@ def child_function():
         logger.log(ACTIONS)
         return action_space
 
-    # def plot_lines_cleared(lines_cleared_array: List[int]):
-    #     #TODO: maybe do this in with moving average
-    #     import plotly.graph_objects as go
-        
-    #     fig = go.Figure()
-    #     fig.add_trace(go.Scatter(x=list(range(len(lines_cleared_array))), 
-    #                             y=lines_cleared_array))
-    #     fig.update_layout(title="Lines Cleared per Epoch",
-    #                      xaxis_title="Epoch",
-    #                      yaxis_title="Lines Cleared")
-        
-    #     fig.write_html(os.path.join(RES_DIR, "lines_cleared.html"))
 
     def plot_lines_cleared(lines_cleared_array: List[int], mean_rewards: List[float]):
         """
@@ -405,12 +396,9 @@ def child_function():
             series = pd.Series(arr)
             return series.rolling(window=window, min_periods=1, center=True).mean()
         
-        #lines_cleared_array = np.cumsum(lines_cleared_array)
         lines_cleared_array = moving_average(lines_cleared_array, window=MOVING_AVG_WINDOW_SIZE)
         new_mean_rewards        = moving_average(mean_rewards, window=MOVING_AVG_WINDOW_SIZE)
         logger.log(f"difference of lengths: {len(new_mean_rewards)} vs {len(mean_rewards)}")
-        # logger.log(f"MA lines cleared: {lines_cleared_array}")
-        # logger.log(f"MA mean rewards: {mean_rewards}")
         
         fig = go.Figure()
         

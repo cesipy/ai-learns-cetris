@@ -14,10 +14,15 @@ from simpleLogger import SimpleLogger
 logger = SimpleLogger()
 
 class Memory():
-    def __init__(self, maxlen:int, bias:bool=False): 
+    def __init__(
+        self, maxlen:int, 
+        bias_recent:bool=False,
+        bias_reward:bool=False,
+    ): 
         self.maxlen = maxlen
         self.memory_list = []
-        self.bias = bias
+        self.bias_recent = bias_recent
+        self.bias_reward = bias_reward
         
         
         
@@ -32,11 +37,69 @@ class Memory():
     def __len__(self,) -> int:
         return len(self.memory_list)
     
+    def sample_no_bias(self, k:int): 
+        """explicit uniform sampling from memory"""
+        if len(self.memory_list) <= k:
+            return self.memory_list.copy()
+        return random.sample(self.memory_list, k=k)
+    
     def sample(self, k) -> List: 
-        if self.bias: 
+        if len(self.memory_list) <=k: 
+            return self.memory_list.copy()
+        if self.bias_recent and self.bias_reward: 
+            logger.log("biasing both recent and reward not working, defaulting to no bias")
+            return random.sample(self.memory_list, k=k)
+        
+        elif self.bias_recent: 
             return self.sample_with_recent_bias(k=k)
         
+        elif self.bias_reward:
+            return self.sample_with_reward_bias(k=k)
+        
         return random.sample(self.memory_list, k=k)
+    
+    def sample_with_reward_bias(self, k:int, temperature=REWARD_TEMPERATURE) -> List:
+        """
+        Sample k elements from the memory buffer with a bias towards higher rewards.
+        
+        Args:
+            k (int): Number of elements to sample
+            temperature (float): Temperature parameter for the softmax function used to bias the sampling.
+                A value of 1.0 results in a strong bias, while a value of 0.0 results in a uniform distribution."""
+        if len(self.memory_list) <= k: 
+            return self.memory_list.copy()
+        
+        rewards = []
+        
+        for t in self.memory_list: 
+            rewards.append(t[2])        # extract rewards fro tuple t
+        
+        min_reward = min(rewards)
+        max_reward = max(rewards)
+        reward_range = max_reward - min_reward + 1e-6
+        
+        normalized_rewards = [ (r - min_reward) / reward_range for r in rewards]  # like partition function, small value
+        
+        # temperature for the bias
+        # temperature = 1: strong bias
+        # temperature = 0: uniform distr.
+        
+        biased_rewards = [r ** temperature for r in normalized_rewards]
+        
+
+        
+        total_rewards = sum(biased_rewards)
+        probs         = [r/total_rewards for r in biased_rewards]
+        
+        samples_indecies = np.random.choice(
+            len(self.memory_list),
+            size=k, 
+            replace=False, 
+            p=probs
+        )
+        
+        samples = [self.memory_list[index] for index in samples_indecies]
+        return samples
     
     
     def sample_with_recent_bias(self, k) -> List: 
@@ -63,7 +126,7 @@ class Memory():
     
     
     def construct_probability_distr(self, ): 
-        if not self.bias:
+        if not self.bias_recent:
             # return uniform 
             length = len(self.memory_list)
             unif = [1/length for i in self.memory_list]
@@ -108,22 +171,28 @@ class Memory():
         serializable_memory = []
         
         for experience in self.memory_list:
-            (state_array, piece_type), action, reward, (next_state_array, next_piece_type) = experience
+            (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column) = experience
             
             serializable_memory.append((
-                (state_array.cpu().numpy() if torch.is_tensor(state_array) else state_array,
-                piece_type.cpu().numpy() if torch.is_tensor(piece_type) else piece_type),
+                (
+                    state_array.cpu().numpy() if torch.is_tensor(state_array) else state_array,
+                    piece_type.cpu().numpy() if torch.is_tensor(piece_type) else piece_type,
+                    state_column_features.cpu().numpy() if torch.is_tensor(state_column_features) else state_column_features
+                ),
                 action,
                 reward,
-                (next_state_array.cpu().numpy() if torch.is_tensor(next_state_array) else next_state_array,
-                next_piece_type.cpu().numpy() if torch.is_tensor(next_piece_type) else next_piece_type)
+                (
+                    next_state_array.cpu().numpy() if torch.is_tensor(next_state_array) else next_state_array,
+                    next_piece_type.cpu().numpy() if torch.is_tensor(next_piece_type) else next_piece_type, 
+                    next_state_column.cpu().numpy() if torch.is_tensor(next_state_column) else next_state_column
+                )
             ))
         
         with open(path, 'wb') as f:
             pickle.dump({
                 'memory_list': serializable_memory,
                 'maxlen': self.maxlen,
-                'bias': self.bias
+                'bias': self.bias_recent
             }, f)
 
     def load_memory(self, path: str) -> None:
@@ -139,20 +208,27 @@ class Memory():
             
 
         self.maxlen = data['maxlen']
-        self.bias = data['bias']
+        self.bias_recent = data['bias']
         
         self.memory_list = []
         for experience in data['memory_list']:
-            (state_array, piece_type), action, reward, (next_state_array, next_piece_type) = experience
+            (state_array, piece_type, state_column_features), action, reward, (next_state_array, next_piece_type, next_state_column_features) = experience
             
             # Convert numpy arrays to tensors
             self.memory_list.append((
-                (torch.from_numpy(state_array).float() if isinstance(state_array, np.ndarray) else state_array,
-                torch.from_numpy(piece_type).float() if isinstance(piece_type, np.ndarray) else piece_type),
+                (
+                    torch.from_numpy(state_array).float() if isinstance(state_array, np.ndarray) else state_array,
+                    torch.from_numpy(piece_type).float() if isinstance(piece_type, np.ndarray) else piece_type,
+                    torch.from_numpy(state_column_features).float() if isinstance(state_column_features, np.ndarray) else state_column_features
+                ),
                 action,
                 reward,
-                (torch.from_numpy(next_state_array).float() if isinstance(next_state_array, np.ndarray) else next_state_array,
-                torch.from_numpy(next_piece_type).float() if isinstance(next_piece_type, np.ndarray) else next_piece_type)
+                (
+                    torch.from_numpy(next_state_array).float() if isinstance(next_state_array, np.ndarray) else next_state_array,
+                    torch.from_numpy(next_piece_type).float() if isinstance(next_piece_type, np.ndarray) else next_piece_type, 
+                    torch.from_numpy(next_state_column_features).float() if isinstance(next_state_column_features, np.ndarray) else next_state_column_features
+                ),
+                
             ))
         
 # ----------------------------------------------
@@ -191,7 +267,7 @@ def plot_sampling_distribution(memory: Memory):
         
 def main():
     maxlen = 30000
-    memory = Memory(maxlen=maxlen, bias=True)
+    memory = Memory(maxlen=maxlen, bias_recent=True)
     
     for i in range(maxlen): 
         memory.add(((i, i+12), i+1, i,(i-1, i)))
@@ -209,7 +285,7 @@ def main():
     memory.save_memory(path=path)
     
     del memory
-    memory = Memory(maxlen=maxlen, bias=True)
+    memory = Memory(maxlen=maxlen, bias_recent=True)
     memory.load_memory(path=path)
     
     plot_sampling_distribution(memory=memory)

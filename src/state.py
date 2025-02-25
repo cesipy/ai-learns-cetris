@@ -2,6 +2,7 @@ from typing import List, Tuple
 import numpy as np
 
 from simpleLogger import SimpleLogger
+from config import *
 
 
 logger = SimpleLogger()
@@ -48,7 +49,39 @@ class State:
     #                 all_2s.append((row, col))
     
     
+    def get_holes_column_wise(self):
+        holes_per_column = np.zeros(len(self.game_board_copy[0]), dtype=np.float32)
+        
+        for col in range(len(self.game_board_copy[0])):
+            block_found = False
+            holes = 0
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    block_found = True
+                elif block_found and self.game_board_copy[row][col] == 0:
+                    holes += 1
+            holes_per_column[col] = holes
+            
+        return holes_per_column
+
+    def get_heights_column_wise(self):
+        heights = np.zeros(len(self.game_board_copy[0]), dtype=np.float32)
+        
+        for col in range(len(self.game_board_copy[0])):
+            for row in range(len(self.game_board_copy)):
+                if self.game_board_copy[row][col] == 1:
+                    heights[col] = len(self.game_board_copy) - row
+                    break
+                    
+        return heights
     
+    def get_column_features(self): 
+        column_holes = self.get_holes_column_wise()
+        column_height = self.get_heights_column_wise()
+
+        return np.stack([column_holes, column_height])   # (2, board_width)
+
+
     def is_state_game_over(self)-> bool:
         for cell in self.game_board_copy[2]:
             if cell == 1:
@@ -116,12 +149,13 @@ class State:
     def _calculate_column_heights(self):
         heights = []
         for col in range(len(self.game_board_copy[0])):
+            # Initialize height as 0 for empty columns
+            height = 0
             for row in range(len(self.game_board_copy)):
                 if self.game_board_copy[row][col] == 1:
-                    heights.append(len(self.game_board_copy) - row)
+                    height = len(self.game_board_copy) - row
                     break
-            else:
-                heights.append(0)
+            heights.append(height)
         return heights
 
     def _calculate_wells(self):
@@ -186,7 +220,7 @@ class State:
         board_array =np.array(self.game_board_copy, dtype=np.float32)
         
         # one-hot representation for current piece type
-        piece_type_array = np.zeros(7, dtype=np.float32)
+        piece_type_array = np.zeros(NUMBER_OF_PIECES, dtype=np.float32)
         piece_type_array[self.piece_type] = np.float32(1.0)
         
         
