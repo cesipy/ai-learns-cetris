@@ -69,7 +69,7 @@ class Agent:
 
         
         self.target_update_counter = 0
-        self.target_update_frequency = 1000
+        self.target_update_frequency = 3000
         
         self.counter_interlearning_imitation = 0
         self.counter_interlearning_imitation_target = 20 
@@ -308,7 +308,7 @@ class Agent:
             logger.log("\n\ntraining on biased data!")
             for j in range(7): 
                 batch = self.memory.sample_with_reward_bias(k=BATCH_SIZE, temperature=1.0)
-                self.train_batch(batch=batch)
+                self.train_batch(batch=batch,)
             return
             
         else:   
@@ -349,7 +349,7 @@ class Agent:
         if is_expert_move: 
             self.expert_memory.add(((state_array, piece_type, state_column_features), norm_action, reward, (next_state_array, next_piece_type, next_state_column_features)))
         
-        if len(self.memory) >=10000 and self.counter % COUNTER == 0 :
+        if len(self.memory) >=12000 and self.counter % COUNTER == 0 :
             
             if  (not ONLY_TRAINING) and  IMITATION_COLLECTOR:
                 # save list as pickle (checkpointing)

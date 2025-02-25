@@ -2,53 +2,51 @@
 tail -f ../logs/py_log_2025-02-21.txt
 
 
-
-## TODOs
-
-- [x] modify memory to include best rewards as bias. 
-
-- [ ] record perfect matches, save to pickle and maybe pretrain on this for several episodes
-- [ ] epochs in imitation training, also normal training
-- [ ]  imitation training: partial random, partial completely expert
-- [ ] unify batch training methods
-- [ ] fix game-over funciton
-
-- [x] priority based memory to favour recent experience
-- [x] reduce size of C  logs
-- [ ] initialize weights from uniform
-- [x] include piece type in current state for cnn. i guess it doesnt know it right now
-- [ ] normalize loss on batchsize
-- [ ] logger queue for mp.Process
-- [x] script to fetch logs from docker containers
-- [x] deactivate oinly single thread in torch in qagent
-- [ ] improve state function for tetris board - encode state to matrix with current position and all the blocks in the field. 
-- [ ] in c: see next tetris piece
-- [x] use seeds to fix the run: especially for debugging in the begining to know if it even works
+## Demo
+This is a demo of the model playing tetris.
 
 
-- [x] is action space correct? research and write comprehensive documentation
-    - [ ] still write documentation
-- [x] test with easy tetroids
-- [x] fix lines cleared!
-- [ ] save outcomes to file where reward is bigger than 0
-- [x] add some visualizations
-- [x] batch processing only after n steps
-- [x] tetrisexpert implementation
+### Four pieces
+The trained model achieved good performance with about 160 pieces cleared. 
+
+![four pieces](./res/demo-4-pieces.gif)
+
+### Seven (all) pieces
+in progress...
 
 
-- [ ] documentation for piece_types:int  -> what is what?
-- [x] add current_piece_count to state so that i can separate reward function from other code. 
-- [x] maybe dockerize application so i can run several runs in parallel
+## Run the code 
 
-- [ ] problem with placeholder action: state s1 received -> get action a1; s2 is direct result (has already new piece inserted!); s3 (=s2 + 1 tick) -> a2, s4, ...
-    - remove the extra tick, has to be modified on c++ side. 
+In order to run the code, you need to have the python dependencies installed (torch, etc). The dependencies are stored in the `requirements.txt`. To install: 
+
+```bash
+pip install -r requirements.txt
+```
+
+As the C-code uses the `ncurses` library, it is necessary to install it. On Ubuntu, you can install it with: 
+
+```bash
+sudo apt-get install libncurses5-dev libncursesw5-dev
+```
+
+### Run a trained model
+To run a trained model, simply adjust the `src/config.py` to your needs. This means copying the code from `src/run_config.py` to  `src/config.py`. Then you can run the model with the `./running_script`(from `src`) or using docker. I recommend using docker, but there you cannot see the game.
 
 
-- [x] in tetris expert: if several actions ahave same reward, always first one is chosen -> make random to remove this bias
-- [x] lines cleared from pipe is only 1 digit - what happens at more?
+Of course you can choose the model you want to run. The models are stored in the `models` directory. 
+
+```python
+MODEL_NAME = "../models/trained_4_pieces_140_avg.pt"  # where are models saved? (for e.g. checkpointing )
+MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
+```
+Note: The models are trained with different numbers of pieces. To adjust the number of pieces please set `NUMBER_OF_PIECES` in `src/config.py` AND in `src/cpp/tetris.h` under `#define AMOUNT_OF_PIECES 4`
 
 
-# run with docker
+### Train a model from scratch 
+To train a model from scratch, adjust the `src/config.py` to your needs. This means copying the code from `src/train_config.py` to  `src/config.py`. Then you can run the model with the `./running_script`(from `src`) or using docker. I recommend using docker, but there you cannot see the game.
+
+
+## run with docker
 With docker it is possible to run several different configs for training. Each one uses just one core. 
 different containers are available in `docker-compose.yaml`. 
 To run one container, simply type: 
@@ -62,6 +60,33 @@ docker-compose up --build experiment_1
 docker-compose up --build experiment_2
 
 ```
+
+
+## Architecture
+This project consists of two major parts: 
+- Tetris implemented in C++ (heavy C-style), displaying the game using `ncurses`
+- Reinforcement learning model implemented in Python, using `pytorch`. 
+
+In order to communicate between the two parts, a FIFO is used. The C++ code writes the game state to a file, and the python code reads it. The python code writes the action to a file, and the C++ code reads it.
+
+
+
+## Take-aways
+It was really hard to train a model from scratch and then achieve good results. Most of them got stuck or plateaued at a certain point. As there are so many hyperparameters, it is hard to find the right combination.
+
+I imporved my workflow by checkpointing the models when they reached some good point and finetuned them further with a slightly smaller learning rate. With the Docker Setup it was possible to run multiple experiments in parallel.
+
+The hardest parts in learning were: 
+- Finding good reward function (hardest)
+- how much imitation learning/expert learning?
+- hyperparameters ($\gamma, \lambda, \epsilon, lr$, batch_size, etc)
+
+
+## Working version for four pieces reloaded
+Switch to commit "856b9a834909d643897f0f2e2610bc221b455fea" and train the model from scratch. after about 15k episodes the model averaged to 7 lines cleared. Then I saved the model and tuned it with a smaller learning rate and a smaller replay memory. This helped to achieve ... pieces. 
+
+This is a video showcasing the training process: 
+![traininge](./res/training_4_pieces.gif)
 
 ## working version with four pieces reloaded 2
 model is trained from commit: "452fa334dc9c433425a1dde0d0fdecad9e86a21e".
@@ -198,107 +223,6 @@ Switch to commit `0ccc4eb0ee345ab8a20dfde3619505e0f51d0e36` and use `models/trai
 The model improves drastically at about 4k-4.5k epochs. 
 Uses the following hyperparams: 
 
-```python
-EPSILON....................... 1.0
-EPSILON_DECAY................. 0.9955
-DISCOUNT...................... 0.96
-LEARNING_RATE................. 0.0008
-BATCH_SIZE.................... 1024
-COUNTER....................... 2000
-EPOCHS........................ 2
-NUM_BATCHES................... 40
-MIN_EPSILON................... 0.045
-EPSILON_COUNTER_EPOCH......... 50
 
-Model:
-------
-BOARD_HEIGHT.................. 28
-BOARD_WIDTH................... 10
-FC_HIDDEN_UNIT_SIZE........... 128
-NUMBER_OF_PIECES.............. 2
-
-Environment:
-------------
-BASE_DIR...................... /app
-SRC_DIR....................... /app/src
-LOG_DIR....................... /app/logs
-RES_DIR....................... /app/res
-TETRIS_COMMAND................ /app/src/cpp/tetris
-
-Communication:
---------------
-FIFO_STATES................... fifo_states
-FIFO_CONTROLS................. fifo_controls
-COMMUNICATION_TIME_OUT........ 45.0
-SLEEPTIME..................... 1e-06
-INTER_ROUND_SLEEP_TIME........ 0.2
-
-Experiment:
------------
-LOGGING....................... False
-LOAD_MODEL.................... False
-ITERATIONS.................... 100000
-PLOT_COUNTER.................. 50
-MOVING_AVG_WINDOW_SIZE........ 50
-COUNTER_TETRIS_EXPERT......... 1            # works also with 2 or 3
-
-```
 ![plot](./res/newplot.png)
 
-
-
-
-## Experiments 
-
-## 12.02
-- exp 2: new expert period test
-
-## 11.02
-- exp 1: imitation learning with pretrained model from yesterday
-- exp 2: further training of yesterdays model, with lower gamma=0.85
-- exp 4: further training of yesterdays model with gamma=0.95
-- exp 6: also further training, lower mem, gameover penalty revisited, num batches 35, no bias
-
-### 10.02
-- exp 1,7 - new architecture, batches= 70, no bias
-- exp 2   - 150 num batches, more imitation learning
-- exp 3   - same as above, no imitation learning
-- exp 4   - old arch, 300 batches 
-- exp 5   - new arch, 40k mem, higher lr, gamma only 0.85!
-
-
-### 08.02
-- exp4: simple reward, no imitation learning
-- exp5: simple reward + imitation learning, epsilon = 1.0
-
- 
-### 07.02
-experimenting with four pieces + new imitation learning. 
-Seems to be promising, going to do more experiments with pretraining. 
-
-current running experiments: 
-- exp1: complex reward
-    ```python 
-    IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
-    IMITATIO_LEARNING_BATCHES     = 130     # currently not used
-    IMITATION_LEARNING_EPOCHS     = 25
-    # memory objs
-    # max length for the memory objects
-    MEMORY_MAXLEN        = 40000
-    MEMORY_EXPERT_MAXLEN = 20000
-    # biases for sampling from memory   
-    USE_REWARD_BIAS  = True     # favor best reward-samples in memory
-    USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
-
-    ```
-- exp4: same as above, but with simple reward
-- exp6: same as exp4, but epochs = 14
-- currently epsilon is 0.02! no random exploration => test this next
-
-all of them did not work 
-
-- exp1: simple reward, reward bias, epochs=3
-- exp2: same as e1, but no reward bias. 
-- epx5: new reward with holes
-- exp6: exp5 + piece embedd
-- exp7

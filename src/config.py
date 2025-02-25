@@ -11,12 +11,10 @@ import torch
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", message="invalid value encountered in scalar divide")
 
-# # problem with tf.keras on WSL ubuntu, have to choose gpu
-# # TODO: not used in all files? currently im setting this env in multiple files
-# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-
+# problem with tf.keras on WSL ubuntu, have to choose gpu
+# TODO: not used in all files? currently im setting this env in multiple files
+#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"using device: {device}")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR  = os.path.join(BASE_DIR, "src")
@@ -30,20 +28,20 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.9985
+EPSILON_DECAY = 0.995
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.00000000000005
+MIN_EPSILON = 0.001
 
-LEARNING_RATE     = 10e-6 
-MIN_LEARNING_RATE = 6e-6
-WARMUP_STEPS  = 1000      # for LR scheduling
+LEARNING_RATE = 1e-5
+MIN_LEARNING_RATE = 5e-6
+WARMUP_STEPS  = 700      # for LR scheduling
 MAX_STEPS     = 3000     # for lr scheduling
-BATCH_SIZE    = 128
-COUNTER       = 4000     #when to perform batch training
+BATCH_SIZE    =  128
+COUNTER       = 40000     #when to perform batch training, in running really large
 EPOCHS        = 3   # how often to iterate over samples
-NUM_BATCHES   = 65  # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 50  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -52,7 +50,7 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 5
+COUNTER_TETRIS_EXPERT = 2
 NUMBER_OF_PIECES      = 7       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
@@ -62,14 +60,16 @@ COMMUNICATION_TIME_OUT = 45.0
 
 # from main file: 
 # default value should be (350/5000), how much to sleep between the communication with c++
-SLEEPTIME = 0.000001    
+SLEEPTIME = 0.2   
 # sleeptime between multiple epochs    
 INTER_ROUND_SLEEP_TIME = 0.2
 ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
-LOAD_MODEL = True        # load model?
-LOAD_EPSILON = 0.15
+LOAD_MODEL = True          # load model?
+LOAD_EPSILON = 0.001         # what initial epsilon to use when loading
+
+
 # files ideosyncratic to the neural network
 # currently this is a CNN, maybe architecture is changed in the future
 FC_HIDDEN_UNIT_SIZE = 150
@@ -88,20 +88,21 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 30000
-MEMORY_EXPERT_MAXLEN = 60000
+MEMORY_MAXLEN        = 75000
+MEMORY_EXPERT_MAXLEN = 6000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = False    # favor best reward-samples in memory
+USE_REWARD_BIAS  = True    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
-REWARD_TEMPERATURE = 0.66    # if 0 - uniform, if 1 strong bias
+REWARD_TEMPERATURE = 0.5    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
 IMITATIO_LEARNING_BATCHES     = 130     # currently not used
 IMITATION_LEARNING_BATCH_SIZE = 64
-IMITATION_LEARNING_EPOCHS     = 7
+IMITATION_LEARNING_EPOCHS = 5
 
-MODEL_NAME = "../models/model-1"  # where are models saved? (for e.g. checkpointing )
+# NOTE: in modelname remove .pt form model.pt - is automatically inserted.
+MODEL_NAME = "../models/trained_7_pieces_80-avg"  # where are models saved? (for e.g. checkpointing )
 MEMORY_PATH = "../res/precollected-memory/memory.pkl"   # where to collect mem
 
 # placeholder for the pretraining. currently not used, as it would require real examles. 
