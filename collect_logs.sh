@@ -18,5 +18,6 @@ for cont in $containers; do
 
     docker cp "$cont:$CONTAINER_LOGS_DIR/." "$LOGS_DEST_DIR/$cont/"
     docker cp "$cont:$CONTAINER_PLOTS_DIR/." "$LOGS_DEST_DIR/$cont/"
+    docker cp "$cont:$CONTAINER_PLOTS_DIR/../models" "$LOGS_DEST_DIR/$cont/"
 
 done

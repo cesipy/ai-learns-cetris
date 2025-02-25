@@ -2,23 +2,21 @@ from state import State
 from simpleLogger import SimpleLogger
 logger = SimpleLogger()
 
-# super simple reward
-# def calculate_reward(next_state: State):
 
+
+# # reward from the paper, super simple
+# def calculate_reward(next_state: State): 
 #     reward = 0
-    
-#     #add basic reward for surviving: 
-#     reward += 0.2 * next_state.piece_count
-    
-#     if next_state.immedeate_lines_cleared > 0:
-#         reward += (next_state.immedeate_lines_cleared ** 2) * 100
-        
-#     # Heavy punishment for game over (when game terminates)  
-#     if next_state.is_state_game_over():
-#         reward -= 600
-        
-#     return reward
 
+#     reward += (
+#         -0.51* next_state.height + 
+#         -0.36* next_state.holes + 
+#         -0.18* next_state.bumpiness + 
+#         0.76 * (next_state.immedeate_lines_cleared ** 2) * 200 +
+#         next_state.piece_count
+#     )
+
+#     return reward/ 200.0
 
 def calculate_reward(next_state: State):
     reward = 0
@@ -26,7 +24,7 @@ def calculate_reward(next_state: State):
     if next_state.immedeate_lines_cleared > 0:
         fraction = next_state.piece_count / 70
         if fraction > 1: 
-            logger.log("70 pieces reached!")
+            #logger.log("70 pieces reached!")
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
         else:
             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
@@ -44,17 +42,85 @@ def calculate_reward(next_state: State):
     reward -= 0.95 * next_state.holes
     
     if next_state.is_state_game_over():
-        game_over_penalty = 1000 
+        game_over_penalty = 500 
         reward -= game_over_penalty
-        logger.log(f"game over reward: {reward}")
+        #logger.log(f"game over reward: {reward}")
         
+    return reward/500.0
+
+
+
+# def calculate_reward(next_state: State):
+#     lines_cleared = 0
+#     if next_state.immedeate_lines_cleared: 
+#         lines_cleared = next_state.immedeate_lines_cleared
+#     reward = (
+#         next_state.piece_count  + 
+#         (lines_cleared ** 2.5) * 100
+#     )
+
+#     reward -= next_state.holes * 0.7
+
+#     if next_state.is_state_game_over(): 
+#         reward -= 500
+#     return reward/200.0
+
+# def calculate_reward(next_state: State):
+
+#     reward = 0
     
-    if next_state.immedeate_lines_cleared > 0:
-        logger.log(f"current winning reward: {reward}")
-    else:
-        pass
-        # logger.log(f"normal reward: {reward} for state: {next_state}")
-    return reward
+#     #add basic reward for surviving: 
+#     reward += 1.4 * next_state.piece_count ** 1.25
+    
+#     if next_state.immedeate_lines_cleared > 0:
+#         line_weights = {1: 100, 2: 300, 3: 600, 4: 1200}
+#         reward += line_weights.get(next_state.immedeate_lines_cleared, 0)
+        
+        
+#     reward += -1.5 * next_state.get_height_variance()**1.8
+#     reward -= 5.5 * next_state.max_height                    # Penalize tall stacks
+#     reward -= .6 * next_state.holes ** 1.54                        # Strong hole penalty
+#     reward -= .7 * next_state.bumpiness 
+        
+#     # Heavy punishment for game over (when game terminates)  
+#     if next_state.is_state_game_over():
+#         reward -= 600
+        
+#     return reward/1000.0
+
+
+
+
+# def calculate_reward(next_state: State):
+#     reward = 0
+    
+#     if next_state.immedeate_lines_cleared > 0:
+#         fraction = next_state.piece_count / 70
+#         if fraction > 1: 
+#             #logger.log("70 pieces reached!")
+#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
+#         else:
+#             line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
+#         #logger.log(f"line cleared reward: {line_cleared_reward}")
+#         reward += line_cleared_reward
+        
+#     survival_bonus = 0.5* next_state.piece_count 
+#     reward += survival_bonus
+    
+
+#     reward -= 0.3 * next_state.get_height_variance() ** 1.5
+#     reward -= 1.5 * next_state.max_height
+
+#     reward -= 0.2 * next_state.bumpiness
+#     reward -= 0.95 * next_state.holes
+    
+#     if next_state.is_state_game_over():
+#         game_over_penalty = 1000 
+#         reward -= game_over_penalty
+#         #logger.log(f"game over reward: {reward}")
+        
+
+#     return reward/10
 
 
 # super simple reward for only expert
