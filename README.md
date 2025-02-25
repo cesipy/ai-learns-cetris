@@ -1,19 +1,19 @@
 # AI learns cetris - Reinforement Machine Learning
-This project teaches an AI to play Tetris using deep reinforcement learning. The standard Tetris board (10×28) has approximately 2^280 possible configurations (≈1.9×10^84, simple napkin math) - more than the estimated number of atoms in the observable universe. This enormous state space makes it impossible to use traditional tabular methods, necessitating the use of Deep Q-Networks (DQN) to approximate optimal actions.
+This project teaches an AI to play Tetris using deep reinforcement learning. The standard Tetris board (10×28) has approximately $2^{280}$ possible configurations ($≈1.9 \cdot 10^{84}$, simple napkin math) - more than the estimated number of atoms in the observable universe. This enormous state space makes it impossible to use traditional tabular methods, necessitating the use of Deep Q-Networks (DQN) to approximate optimal actions.
 
 ## Demo
-This is a demo of the model playing tetris.
+This is a demo of the model playing tetris with four and seven pieces. 
 
 
 ### Four pieces
 The trained model achieved good performance with about 160 pieces cleared. 
 
-![four pieces](./res/demo-4-pieces.gif)
+![four pieces](./res/demo-4-pieces-small.gif)
 
 ### Seven (all) pieces
 The trained model achieved also good performance, but with less pieces cleared on average. With about 80 pieces cleared, this still shows good performance.
 
-![seven pieces](./res/demo-7-pieces.gif)
+![seven pieces](./res/demo-7-pieces-small.gif)
 
 
 ## Run the code 
@@ -87,7 +87,8 @@ The hardest parts in learning were:
 Switch to commit "856b9a834909d643897f0f2e2610bc221b455fea" and train the model from scratch. after about 15k episodes the model averaged to 7 lines cleared. Then I saved the model and tuned it with a smaller learning rate and a smaller replay memory. This helped to achieve ... pieces. 
 
 This is a video showcasing the training process: 
-![traininge](./res/training_4_pieces.gif)
+
+![traininge](./res/training_4_pieces-small.gif)
 
 ## working version with four pieces reloaded 2
 model is trained from commit: "452fa334dc9c433425a1dde0d0fdecad9e86a21e".
