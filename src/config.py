@@ -30,20 +30,20 @@ FIFO_CONTROLS = "fifo_controls"
 
 LOGGING = False
 
-EPSILON_DECAY = 0.99965
+EPSILON_DECAY = 0.9985
 EPSILON = 1.0
 DISCOUNT = 0.95
 EPSILON_COUNTER_EPOCH = 50
-MIN_EPSILON = 0.02
+MIN_EPSILON = 0.00000000000005
 
-LEARNING_RATE     = 4e-6
-MIN_LEARNING_RATE = 1e-6
+LEARNING_RATE     = 10e-6 
+MIN_LEARNING_RATE = 6e-6
 WARMUP_STEPS  = 1000      # for LR scheduling
 MAX_STEPS     = 3000     # for lr scheduling
 BATCH_SIZE    = 128
-COUNTER       = 2500     #when to perform batch training
+COUNTER       = 4000     #when to perform batch training
 EPOCHS        = 3   # how often to iterate over samples
-NUM_BATCHES   = 70  # when counter is reached, how many random batches are chosen from memory
+NUM_BATCHES   = 65  # when counter is reached, how many random batches are chosen from memory
 
 
 ACTIONS = list(range(-20, 24))   # represents left and rotate, left, nothing, right, right and rotate; 
@@ -52,7 +52,7 @@ PLOT_COUNTER = 50      # after 100 epochs save the plot
 MOVING_AVG_WINDOW_SIZE = 50        # for plots, what is moving avg?
 
 
-COUNTER_TETRIS_EXPERT = 3
+COUNTER_TETRIS_EXPERT = 5
 NUMBER_OF_PIECES      = 7       # how many pieces, default is 7 different (I, O, L, J, ...) 
                                 # must be the same as  AMOUNT_OF_PIECES in `tetris.hpp``
 
@@ -69,8 +69,7 @@ ITERATIONS = 100000   # temp
 POSSIBLE_NUMBER_STEPS = 4
                                 
 LOAD_MODEL = True        # load model?
-LOAD_EPSILON = 0.2
-
+LOAD_EPSILON = 0.15
 # files ideosyncratic to the neural network
 # currently this is a CNN, maybe architecture is changed in the future
 FC_HIDDEN_UNIT_SIZE = 150
@@ -89,12 +88,12 @@ USE_LR_SCHEDULER =True
 
 # memory objs
 # max length for the memory objects
-MEMORY_MAXLEN        = 80000
+MEMORY_MAXLEN        = 30000
 MEMORY_EXPERT_MAXLEN = 60000
 # biases for sampling from memory   
-USE_REWARD_BIAS  = True    # favor best reward-samples in memory
+USE_REWARD_BIAS  = False    # favor best reward-samples in memory
 USE_RECENCY_BIAS = False    # favor recently collected samplses (partially unifromly)
-REWARD_TEMPERATURE = 0.6    # if 0 - uniform, if 1 strong bias
+REWARD_TEMPERATURE = 0.66    # if 0 - uniform, if 1 strong bias
 
 # pretraining / imitation learning at the start of learning to nudge model in right direction
 IMITATION_LEARNING_LR         = 0.002       # learning rate only used in pretraining
