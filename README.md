@@ -1,4 +1,4 @@
-# AI learns cetris - Reinforement Machine Learning
+# AI learns cetris - Reinforcement Machine Learning
 This project teaches an AI to play Tetris using deep reinforcement learning. The standard Tetris board (10×28) has approximately $2^{280}$ possible configurations ($≈1.9 \cdot 10^{84}$, simple napkin math) - more than the estimated number of atoms in the observable universe. This enormous state space makes it impossible to use traditional tabular methods, necessitating the use of Deep Q-Networks (DQN) to approximate optimal actions.
 
 ## Demo
@@ -47,7 +47,8 @@ Note: The models are trained with different numbers of pieces. To adjust the num
 To train a model from scratch, adjust the `src/config.py` to your needs. This means copying the code from `src/train_config.py` to  `src/config.py`. Then you can run the model with the `./running_script`(from `src`) or using docker. I recommend using docker, but there you cannot see the game.
 
 
-## run with docker
+### Run with docker
+
 With docker it is possible to run several different configs for training. Each one uses just one core. 
 different containers are available in `docker-compose.yaml`. 
 To run one container, simply type: 
@@ -70,6 +71,33 @@ This project consists of two major parts:
 
 In order to communicate between the two parts, a FIFO is used. The C++ code writes the game state to a file, and the python code reads it. The python code writes the action to a file, and the C++ code reads it.
 
+### DQN model
+For the deep neural network a CNN was used. The  nature of the two dimensional game board makes it a good fit. But the architecture differs from traditional CNN architectures used for image classification. The model consists of two branches with different kernel sizes applied to the game board.
+
+```python 
+self.branch1 = nn.Sequential(
+    nn.Conv2d(1, 32, 3, padding=1),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Conv2d(32, 64, 3, padding=1),
+    nn.ReLU()
+)
+        
+self.branch2 = nn.Sequential(
+    nn.Conv2d(1, 64, 5, padding=2),
+    nn.ReLU(),
+    nn.MaxPool2d(2),
+    nn.Conv2d(64, 64, 5, padding=2),
+    nn.ReLU()
+)
+```
+
+Additionally, the model uses an embedding for the current piece `piece_type`. 
+
+
+#### Other model architectures
+In the course of this project I experimented with different model architectures. For example I tried CNNs with layerwise pooling, precomputed column features (`column_features`) and different implementations for the fully connected layer and the piece-embedding. 
+
 
 
 ## Take-aways
@@ -84,7 +112,7 @@ The hardest parts in learning were:
 
 
 ## Train working version for four pieces reloaded
-Switch to commit "856b9a834909d643897f0f2e2610bc221b455fea" and train the model from scratch. after about 15k episodes the model averaged to 7 lines cleared. Then I saved the model and tuned it with a smaller learning rate and a smaller replay memory. This helped to achieve ... pieces. 
+Switch to commit "856b9a834909d643897f0f2e2610bc221b455fea" and train the model from scratch. after about 15k episodes the model averaged to 7 lines cleared. Then I saved the model and tuned it with a smaller learning rate and a smaller replay memory. This helped to achieve 160 lines cleared on average.
 
 This is a video showcasing the training process: 
 
@@ -98,35 +126,32 @@ This resulted in an average of 16 pieces cleared. Then finetuned furthermore.
 
 
 ## Reward function
-The tuning of the reward function was the central part for the learning process. After hundreds of trial and errors I came up with the following reward function. It was working very well for (adjust) x pieces. 
+The tuning of the reward function was the central part for the learning process. After hundreds of trial and errors I came up with the following reward function.  
 
 ```python
 def calculate_reward(next_state: State):
     reward = 0
     
-    if next_state.immedeate_lines_cleared > 0:
-        fraction = next_state.piece_count / 70
-        if fraction > 1: 
-            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200
-        else:
-            line_cleared_reward = (next_state.immedeate_lines_cleared ** 2) * 200 * fraction*2
+    if next_state.immediate_lines_cleared > 0:
+        line_cleared_reward = (next_state.immediate_lines_cleared ** 2) * 200
 
         reward += line_cleared_reward
         
-    survival_bonus = 1.0* next_state.piece_count 
+    survival_bonus = min(1.0* next_state.piece_count, 80)
     reward += survival_bonus
     
+
     reward -= 0.3 * next_state.get_height_variance() ** 1.5
     reward -= 1.5 * next_state.max_height
-
     reward -= 0.2 * next_state.bumpiness
     reward -= 0.95 * next_state.holes
     
     if next_state.is_state_game_over():
         game_over_penalty = 500 
         reward -= game_over_penalty
-
+        
     return reward/500.0
+
 ```
 
 Both the expert used and the model optimized this function. 
